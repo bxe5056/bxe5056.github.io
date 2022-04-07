@@ -13,7 +13,6 @@
 
     <!-- Bootstrap Core CSS -->
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-
     <!-- Theme CSS -->
     <link href="css/freelancer.min.css" rel="stylesheet">
 
@@ -22,34 +21,36 @@
     <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
 
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-
     <!-- Google Analytics -->
     <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-      ga('create', 'UA-93093411-1', 'auto');
-      ga('send', 'pageview');
+        (function(i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r;
+            i[r] = i[r] || function() {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date();
+            a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0];
+            a.async = 1;
+            a.src = g;
+            m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+        ga('create', 'UA-93093411-1', 'auto');
+        ga('send', 'pageview');
     </script>
 </head>
 
 <body id="page-top" class="index">
 
     <!-- Navigation -->
-    <nav id="mainNav" class="navbar navbar-default navbar-fixed-top navbar-custom">
+    <nav id="mainNav" class="navbar navbar-default navbar-fixed-top
+            navbar-custom">
         <div class="container">
             <!-- Brand and toggle get grouped for better mobile display -->
             <div class="navbar-header page-scroll">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                    <span class="sr-only">Toggle navigation</span> Menu <i class="fa fa-bars"></i>
-                </button>
+                        <span class="sr-only">Toggle navigation</span> Menu <i
+                            class="fa fa-bars"></i>
+                    </button>
                 <a class="navbar-brand" href="#page-top">Benjamin Eppinger</a>
             </div>
 
@@ -59,7 +60,7 @@
                     <li class="hidden">
                         <a href="index.html#page-top"></a>
                     </li>
-		    <li class="page-scroll">
+                    <li class="page-scroll">
                         <a href="index.html#resume">Résumé</a>
                     </li>
                     <li class="page-scroll">
@@ -85,17 +86,28 @@
     <header>
         <div class="container">
             <div class="row">
-                <div class="col-lg-12">
+                <div class="col-lg-3">
                     <img class="img-responsive" src="img/profile.png" alt="">
+                </div>
+                <div class="col-lg-9">
                     <div class="intro-text">
                         <span class="name">Benjamin Eppinger</span>
-                        <hr class="star-light">
+                        <!-- <hr class="star-light"> -->
                         <span class="skills">
-				I’m a full-time software developer in the Boston, MA region.
-				I received a BS and MS in 2019 at Penn State's College of Information
-				Sciences and Technology. I have developed a wide array of skills that will
-				benefit me in my future endeavors.<br>Take a look below for more info about me!
-			</span>
+                                I’m a full-time software developer in the Greater
+                                Boston (MA) region, currently doing full-stack NodeJS development on a customer-facing web application.
+                        </span>
+                        <br />
+                        <span class="skills">
+                                I received a BS and MS in 2019 at Penn State's
+                                College of Information
+                                Sciences and Technology. 
+                        </span>
+
+                        <span class="skills construction">
+                            Note: This page is finally a work-in-progress again, so bear with me as I change some things up here. (Resume's up to date though)
+                            
+                    </span>
                     </div>
                 </div>
             </div>
@@ -113,23 +125,24 @@
                 <br>
             </div>
             <div class="row">
-               <p class="row">&nbsp;</p>
-<iframe src="https://app.box.com/embed/preview/q15bsl0ont4er07suzw5sllndp6uehap?direction=ASC&theme=dark" width="800" height="1050" frameborder="0" allowfullscreen webkitallowfullscreen msallowfullscreen> </iframe>
-              <p>&nbsp;</p>
+                <p class="row">&nbsp;</p>
+                <iframe src="https://app.box.com/embed/preview/q15bsl0ont4er07suzw5sllndp6uehap?direction=ASC&theme=dark" width="800" height="1050" frameborder="0" allowfullscreen webkitallowfullscreen msallowfullscreen>
+                    </iframe>
+                <p>&nbsp;</p>
             </div>
         </div>
         <div class="col-lg-8 col-lg-offset-2 text-center">
-        <br>
-        <!--
-		<a href="resume.pdf" class="btn btn-lg btn-outline"> <em class="fa fa-download"></em> Download PDF Résumé </a></div><br><br>
-	-->
-        <br>
+            <br>
+            <br>
     </section>
+
+    <!-- WIP Hobbies Section-->
+
 
     <!-- Courses Section -->
     <section class="success" id="courses">
         <div class="container">
-      <div class="row">
+            <div class="row">
                 <div class="col-lg-12 text-center">
                     <h2>Courses</h2>
                     <hr class="star-light">
@@ -137,75 +150,134 @@
             </div>
             <br><br><br><br>
             <table width="90%" border="0" align="center">
-              <tr width="33%">
-                <td width="33%" align="center" valign="middle">
-			<a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/331" target="_blank">
-                        	<h1> IST 331 </h1>
-				<h4> Organization and Design of Information Systems: User and System Principles </h4>
-				<br>
-			</a>
-		</td>
-                <td width="33%">
-			<a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/311" target="_blank">
-                        	<h1> IST 311 </h1>
-				<h4> Object Oriented Java Programming and Software</h4>
-				<br>
-			</a>
-		</td>
-                <td width="33%" align="center" valign="middle"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/242" target="_blank">
-                     				<h1> IST 242  </h1><h4> Intermediate Object Oriented Java Programming </h4> <br></a></td>
+                <tr width="33%">
+                    <td width="33%" align="center" valign="middle">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/331" target="_blank">
+                            <h1> IST 331 </h1>
+                            <h4> Organization and Design of Information Systems: User and System Principles
+                            </h4>
+                            <br>
+                        </a>
+                    </td>
+                    <td width="33%">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/311" target="_blank">
+                            <h1> IST 311 </h1>
+                            <h4> Object Oriented Java Programming and Software
+                            </h4>
+                            <br>
+                        </a>
+                    </td>
+                    <td width="33%" align="center" valign="middle">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/242" target="_blank">
+                            <h1> IST 242 </h1>
+                            <h4> Intermediate Object Oriented Java Programming </h4> <br></a>
+                    </td>
 
-              </tr>
-              <tr width="33%">
-				<td width="33%"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/230" target="_blank">
-                     				<h1> IST 230  </h1><h4> Discrete Mathematics </h4> <br> </a></td>
-                <td width="33%"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/220" target="_blank">
-                                    <h1> IST 220  </h1><h4> Networking and Telecommunications</h4> <br> </a></td>
-                <td width="33%" align="center" valign="middle"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/210" target="_blank">
-                        			<h1> IST 210  </h1><h4> Organization of Data </h4> <br> </a></td>
+                </tr>
+                <tr width="33%">
+                    <td width="33%">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/230" target="_blank">
+                            <h1> IST 230 </h1>
+                            <h4> Discrete Mathematics </h4> <br> </a>
+                    </td>
+                    <td width="33%">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/220" target="_blank">
+                            <h1> IST 220 </h1>
+                            <h4> Networking and Telecommunications</h4>
+                            <br> </a>
+                    </td>
+                    <td width="33%" align="center" valign="middle">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/210" target="_blank">
+                            <h1> IST 210 </h1>
+                            <h4> Organization of Data </h4> <br> </a>
+                    </td>
 
-              </tr>
-              <tr width="33%">
-                <td width="33%" align="center" valign="middle"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/140" target="_blank">
-                     				<h1> IST 140  </h1><h4> Introduction to Object Oriented Java Programming </h4> <br> </a></td>
-                <td width="33%"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/HI%20ED/302/" target="_blank">
-                     				<h1> HIED 302 </h1><h4> The Role of the Resident Assistant: Theory and Practice </h4> </a></td>
-                <td width="33%"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/D/DS/410" target="_blank">
-                                    <h1> DS 410   </h1><h4> Data Analytics at Scale </h4> <br> </a></td>
+                </tr>
+                <tr width="33%">
+                    <td width="33%" align="center" valign="middle">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/140" target="_blank">
+                            <h1> IST 140 </h1>
+                            <h4> Introduction to Object Oriented Java Programming </h4> <br> </a>
+                    </td>
+                    <td width="33%">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/HI%20ED/302/" target="_blank">
+                            <h1> HIED 302 </h1>
+                            <h4> The Role of the Resident Assistant: Theory and Practice </h4>
+                        </a>
+                    </td>
+                    <td width="33%">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/D/DS/410" target="_blank">
+                            <h1> DS 410 </h1>
+                            <h4> Data Analytics at Scale </h4> <br> </a>
+                    </td>
 
-			  </tr>
-              <tr width="33%">
-                <td width="33%"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/D/DS/220" target="_blank">
-                    				<h1> DS 220 </h1><h4> Data Management & Data Science </h4> <br> </a></td>
-                <td width="33%"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/M/MATH/141" target="_blank">
-                     				<h1> MATH 141 </h1><h4> Calculus With Analytic Geometry II </h4> </a></td>
-                <td width="33%"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/M/MATH/140" target="_blank">
-                     				<h1> MATH 140 </h1><h4> Calculus With Analytic Geometry I </h4> </a></td>
+                </tr>
+                <tr width="33%">
+                    <td width="33%">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/D/DS/220" target="_blank">
+                            <h1> DS 220 </h1>
+                            <h4> Data Management & Data Science </h4>
+                            <br> </a>
+                    </td>
+                    <td width="33%">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/M/MATH/141" target="_blank">
+                            <h1> MATH 141 </h1>
+                            <h4> Calculus With Analytic Geometry II
+                            </h4>
+                        </a>
+                    </td>
+                    <td width="33%">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/M/MATH/140" target="_blank">
+                            <h1> MATH 140 </h1>
+                            <h4> Calculus With Analytic Geometry I </h4>
+                        </a>
+                    </td>
 
-              </tr>
-              <tr width="33%">
-                <td width="33%" align="center" valign="middle"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/C/CMPSC/121" target="_blank">
-                        			<h1> CMPSC 121 </h1><h4> Intermediate Python Programming </h4> <br></a></td>
-                <td width="33%" align="center" valign="middle"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/K/KINES/011" target="_blank">
-                    				<h1> KINES 011 </h1><h4> Basic Downhill Skiing </h4> <br> </a></td>
-                <td width="33%"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/F/FRNSC/100" target="_blank">
-                     				<h1> FRNSC 100 </h1><h4> Introduction to forensic Science</h4> <br> </a></td>
+                </tr>
+                <tr width="33%">
+                    <td width="33%" align="center" valign="middle">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/C/CMPSC/121" target="_blank">
+                            <h1> CMPSC 121 </h1>
+                            <h4> Intermediate Python Programming </h4>
+                            <br></a>
+                    </td>
+                    <td width="33%" align="center" valign="middle">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/K/KINES/011" target="_blank">
+                            <h1> KINES 011 </h1>
+                            <h4> Basic Downhill Skiing </h4> <br> </a>
+                    </td>
+                    <td width="33%">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/F/FRNSC/100" target="_blank">
+                            <h1> FRNSC 100 </h1>
+                            <h4> Introduction to Forensic Science</h4>
+                            <br> </a>
+                    </td>
 
-               </tr>
-              <tr width="33%">
-				<td width="33%"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/E/ECON/102" target="_blank">
-                    				<h1> ECON 102 </h1><h4> Introductory Microeconomic Analysis and Policy </h4> <br> </a></td>
-                <td width="33%"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/S/STAT/200" target="_blank">
-                                    <h1> STAT 200 </h1><h4> Elementary Statistics </h4> <br> </a></td>
-                <td width="33%"><a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/S/SRA/211" target="_blank">
-                     				<h1> SRA 211  </h1><h4> Threat of Terrorism and Crime </h4> <br> </a></td>
+                </tr>
+                <tr width="33%">
+                    <td width="33%">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/E/ECON/102" target="_blank">
+                            <h1> ECON 102 </h1>
+                            <h4> Introductory Microeconomic Analysis and Policy </h4> <br> </a>
+                    </td>
+                    <td width="33%">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/S/STAT/200" target="_blank">
+                            <h1> STAT 200 </h1>
+                            <h4> Elementary Statistics </h4> <br> </a>
+                    </td>
+                    <td width="33%">
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/S/SRA/211" target="_blank">
+                            <h1> SRA 211 </h1>
+                            <h4> Threat of Terrorism and Crime </h4>
+                            <br> </a>
+                    </td>
 
-             </tr>
+                </tr>
 
-			</table>
-				<br><br><br><br>
-                <h3> Ending GPA: 3.76 BS / 3.79 MS  | Status: Graduated (Working Full-Time)</h3>
-</section>
+            </table>
+            <br><br><br><br>
+            <h3> Ending GPA: 3.76 BS / 3.79 MS | Status: Graduated (Working Full-Time)</h3>
+    </section>
 
     <!-- Contact Section -->
     <section id="evidence">
@@ -217,45 +289,52 @@
                 </div>
             </div>
             <table width="90%" border="0" align="center">
-              <tr width="33%">
-                <td width="33%" align="center" valign="middle"><a href= "https://github.com/bxe5056/CrimeDataManipulation" target="_blank">
-                                    <h3> IST Research Project  </h3><h5> Python Program to <br>
-                                      Manipulate Crime Data </h5>
-									<br>
-                                    </a>
-                </td>
-                <td width="33%"><h3> <a href="#">Microsoft Office Specialist</a></h3>
-                                    <h4><a href="#"> Excel 2013</a></h4>
-                                    <a href= "https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/311" target="_blank">                                    <br>
-                                    </a>
-                                    </td>
-                <td width="33%"><a href= "GallupReport.pdf" target="_blank">
-                                    <h3> StrengthsQuest
-                                    <br> Strengths
-                                    </h3>
-                                    <br>
-                                    </a>
-                </td>
+                <tr width="33%">
+                    <td width="33%" align="center" valign="middle">
+                        <a href="https://github.com/bxe5056/CrimeDataManipulation" target="_blank">
+                            <h3> IST Research Project </h3>
+                            <h5> Python Program to <br> Manipulate Crime Data </h5>
+                            <br>
+                        </a>
+                    </td>
+                    <td width="33%">
+                        <h3> <a href="#">Microsoft Office Specialist</a></h3>
+                        <h4><a href="#"> Excel 2013</a></h4>
+                        <a href="https://web.archive.org/web/20160613044041/bulletins.psu.edu/undergrad/courses/I/IST/311" target="_blank"> <br>
+                        </a>
+                    </td>
+                    <td width="33%">
+                        <a href="GallupReport.pdf" target="_blank">
+                            <h3> StrengthsQuest
+                                <br> Strengths
+                            </h3>
+                            <br>
+                        </a>
+                    </td>
 
-              </tr>
-              </table>
-              <table width="90%" border="0" align="center">
-              <tr width="33%">
-				<td width="33%"><a href= "http://bit.ly/BEppinger-ForSciCert" target="_blank">
-                                    <h3> Coursera Statement of Accomplishment with Distinction</h3>
-                                    <h4> Introduction to Forensic Science<br>
-                                    </h4>
-                                    <br>
-                                    </a>
-                </td>
-                <td width="33%" align="center" valign="middle"><h3> <a href="#">Microsoft Technology Associate</a></h3>
-                     				<h4><a href="#"> Windows Operating System Fundamentals</a></h4>                                    <br>
-                                    </td>
+                </tr>
+            </table>
+            <table width="90%" border="0" align="center">
+                <tr width="33%">
+                    <td width="33%">
+                        <a href="http://bit.ly/BEppinger-ForSciCert" target="_blank">
+                            <h3> Coursera Statement of Accomplishment with Distinction</h3>
+                            <h4> Introduction to Forensic Science<br>
+                            </h4>
+                            <br>
+                        </a>
+                    </td>
+                    <td width="33%" align="center" valign="middle">
+                        <h3> <a href="#">Microsoft Technology
+                                            Associate</a></h3>
+                        <h4><a href="#"> Windows Operating System
+                                            Fundamentals</a></h4> <br>
+                    </td>
 
-              </tr>
+                </tr>
 
 
-			</table>
+            </table>
         </div>
     </section>
 
@@ -268,20 +347,26 @@
                         <h3>Location</h3>
                         <p>Somewhere around
                             <br>Boston, MA
-                            <br><a href= "mail:bxe5056@gmail.com">Email me for more info!</a>
+                            <br><a href="mail:bxe5056@gmail.com">Email
+                                            me for more info!</a>
                         </p>
                     </div>
                     <div class="footer-col col-md-4">
                         <h3>Around the Web</h3>
                         <ul class="list-inline">
                             <li>
-                                <a href="https://www.facebook.com/bxe5056" class="btn-social btn-outline"><i class="fa fa-fw fa-facebook"></i></a>
+                                <a href="https://www.facebook.com/bxe5056" class="btn-social btn-outline"><i
+                                                    class="fa fa-fw
+                                                    fa-facebook"></i></a>
                             </li>
                             <li>
-                                <a href="http://www.linkedin.com/in/benjamindeppingerpsu" class="btn-social btn-outline"><i class="fa fa-fw fa-linkedin"></i></a>
+                                <a href="http://www.linkedin.com/in/benjamindeppingerpsu" class="btn-social btn-outline"><i
+                                                    class="fa fa-fw
+                                                    fa-linkedin"></i></a>
                             </li>
                             <li>
-                                <a href="https://github.com/bxe5056" class="btn-social btn-outline"><i class="fa fa-fw fa-github"></i></a>
+                                <a href="https://github.com/bxe5056" class="btn-social btn-outline"><i
+                                                    class="fa fa-fw fa-github"></i></a>
                             </li>
                         </ul>
                     </div>
@@ -289,7 +374,8 @@
                         <h3>Contact Me</h3>
                         <p>
                             <a href="mail:bxe5056@gmail.com">bxe5056@gmail.com</a><br>
-                            <a href="sms:18143108292">+1 814 310 8292</a>
+                            <a href="sms:18143108292">+1 814 310
+                                            8292</a>
                         </p>
                     </div>
                 </div>
@@ -307,7 +393,8 @@
     </footer>
 
     <!-- Scroll to Top Button (Only visible on small and extra-small screen sizes) -->
-    <div class="scroll-top page-scroll hidden-sm hidden-xs hidden-lg hidden-md">
+    <div class="scroll-top page-scroll hidden-sm hidden-xs hidden-lg
+                    hidden-md">
         <a class="btn btn-primary" href="#page-top">
             <i class="fa fa-chevron-up"></i>
         </a>
@@ -318,10 +405,8 @@
 
     <!-- Bootstrap Core JavaScript -->
     <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-
     <!-- Plugin JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
-
     <!-- Contact Form JavaScript -->
     <script src="js/jqBootstrapValidation.js"></script>
     <script src="js/contact_me.js"></script>
