@@ -1,19 +1,24 @@
 .nav-link-item {
-    flex-direction: row;
+  flex-direction: row;
 }
 
 .nav-links:hover {
-    color: #536DFE;
-    outline: none;
+  color: #536dfe;
+  outline: none;
 }
 
 .nav-links {
-    color: white;
-    outline: none;
-    text-decoration: none;
-    padding-left: 7.5px;
+  color: white;
+  outline: none;
+  text-decoration: none;
+  padding-left: 7.5px;
 }
 
 .text-align-right {
-    text-align: right;
+  text-align: right;
+}
+
+.banner-note {
+  background-color: yellow;
+  color: black;
 }
