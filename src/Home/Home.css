@@ -45,3 +45,19 @@
   height: 20vw;
   margin-left: 2.5vh;
 }
+
+@media (max-width: 991px) {
+  .intro-text .name,
+  .intro-text .skills {
+    text-align: center;
+  }
+
+  .intro-text .name {
+    padding-top: 2vh;
+  }
+
+  .img-profile {
+    height: 20vw;
+    margin-left: 1.5vh;
+  }
+}
