@@ -29,11 +29,8 @@ class NavBar extends React.Component {
                 <Link to='/bentheitguy/sample' className='nav-links'>
                   Courses
                 </Link>
-                <Link to='/bentheitguy/404' className='nav-links'>
-                  Evidence of Work
-                </Link>
                 <Link to='/bentheitguy/datarepo' className='nav-links'>
-                  File Repo
+                  Past Works
                 </Link>
                 <Link to='/bentheitguy/404' className='nav-links'>
                   Contact

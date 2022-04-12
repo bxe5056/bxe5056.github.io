@@ -1,5 +1,6 @@
 import { Col, Container, Row } from 'react-bootstrap';
 import './DataRepo.css';
+import dataItemList from './DataItemList';
 
 const dataItem = (href, title, subtitle) => {
   return (
@@ -13,6 +14,12 @@ const dataItem = (href, title, subtitle) => {
   );
 };
 
+const getDataItems = () => {
+  return dataItemList.map((item) => {
+    return dataItem(item[0], item[1], item[2]);
+  });
+};
+
 const DataRepo = () => {
   return (
     <Container>
@@ -21,45 +28,12 @@ const DataRepo = () => {
           <div class='col-lg-12 text-center'>
             <h2>
               <br />
-              <br />
-              File Repository
+              Past Works / File Repo
             </h2>
             <hr class='star-primary' />
           </div>
         </div>
-        <Row className='fileRepoGrid'>
-          {dataItem(
-            './fileFolder/CareBnB_StoryBoard_All_Streamlined_FontRoboto.xd',
-            'IST 413',
-            'CareBnB Adobe xD Prototype'
-          )}
-          {dataItem(
-            './fileFolder/IST505-ProposalPresentation.pptx',
-            'IST 505',
-            'Project Proposal Presentation'
-          )}
-          {dataItem(
-            './fileFolder/525Poster.pptx',
-            'IST 525',
-            'IST 525 Class Project Poster'
-          )}
-
-          {dataItem(
-            './fileFolder/Eppinger597ProposalPresentation.pptx',
-            'IST 597',
-            'ML ProjectFi Class Proposal Presentation'
-          )}
-          {dataItem(
-            './fileFolder/Eppinger597ProjectPresentation.pptx',
-            'IST 597',
-            'ML ProjectFi Class Final Presentation'
-          )}
-          {dataItem(
-            './fileFolder/Module11PPT.pptx',
-            'IST 597',
-            'AI - Content Moderation Presentation'
-          )}
-        </Row>
+        <Row className='fileRepoGrid'>{getDataItems()}</Row>
       </div>
     </Container>
   );
