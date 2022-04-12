@@ -7,6 +7,7 @@ import LostPage from './LostPage/LostPage';
 import './importedApp.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Resume from './Resume/Resume';
+import DataRepo from './DataRepo/DataRepo';
 
 const App = () => {
   return (
@@ -20,6 +21,7 @@ const App = () => {
           <Route index element={<Home />} />
           <Route path='sample' element={<NavBar />} />
           <Route path='resume' element={<Resume />} />
+          <Route path='datarepo' element={<DataRepo />} />
           <Route path='*' element={<LostPage />} />
         </Route>
       </Routes>

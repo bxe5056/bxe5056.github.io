@@ -15,9 +15,9 @@ class NavBar extends React.Component {
           <Container fluid>
             <Row md={12} className={'align-center'}>
               <Col md>
-                <a class='nav navbar-brand' href='#page-top'>
+                <Link class='nav navbar-brand' to='/bentheitguy/'>
                   Benjamin Eppinger
-                </a>
+                </Link>
               </Col>
               <Col mdPush='auto' className='text-align-right'>
                 <Link to='/bentheitguy/' className='nav-links'>
@@ -32,7 +32,7 @@ class NavBar extends React.Component {
                 <Link to='/bentheitguy/404' className='nav-links'>
                   Evidence of Work
                 </Link>
-                <Link to='/bentheitguy/404' className='nav-links'>
+                <Link to='/bentheitguy/datarepo' className='nav-links'>
                   File Repo
                 </Link>
                 <Link to='/bentheitguy/404' className='nav-links'>
