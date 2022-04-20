@@ -17,7 +17,7 @@ class Home extends React.Component {
             <Col lg={9}>
               <div class='intro-text'>
                 <Row>
-                  <span class='name'>Benjamin Eppinger</span>
+                  <span class='name font-montserrat'>Benjamin Eppinger</span>
                 </Row>
                 <Row>
                   <span class='skills'>

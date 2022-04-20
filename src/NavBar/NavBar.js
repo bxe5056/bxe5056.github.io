@@ -15,19 +15,22 @@ class NavBar extends React.Component {
           <Container fluid>
             <Row md={12} className={'align-center'}>
               <Col md>
-                <Link class='nav navbar-brand' to='/bentheitguy/'>
+                <Link
+                  class='nav navbar-brand font-montserrat'
+                  to='/bentheitguy/'
+                >
                   Benjamin Eppinger
                 </Link>
               </Col>
-              <Col mdPush='auto' className='text-align-right'>
+              <Col mdPush='auto' className='text-align-right font-montserrat'>
                 <Link to='/bentheitguy/' className='nav-links'>
                   Home
                 </Link>
                 <Link to='/bentheitguy/resume' className='nav-links'>
                   Resume
                 </Link>
-                <Link to='/bentheitguy/sample' className='nav-links'>
-                  Courses
+                <Link to='/bentheitguy/hobbies' className='nav-links'>
+                  Hobbies
                 </Link>
                 <Link to='/bentheitguy/datarepo' className='nav-links'>
                   Past Works
