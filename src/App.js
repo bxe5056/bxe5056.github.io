@@ -8,6 +8,7 @@ import './importedApp.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Resume from './Resume/Resume';
 import DataRepo from './DataRepo/DataRepo';
+import FootBar from './FootBar/FootBar';
 
 const App = () => {
   return (
@@ -25,6 +26,8 @@ const App = () => {
           <Route path='*' element={<LostPage />} />
         </Route>
       </Routes>
+
+      <FootBar />
     </div>
   );
 };
