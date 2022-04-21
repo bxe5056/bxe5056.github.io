@@ -22,6 +22,7 @@ const App = () => {
           <Route index element={<Home />} />
           <Route path='sample' element={<NavBar />} />
           <Route path='resume' element={<Resume />} />
+          <Route path='resume.pdf' element={<Resume />} />
           <Route path='datarepo' element={<DataRepo />} />
           <Route path='*' element={<LostPage />} />
         </Route>
