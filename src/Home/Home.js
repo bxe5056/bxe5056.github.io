@@ -12,15 +12,17 @@ class Home extends React.Component {
           {/* {importedItem()} */}
           <Row className='padding-welcome welcome'>
             <Col lg={3}>
-              <img class='img-profile' src={profilePic} alt="Ben's Face" />
+              <img className='img-profile' src={profilePic} alt="Ben's Face" />
             </Col>
             <Col lg={9}>
-              <div class='intro-text'>
+              <div className='intro-text'>
                 <Row>
-                  <span class='name font-montserrat'>Benjamin Eppinger</span>
+                  <span className='name font-montserrat'>
+                    Benjamin Eppinger
+                  </span>
                 </Row>
                 <Row>
-                  <span class='skills'>
+                  <span className='skills'>
                     I’m a full-time software developer in the Greater Boston
                     (MA) region, currently doing full-stack NodeJS development
                     on a customer-facing web application.
@@ -28,7 +30,7 @@ class Home extends React.Component {
                   <br />
                 </Row>
                 <Row>
-                  <span class='skills'>
+                  <span className='skills'>
                     I received a BS and MS in 2019 at Penn State's <br />{' '}
                     College of Information Sciences and Technology.
                   </span>

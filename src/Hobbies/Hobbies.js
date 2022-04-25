@@ -1,6 +1,18 @@
 import { Col, Container, Row } from 'react-bootstrap';
-import './DataRepo.css';
-import dataItemList from './DataItemList';
+import './Hobbies.css';
+import PhotoText from './PhotoText/PhotoText';
+const dataItemList = [
+  [
+    './fileFolder/CareBnB_StoryBoard_All_Streamlined_FontRoboto.xd',
+    'IST 413',
+    'CareBnB Adobe xD Prototype',
+  ],
+  [
+    './fileFolder/IST505-ProposalPresentation.pptx',
+    'IST 505',
+    'Project Proposal Presentation',
+  ],
+];
 
 const dataItem = (href, title, subtitle) => {
   return (
@@ -20,7 +32,12 @@ const getDataItems = () => {
   });
 };
 
-const DataRepo = () => {
+let object1 = {
+  title: 'This is Tesla',
+  subheading: 'She is a dog',
+};
+
+const Hobbies = () => {
   return (
     <Container>
       <div className='container'>
@@ -28,15 +45,16 @@ const DataRepo = () => {
           <div className='col-lg-12 text-center'>
             <h2>
               <br />
-              Past Works / File Repo
+              My Hobbies
             </h2>
             <hr className='star-primary' />
           </div>
         </div>
         <Row className='fileRepoGrid'>{getDataItems()}</Row>
+        <PhotoText cardContents={object1} />
       </div>
     </Container>
   );
 };
 
-export default DataRepo;
+export default Hobbies;

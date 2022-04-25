@@ -7,11 +7,11 @@ class FootBar extends React.Component {
   render() {
     return (
       <div className='FootBar'>
-        <footer class='text-center' id='contact'>
-          <div class='footer-above'>
+        <footer className='text-center' id='contact'>
+          <div className='footer-above'>
             <Container>
-              <Row class='row'>
-                <Col md={4} class='footer-col'>
+              <Row className='row'>
+                <Col md={4} className='footer-col'>
                   <h3>Location</h3>
                   <p>
                     Somewhere around
@@ -21,7 +21,7 @@ class FootBar extends React.Component {
                     <a href='mail:bxe5056@gmail.com'>Email me for more info!</a>
                   </p>
                 </Col>
-                <Col md={4} class='footer-col'>
+                <Col md={4} className='footer-col'>
                   <Row md={9} className='justify-content-md-center'>
                     <h3>Around the Web</h3>
                   </Row>
@@ -29,7 +29,7 @@ class FootBar extends React.Component {
                     <Col md={3}>
                       <a
                         href='https://www.facebook.com/bxe5056'
-                        class='btn-social btn-outline'
+                        className='btn-social btn-outline'
                       >
                         <FaFacebookF />
                       </a>
@@ -37,7 +37,7 @@ class FootBar extends React.Component {
                     <Col md={3}>
                       <a
                         href='http://www.linkedin.com/in/benjamindeppingerpsu'
-                        class='btn-social btn-outline'
+                        className='btn-social btn-outline'
                       >
                         <FaLinkedin />
                       </a>
@@ -45,14 +45,14 @@ class FootBar extends React.Component {
                     <Col md={3}>
                       <a
                         href='https://github.com/bxe5056'
-                        class='btn-social btn-outline'
+                        className='btn-social btn-outline'
                       >
                         <FaGithub />
                       </a>
                     </Col>
                   </Row>
                 </Col>
-                <Col md={4} class='footer-col'>
+                <Col md={4} className='footer-col'>
                   <h3>Contact Me</h3>
                   <p>
                     <a href='mail:bxe5056@gmail.com'>bxe5056@gmail.com</a>
@@ -63,7 +63,7 @@ class FootBar extends React.Component {
               </Row>
             </Container>
           </div>
-          <div class='footer-below'>
+          <div className='footer-below'>
             <Container>
               <Row>
                 <Col lg={12}>Copyright © Benjamin Eppinger 2022</Col>

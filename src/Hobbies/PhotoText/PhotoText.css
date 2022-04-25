@@ -1,0 +1,20 @@
+.outline-black {
+  border: 1px solid black;
+}
+
+.outline-green {
+  border: 1px solid green;
+}
+
+.outline-red {
+  border: 1px solid red;
+}
+
+.outline-blue {
+  border: 1px solid blue;
+}
+
+.card-item-margin {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}

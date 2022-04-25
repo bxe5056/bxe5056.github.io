@@ -9,20 +9,20 @@ class NavBar extends React.Component {
       <div className='NavBar'>
         <nav
           id='mainNav'
-          class='navbar navbar-default navbar-fixed-top
+          className='navbar navbar-default navbar-fixed-top
             navbar-custom'
         >
           <Container fluid>
             <Row md={12} className={'align-center'}>
               <Col md>
                 <Link
-                  class='nav navbar-brand font-montserrat'
+                  className='nav navbar-brand font-montserrat'
                   to='/bentheitguy/'
                 >
                   Benjamin Eppinger
                 </Link>
               </Col>
-              <Col mdPush='auto' className='text-align-right font-montserrat'>
+              <Col className='text-align-right font-montserrat'>
                 <Link to='/bentheitguy/' className='nav-links'>
                   Home
                 </Link>
@@ -41,7 +41,7 @@ class NavBar extends React.Component {
               </Col>
             </Row>
             <Row>
-              <span class='banner-note'>
+              <span className='banner-note'>
                 Note: This page is finally a work-in-progress again, so bear
                 with me as I change some things up here.
               </span>

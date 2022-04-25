@@ -8,6 +8,7 @@ import './importedApp.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Resume from './Resume/Resume';
 import DataRepo from './DataRepo/DataRepo';
+import Hobbies from './Hobbies/Hobbies';
 import FootBar from './FootBar/FootBar';
 
 const App = () => {
@@ -24,6 +25,7 @@ const App = () => {
           <Route path='resume' element={<Resume />} />
           <Route path='resume.pdf' element={<Resume />} />
           <Route path='datarepo' element={<DataRepo />} />
+          <Route path='hobbies' element={<Hobbies />} />
           <Route path='*' element={<LostPage />} />
         </Route>
       </Routes>
