@@ -3,6 +3,29 @@ import './NavBar.css';
 import { Link } from 'react-router-dom';
 import { Container, Row, Col } from 'react-bootstrap';
 
+const navItems = [
+  ['/bentheitguy/', 'Home'],
+  ['/bentheitguy/resume', 'Resume'],
+  ['/bentheitguy/hobbies', 'Hobbies', 'hidden'],
+  ['/bentheitguy/datarepo', 'Past Works'],
+  ['/bentheitguy/404', 'Contact', 'hidden'],
+];
+
+const navItem = (href, title) => {
+  return (
+    <Link to={href} className='nav-links'>
+      {title}
+    </Link>
+  );
+};
+
+const getNavItems = () => {
+  return navItems.map((item) => {
+    if (item[2]) return '';
+    return navItem(item[0], item[1]);
+  });
+};
+
 class NavBar extends React.Component {
   render() {
     return (
@@ -23,21 +46,7 @@ class NavBar extends React.Component {
                 </Link>
               </Col>
               <Col className='text-align-right font-montserrat'>
-                <Link to='/bentheitguy/' className='nav-links'>
-                  Home
-                </Link>
-                <Link to='/bentheitguy/resume' className='nav-links'>
-                  Resume
-                </Link>
-                <Link to='/bentheitguy/hobbies' className='nav-links'>
-                  Hobbies
-                </Link>
-                <Link to='/bentheitguy/datarepo' className='nav-links'>
-                  Past Works
-                </Link>
-                <Link to='/bentheitguy/404' className='nav-links'>
-                  Contact
-                </Link>
+                {getNavItems()}
               </Col>
             </Row>
             <Row>
