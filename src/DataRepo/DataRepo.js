@@ -25,12 +25,8 @@ const DataRepo = () => {
     <Container>
       <div className='container'>
         <div className='row'>
-          <div className='col-lg-12 text-center'>
-            <h2>
-              <br />
-              Past Works / File Repo
-            </h2>
-            <hr className='star-primary' />
+          <div className='col-lg-12 text-center buffer-y'>
+            <h2>Past Works / File Repo</h2>
           </div>
         </div>
         <Row className='fileRepoGrid'>{getDataItems()}</Row>
