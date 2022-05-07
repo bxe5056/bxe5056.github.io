@@ -4,11 +4,11 @@ import { Link } from 'react-router-dom';
 import { Container, Row, Col } from 'react-bootstrap';
 
 const navItems = [
-  ['/bentheitguy/', 'Home'],
-  ['/bentheitguy/resume', 'Resume'],
-  ['/bentheitguy/hobbies', 'Hobbies', 'hidden'],
-  ['/bentheitguy/datarepo', 'Past Works'],
-  ['/bentheitguy/404', 'Contact', 'hidden'],
+  ['/', 'Home'],
+  ['/resume', 'Resume'],
+  ['/hobbies', 'Hobbies', 'hidden'],
+  ['/datarepo', 'Past Works'],
+  ['/404', 'Contact', 'hidden'],
 ];
 
 const navItem = (href, title) => {

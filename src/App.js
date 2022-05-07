@@ -19,7 +19,7 @@ const App = () => {
       </header>
 
       <Routes>
-        <Route path='/bentheitguy'>
+        <Route path='/'>
           <Route index element={<Home />} />
           <Route path='sample' element={<NavBar />} />
           <Route path='resume' element={<Resume />} />
