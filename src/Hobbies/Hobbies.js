@@ -96,7 +96,6 @@ const Hobbies = () => {
               <br />
               My Hobbies
             </h2>
-            <hr className='star-primary' />
           </div>
         </div>
         <Row className='fileRepoGrid'>{getDataItems()}</Row>
