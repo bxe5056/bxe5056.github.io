@@ -1,17 +1,17 @@
 {
   "files": {
     "main.css": "/static/css/main.e131da1d.css",
-    "main.js": "/static/js/main.37cc6908.js",
+    "main.js": "/static/js/main.c73c53f8.js",
     "static/js/787.9d9ea998.chunk.js": "/static/js/787.9d9ea998.chunk.js",
     "static/media/PXL-TeslaBear-1.jpg": "/static/media/PXL-TeslaBear-1.7a9882b14e36213808cc.jpg",
     "static/media/profile.png": "/static/media/profile.f858504f6c33ff842ae6.png",
     "index.html": "/index.html",
     "main.e131da1d.css.map": "/static/css/main.e131da1d.css.map",
-    "main.37cc6908.js.map": "/static/js/main.37cc6908.js.map",
+    "main.c73c53f8.js.map": "/static/js/main.c73c53f8.js.map",
     "787.9d9ea998.chunk.js.map": "/static/js/787.9d9ea998.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.e131da1d.css",
-    "static/js/main.37cc6908.js"
+    "static/js/main.c73c53f8.js"
   ]
 }
