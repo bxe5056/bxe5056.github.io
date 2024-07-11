@@ -16,7 +16,7 @@ class FootBar extends React.Component {
                   <p>
                     Somewhere around
                     <br />
-                    Boston, MA
+                    Denver, CO
                     <br />
                     <a href='mail:bxe5056@gmail.com'>Email me for more info!</a>
                   </p>
@@ -66,7 +66,7 @@ class FootBar extends React.Component {
           <div className='footer-below'>
             <Container>
               <Row>
-                <Col lg={12}>Copyright © Benjamin Eppinger 2022</Col>
+                <Col lg={12}>Copyright © Benjamin Eppinger 2024</Col>
               </Row>
             </Container>
           </div>

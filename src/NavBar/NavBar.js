@@ -48,7 +48,7 @@ class NavBar extends React.Component {
             </Row>
             <Row>
               <span className='banner-note'>
-                Note: This page is finally a work-in-progress again, so bear
+                Note: This page needs some TLC, so bear
                 with me as I change some things up here.
               </span>
             </Row>

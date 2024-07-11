@@ -23,9 +23,8 @@ class Home extends React.Component {
                 </Row>
                 <Row>
                   <span className='skills'>
-                    I’m a full-time software developer in the Greater Boston
-                    (MA) region, currently doing full-stack NodeJS development
-                    on a customer-facing web application.
+                    I’m a full-time software developer in the Greater Denver
+                    (CO) region, currently doing project management and Ionic Mobile App Development in React JS.
                   </span>
                   <br />
                 </Row>
