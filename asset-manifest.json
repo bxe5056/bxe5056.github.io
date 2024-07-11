@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.css": "/static/css/main.e131da1d.css",
-    "main.js": "/static/js/main.afb29d30.js",
-    "static/js/787.9d9ea998.chunk.js": "/static/js/787.9d9ea998.chunk.js",
+    "main.css": "/static/css/main.b09a9dfe.css",
+    "main.js": "/static/js/main.283127d7.js",
+    "static/js/496.710bd925.chunk.js": "/static/js/496.710bd925.chunk.js",
     "static/media/PXL-TeslaBear-1.jpg": "/static/media/PXL-TeslaBear-1.7a9882b14e36213808cc.jpg",
     "static/media/profile.png": "/static/media/profile.f858504f6c33ff842ae6.png",
     "index.html": "/index.html",
-    "main.e131da1d.css.map": "/static/css/main.e131da1d.css.map",
-    "main.afb29d30.js.map": "/static/js/main.afb29d30.js.map",
-    "787.9d9ea998.chunk.js.map": "/static/js/787.9d9ea998.chunk.js.map"
+    "main.b09a9dfe.css.map": "/static/css/main.b09a9dfe.css.map",
+    "main.283127d7.js.map": "/static/js/main.283127d7.js.map",
+    "496.710bd925.chunk.js.map": "/static/js/496.710bd925.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.e131da1d.css",
-    "static/js/main.afb29d30.js"
+    "static/css/main.b09a9dfe.css",
+    "static/js/main.283127d7.js"
   ]
 }
