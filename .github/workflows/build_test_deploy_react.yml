@@ -36,7 +36,7 @@ jobs:
       # Runs a set command using the runners shell to build and test the application
       - name: npm ci, build and test
         run: |
-          npm ci
+          npm i
           npm run build --if-present
           npm test
 
