@@ -723,14 +723,14 @@ const DataTools = () => {
           </div>
         )}
 
-        {/* File Upload and Text Input Area */}
+        {/* File Selector and Text Input Area */}
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <h2 className="text-base font-medium text-gray-900 mb-4">
             Input Data
           </h2>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Left side - File Upload */}
+              {/* Left side - File Selector */}
               <div
                 {...getRootProps()}
                 className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors flex flex-col items-center justify-center ${

@@ -146,7 +146,7 @@ const ImageTools = () => {
     // Check if file is SVG
     if (file.type === "image/svg+xml") {
       setError(
-        "SVG files are not supported. Please upload a raster image (PNG, JPG, etc)."
+        "SVG files are not supported. Please select a raster image (PNG, JPG, etc)."
       );
       return;
     }
@@ -825,7 +825,7 @@ const ImageTools = () => {
                   onClick={handleClearImage}
                   className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
                 >
-                  Upload New Image
+                  Select New Image
                 </button>
                 {processedImage && !cropStart && !cropEnd && (
                   <button
@@ -991,7 +991,7 @@ const ImageTools = () => {
                 </div>
               ) : (
                 <p className="text-gray-500 text-center">
-                  Upload an image to view its metadata
+                  Select an image to view its metadata
                 </p>
               )}
             </div>
@@ -1128,7 +1128,7 @@ const ImageTools = () => {
           </div>
         </div>
 
-        {/* File Upload */}
+        {/* File Selector */}
         {!selectedFile && (
           <div
             {...getRootProps()}

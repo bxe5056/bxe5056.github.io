@@ -1500,7 +1500,7 @@ const ColorTools = () => {
                 {uploadedImage && (
                   <img
                     src={uploadedImage}
-                    alt="Uploaded"
+                    alt="Seelected Image"
                     className="max-h-64 mx-auto"
                   />
                 )}

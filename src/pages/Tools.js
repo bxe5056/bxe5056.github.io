@@ -13,6 +13,7 @@ import {
   FaFont,
   FaTable,
   FaVectorSquare,
+  FaFilePdf,
 } from "react-icons/fa";
 import FileSaver from "file-saver";
 import JSZip from "jszip";
@@ -28,6 +29,20 @@ const toolCategories = [
     description: "Convert between multiple data formats",
     features: ["CSV", "JSON/JSON5", "YAML", "XML", "MD Table", "HTML Table"],
     color: "purple",
+  },
+  {
+    title: "PDF Tools",
+    path: "/tools/pdf",
+    icon: <FaFilePdf className="text-2xl" />,
+    description: "View, modify, and merge PDF files",
+    features: [
+      "PDF Viewer",
+      "PDF Merger",
+      "PDF Editor",
+      "PDF to Images",
+      "Images to PDF",
+    ],
+    color: "red",
   },
   {
     title: "Color Tools",
@@ -128,6 +143,12 @@ const getToolPath = (category, feature) => {
     "Regex Tester": "regex",
     "Cron Parser": "cron",
     "Favicon Generator": "favicon",
+    // PDF Tools
+    "PDF Viewer": "viewer",
+    "PDF Merger": "merger",
+    "PDF Editor": "editor",
+    "PDF to Images": "to-images",
+    "Images to PDF": "from-images",
   };
 
   return `${category}/${featureMap[feature] || feature.toLowerCase()}`;

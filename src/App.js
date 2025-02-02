@@ -13,6 +13,7 @@ import ImageTools from "./pages/tools/image";
 import SvgTools from "./pages/tools/svg";
 import DataTools from "./pages/tools/data";
 import DevTools from "./pages/tools/dev";
+import PDFTools from "./pages/tools/pdf";
 import Experience from "./pages/Experience";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles/global.css";
@@ -49,6 +50,8 @@ const App = () => {
         <Route path="/tools/data/:tool" element={<DataTools />} />
         <Route path="/tools/dev" element={<DevTools />} />
         <Route path="/tools/dev/:tool" element={<DevTools />} />
+        <Route path="/tools/pdf" element={<PDFTools />} />
+        <Route path="/tools/pdf/:tool" element={<PDFTools />} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>

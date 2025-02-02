@@ -474,7 +474,7 @@ const SvgTools = () => {
               </>
             ) : (
               <p className="text-center text-gray-500">
-                Upload an SVG to replace its colors
+                Select an SVG to replace its colors
               </p>
             )}
           </div>
@@ -634,7 +634,7 @@ const SvgTools = () => {
           </div>
         </div>
 
-        {/* File Upload */}
+        {/* File Selector */}
         {!svgContent && (
           <div
             {...getRootProps()}
