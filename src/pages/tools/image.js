@@ -1103,62 +1103,29 @@ const ImageTools = () => {
           />
         )}
         {/* Tool Selection */}
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => handleTabChange("resize")}
-            className={`flex items-center px-3 py-2 rounded ${
-              activeTab === "resize"
-                ? "bg-primary-100 text-primary-700"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <FaRuler className="mr-2" />
-            Resize
-          </button>
-          <button
-            onClick={() => handleTabChange("compress")}
-            className={`flex items-center px-3 py-2 rounded ${
-              activeTab === "compress"
-                ? "bg-primary-100 text-primary-700"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <FaCompress className="mr-2" />
-            Compress
-          </button>
-          <button
-            onClick={() => handleTabChange("crop")}
-            className={`flex items-center px-3 py-2 rounded ${
-              activeTab === "crop"
-                ? "bg-primary-100 text-primary-700"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <FaCrop className="mr-2" />
-            Crop
-          </button>
-          <button
-            onClick={() => handleTabChange("convert")}
-            className={`flex items-center px-3 py-2 rounded ${
-              activeTab === "convert"
-                ? "bg-primary-100 text-primary-700"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <FaExchangeAlt className="mr-2" />
-            Convert
-          </button>
-          <button
-            onClick={() => handleTabChange("metadata")}
-            className={`flex items-center px-3 py-2 rounded ${
-              activeTab === "metadata"
-                ? "bg-primary-100 text-primary-700"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <FaInfo className="mr-2" />
-            Metadata
-          </button>
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="flex space-x-2 border-b border-gray-200 min-w-max px-4 sm:px-0">
+            {[
+              { id: "resize", label: "Resize", icon: FaRuler },
+              { id: "compress", label: "Compress", icon: FaCompress },
+              { id: "crop", label: "Crop", icon: FaCrop },
+              { id: "convert", label: "Convert", icon: FaExchangeAlt },
+              { id: "metadata", label: "Metadata", icon: FaInfo },
+            ].map((tool) => (
+              <button
+                key={tool.id}
+                onClick={() => handleTabChange(tool.id)}
+                className={`px-4 py-2 -mb-px flex items-center whitespace-nowrap ${
+                  activeTab === tool.id
+                    ? "border-b-2 border-primary-600 text-primary-600"
+                    : "text-gray-500"
+                }`}
+              >
+                <tool.icon className="mr-2" />
+                {tool.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* File Upload */}

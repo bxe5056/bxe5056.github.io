@@ -587,25 +587,51 @@ const SvgTools = () => {
     >
       <div className="space-y-6">
         {/* Tool Selection */}
-        <div className="flex space-x-2 border-b border-gray-200">
-          {[
-            { id: "optimize", label: "Optimize", icon: FaCompress },
-            { id: "colors", label: "Color Swap", icon: FaPalette },
-            { id: "viewbox", label: "ViewBox", icon: FaRuler },
-          ].map((tool) => (
-            <button
-              key={tool.id}
-              onClick={() => handleTabChange(tool.id)}
-              className={`px-4 py-2 -mb-px flex items-center ${
-                activeTab === tool.id
-                  ? "border-b-2 border-primary-600 text-primary-600"
-                  : "text-gray-500"
-              }`}
+        <div>
+          {/* Mobile Dropdown */}
+          <div className="sm:hidden">
+            <select
+              value={activeTab}
+              onChange={(e) => handleTabChange(e.target.value)}
+              className="w-full px-4 py-2 text-lg font-medium bg-white border-b border-gray-200 focus:outline-none focus:ring-0 focus:border-gray-200"
             >
-              <tool.icon className="mr-2" />
-              {tool.label}
-            </button>
-          ))}
+              {[
+                { id: "optimize", label: "Optimize", icon: FaCompress },
+                { id: "colors", label: "Color Swap", icon: FaPalette },
+                { id: "viewbox", label: "ViewBox", icon: FaRuler },
+              ].map((tool) => (
+                <option key={tool.id} value={tool.id}>
+                  {tool.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Desktop Tabs */}
+          <div className="hidden sm:block">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="flex space-x-2 border-b border-gray-200 min-w-max px-4 sm:px-0">
+                {[
+                  { id: "optimize", label: "Optimize", icon: FaCompress },
+                  { id: "colors", label: "Color Swap", icon: FaPalette },
+                  { id: "viewbox", label: "ViewBox", icon: FaRuler },
+                ].map((tool) => (
+                  <button
+                    key={tool.id}
+                    onClick={() => handleTabChange(tool.id)}
+                    className={`px-4 py-2 -mb-px flex items-center whitespace-nowrap ${
+                      activeTab === tool.id
+                        ? "border-b-2 border-primary-600 text-primary-600"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    <tool.icon className="mr-2" />
+                    {tool.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* File Upload */}
