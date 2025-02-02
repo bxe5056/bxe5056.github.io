@@ -87,6 +87,28 @@ const NavBar = () => {
       : ["rgba(55, 65, 81, 0.9)", "rgba(241, 245, 249, 1)"]
   );
 
+  const textColor = useTransform(
+    scrollY,
+    [0, 50],
+    isHomePage
+      ? ["rgb(255, 255, 255)", "rgb(255, 255, 255)"]
+      : ["rgb(31, 41, 55)", "rgb(255, 255, 255)"]
+  );
+
+  const underlineGradient = useTransform(
+    scrollY,
+    [0, 50],
+    isHomePage
+      ? [
+          "linear-gradient(to right, rgb(255, 255, 255), rgb(255, 255, 255))",
+          "linear-gradient(to right, rgb(255, 255, 255), rgb(255, 255, 255))",
+        ]
+      : [
+          "linear-gradient(to right, rgb(37, 99, 235), rgb(59, 130, 246))",
+          "linear-gradient(to right, rgb(255, 255, 255), rgb(255, 255, 255))",
+        ]
+  );
+
   const isActive = (path) => location.pathname === path;
 
   const handleNavClick = (path, title) => {
@@ -113,64 +135,65 @@ const NavBar = () => {
           {/* Logo */}
           <Link
             to="/"
-            className="relative group"
+            className="relative group flex-shrink-0 mr-4"
             onClick={() => handleNavClick("/", "Home")}
           >
             <motion.div
               className="flex items-center"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              style={{
-                transform: "translateY(-8.5%)",
-              }}
             >
               <img
                 src="/images/avatar.webp"
                 alt="Benjamin Eppinger"
                 className="h-14 w-14 object-cover object-[center_-1.5%]"
               />
-              <span
-                className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r 
-                               from-gray-600 to-gray-800 dark:from-white dark:to-gray-200 
-                               transform scale-x-0 group-hover:scale-x-100 
-                               transition-transform origin-left"
-              />
+              <motion.span
+                className="ml-3 text-lg font-semibold hidden sm:inline"
+                style={{
+                  color: textColor,
+                }}
+              >
+                BenTheITGuy
+              </motion.span>
             </motion.div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navLinks.map(({ title, path }) => (
-              <motion.div
-                key={path}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  color: isActive(path) ? textColorActive : textColorInactive,
-                }}
-                className="relative group text-sm font-medium transition-colors"
-              >
-                <Link
-                  to={path}
+          <div className="hidden md:flex items-center flex-grow justify-end">
+            <div className="flex items-center justify-end space-x-2 md:space-x-3 lg:space-x-6">
+              {navLinks.map(({ title, path }) => (
+                <motion.div
+                  key={path}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   style={{
-                    color: "inherit",
+                    color: isActive(path) ? textColorActive : textColorInactive,
                   }}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-primary-600`}
-                  onClick={() => handleNavClick(path, title)}
+                  className="relative group text-sm font-medium transition-colors whitespace-nowrap"
                 >
-                  {title}
-                </Link>
-                <motion.span
-                  className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-primary-600 to-primary-400 
-                           transform origin-left transition-transform duration-300 ease-out scale-x-0 group-hover:scale-x-100"
-                  initial={false}
-                  transition={{ duration: 0.3 }}
-                />
-              </motion.div>
-            ))}
+                  <Link
+                    to={path}
+                    style={{
+                      color: "inherit",
+                    }}
+                    className="block px-1 md:px-2 lg:px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-primary-600"
+                    onClick={() => handleNavClick(path, title)}
+                  >
+                    {title}
+                  </Link>
+                  <motion.span
+                    className="absolute -bottom-1 left-0 w-full h-0.5 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"
+                    style={{
+                      backgroundImage: underlineGradient,
+                    }}
+                  />
+                </motion.div>
+              ))}
+            </div>
 
             {/* Social Links */}
-            <div className="flex items-center gap-4 pl-4 border-l border-gray-200/50">
+            <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-4 pl-1.5 sm:pl-2 lg:pl-4 ml-1.5 sm:ml-2 lg:ml-4 border-l border-gray-200/50">
               <motion.a
                 href="https://github.com/bxe5056"
                 target="_blank"

@@ -6,6 +6,7 @@ import {
   FaArrowRight,
   FaEnvelope,
   FaPhone,
+  FaToolbox,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 
@@ -116,17 +117,22 @@ const Home = () => {
         </motion.div>
 
         {/* Content Container */}
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12">
+        <div className="relative z-10 w-full">
+          <div className="flex flex-col items-center sm:items-start w-full">
             {/* Text Content */}
             <motion.div
-              className="text-center lg:text-left p-3 sm:p-4 lg:p-16 rounded-2xl backdrop-blur-lg bg-white/25 
+              className="text-center md:text-left p-6 sm:p-5 lg:p-8 rounded-2xl backdrop-blur-lg bg-white/25 
                          shadow-[0_35px_60px_-15px_rgba(0,0,0,0.2)] relative overflow-hidden min-h-[250px] xs:min-h-[300px] sm:min-h-[350px] md:min-h-[300px] lg:min-h-[300px]
                          after:absolute after:inset-0 after:bg-gradient-to-br after:from-white/10 after:to-transparent after:rounded-2xl
-                         flex flex-col justify-between lg:-ml-16 lg:pl-16"
+                         flex flex-col justify-between mx-5 sm:ml-[40%] md:ml-[30%] lg:ml-[55%] xl:ml-[60%] 2xl:ml-[60%]
+                         max-w-[calc(100%-24px)] sm:max-w-[500px] lg:max-w-[calc(40%-50px)]"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
+              style={{
+                width: "100%",
+                position: "relative",
+              }}
             >
               {/* Glass reflections */}
               <motion.div
@@ -151,7 +157,7 @@ const Home = () => {
                   },
                 }}
               />
-              <div className="space-y-0.5 sm:space-y-2 w-full max-w-lg mx-auto">
+              <div className="space-y-1 sm:space-y-2 w-full max-w-none">
                 <motion.h1
                   variants={itemVariants}
                   className="text-xl xs:text-1xl sm:text-2xl md:text-3xl lg:text-4xl font-bold font-montserrat bg-clip-text text-transparent bg-gradient-to-r from-blue-800 to-blue-600 leading-none pt-2"
@@ -160,13 +166,13 @@ const Home = () => {
                 </motion.h1>
                 <motion.h2
                   variants={itemVariants}
-                  className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 font-light leading-none -mt-1"
+                  className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 font-light leading-tight"
                 >
                   <AnimatedText>Full-Stack Developer</AnimatedText>
                 </motion.h2>
                 <motion.p
                   variants={itemVariants}
-                  className="text-xs xs:text-sm sm:text-base md:text-lg text-gray-800 leading-tight mt-1"
+                  className="text-xs xs:text-sm sm:text-base md:text-lg text-gray-800 leading-snug mt-1"
                 >
                   Building intuitive and scalable web applications with modern
                   technologies. Based in Denver, CO, specializing in React and
@@ -177,7 +183,7 @@ const Home = () => {
               {/* CTA Buttons */}
               <motion.div
                 variants={itemVariants}
-                className="flex flex-col gap-2 justify-center pt-2 max-w-lg mx-auto w-full relative z-10 isolate"
+                className="flex flex-col gap-2 justify-center pt-2 w-full relative z-10 isolate"
               >
                 <motion.div
                   whileHover={{ scale: 1.05, y: -2 }}
@@ -187,10 +193,10 @@ const Home = () => {
                 >
                   <Link
                     to="/portfolio"
-                    className="btn btn-primary group text-xs xs:text-sm sm:text-base w-full inline-flex items-center justify-center"
+                    className="btn btn-primary hover:!bg-primary-600 text-xs xs:text-sm sm:text-base w-full inline-flex items-center justify-center group"
                   >
-                    <AnimatedText>View My Work</AnimatedText>
-                    <FaArrowRight className="transition-transform group-hover:translate-x-1 text-lg" />
+                    <AnimatedText>View My Past Work</AnimatedText>
+                    <FaArrowRight className="ml-2 transition-transform group-hover:translate-x-1 text-[20px] min-w-[20px]" />
                   </Link>
                 </motion.div>
                 <div className="flex gap-2 w-full">
@@ -204,9 +210,9 @@ const Home = () => {
                       href="https://github.com/bxe5056"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn text-xs xs:text-sm sm:text-base w-full inline-flex items-center justify-center border-2 border-gray-700 text-gray-700 hover:bg-gray-700 hover:text-white transition-colors bg-white/80 backdrop-blur-sm"
+                      className="btn text-xs xs:text-sm sm:text-base w-full inline-flex items-center justify-center gap-2 border-2 border-gray-700 text-gray-700 hover:bg-gray-700 hover:text-white transition-colors bg-white/80 backdrop-blur-sm"
                     >
-                      <FaGithub className="text-lg" />
+                      <FaGithub className="text-[20px] min-w-[20px]" />
                       <AnimatedText>GitHub</AnimatedText>
                     </a>
                   </motion.div>
@@ -220,13 +226,31 @@ const Home = () => {
                       href="https://www.linkedin.com/in/benjamindeppingerpsu"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn text-xs xs:text-sm sm:text-base w-full inline-flex items-center justify-center border-2 border-gray-700 text-gray-700 hover:bg-gray-700 hover:text-white transition-colors bg-white/80 backdrop-blur-sm"
+                      className="btn text-xs xs:text-sm sm:text-base w-full inline-flex items-center justify-center gap-2 border-2 border-gray-700 text-gray-700 hover:bg-gray-700 hover:text-white transition-colors bg-white/80 backdrop-blur-sm"
                     >
-                      <FaLinkedin className="text-lg" />
+                      <FaLinkedin className="text-[20px] min-w-[20px]" />
                       <AnimatedText>LinkedIn</AnimatedText>
                     </a>
                   </motion.div>
                 </div>
+                <motion.div
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  className="w-full"
+                >
+                  <Link
+                    to="/tools"
+                    className="btn text-xs xs:text-sm sm:text-base w-full inline-flex items-center justify-center gap-2 border-2 border-gray-700 text-gray-700 hover:bg-gray-700 hover:text-white transition-colors bg-white/80 backdrop-blur-sm"
+                    style={{
+                      borderColor: "var(--primary-600)",
+                      "--hover-bg": "var(--primary-600)",
+                    }}
+                  >
+                    <FaToolbox className="text-[20px] min-w-[20px]" />
+                    <AnimatedText>I Just Need The Toolbox</AnimatedText>
+                  </Link>
+                </motion.div>
               </motion.div>
             </motion.div>
           </div>
@@ -234,7 +258,7 @@ const Home = () => {
       </section>
 
       {/* Let's Connect Section */}
-      <section className="py-20 bg-white">
+      <section className="py-10 bg-white">
         <div className="container mx-auto px-4">
           <motion.div
             className="max-w-4xl mx-auto text-center"
@@ -245,7 +269,7 @@ const Home = () => {
           >
             <motion.h2
               variants={connectItemVariants}
-              className="text-3xl font-bold font-montserrat mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-800"
+              className="text-3xl font-bold font-montserrat mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-500"
             >
               Let's Connect
             </motion.h2>

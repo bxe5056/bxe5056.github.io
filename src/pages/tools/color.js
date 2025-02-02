@@ -1500,7 +1500,7 @@ const ColorTools = () => {
                 {uploadedImage && (
                   <img
                     src={uploadedImage}
-                    alt="Seelected Image"
+                    alt="Color source for extraction"
                     className="max-h-64 mx-auto"
                   />
                 )}

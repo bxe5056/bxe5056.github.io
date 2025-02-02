@@ -9,6 +9,7 @@ import {
   FaExchangeAlt,
   FaTools,
   FaDatabase,
+  FaFilePdf,
 } from "react-icons/fa";
 
 const toolCategories = [
@@ -25,6 +26,13 @@ const toolCategories = [
       "Markdown preview",
       "Lorem ipsum generator",
     ],
+  },
+  {
+    title: "PDF Tools",
+    path: "/tools/pdf",
+    icon: FaFilePdf,
+    description: "View, modify, and convert PDF files",
+    features: ["PDF Viewer", "PDF Merger", "PDF to Images", "Images to PDF"],
   },
   {
     title: "Color Tools",

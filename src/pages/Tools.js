@@ -38,9 +38,9 @@ const toolCategories = [
     features: [
       "PDF Viewer",
       "PDF Merger",
-      "PDF Editor",
       "PDF to Images",
       "Images to PDF",
+      "PDF Page Reorder",
     ],
     color: "red",
   },
@@ -146,9 +146,9 @@ const getToolPath = (category, feature) => {
     // PDF Tools
     "PDF Viewer": "viewer",
     "PDF Merger": "merger",
-    "PDF Editor": "editor",
     "PDF to Images": "to-images",
     "Images to PDF": "from-images",
+    "PDF Page Reorder": "reorder",
   };
 
   return `${category}/${featureMap[feature] || feature.toLowerCase()}`;

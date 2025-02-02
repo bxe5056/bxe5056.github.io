@@ -9,6 +9,7 @@ import {
   FaVectorSquare,
   FaExchangeAlt,
   FaTools,
+  FaFilePdf,
 } from "react-icons/fa";
 
 const categories = [
@@ -16,6 +17,7 @@ const categories = [
   { path: "/tools/color", icon: FaPalette, label: "Color" },
   { path: "/tools/image", icon: FaImage, label: "Image" },
   { path: "/tools/svg", icon: FaVectorSquare, label: "SVG" },
+  { path: "/tools/pdf", icon: FaFilePdf, label: "PDF" },
   { path: "/tools/data", icon: FaExchangeAlt, label: "Data" },
   { path: "/tools/dev", icon: FaTools, label: "Dev" },
 ];
@@ -105,10 +107,9 @@ const ToolLayout = ({ title, description, children }) => {
                   >
                     <motion.div
                       style={{
-                        color:
-                          location.pathname === category.path
-                            ? textColorActive
-                            : textColorInactive,
+                        color: location.pathname.startsWith(category.path)
+                          ? textColorActive
+                          : textColorInactive,
                       }}
                       className="flex items-center text-sm font-medium"
                     >
@@ -116,7 +117,7 @@ const ToolLayout = ({ title, description, children }) => {
                       {category.label}
                     </motion.div>
                   </Link>
-                  {location.pathname === category.path && (
+                  {location.pathname.startsWith(category.path) && (
                     <motion.div
                       layoutId="activeCategory"
                       style={{ backgroundColor: textColorActive }}
