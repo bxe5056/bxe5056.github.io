@@ -1,0 +1,1195 @@
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import ToolLayout from "../../components/tools/ToolLayout";
+import { useDropzone } from "react-dropzone";
+import {
+  FaImage,
+  FaDownload,
+  FaCrop,
+  FaCompress,
+  FaRuler,
+  FaUndo,
+  FaRedo,
+  FaInfo,
+  FaExpand,
+  FaTimes,
+  FaExchangeAlt,
+} from "react-icons/fa";
+import imageCompression from "browser-image-compression";
+import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
+
+const validTools = ["resize", "compress", "crop", "convert", "metadata"];
+const defaultTool = "resize";
+
+const ImageTools = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get("tool") || defaultTool
+  );
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [processedImage, setProcessedImage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [metadata, setMetadata] = useState(null);
+  const [cropStart, setCropStart] = useState(null);
+  const [cropEnd, setCropEnd] = useState(null);
+  const [aspectRatio, setAspectRatio] = useState("free");
+  const [quality, setQuality] = useState(75);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [maintainAspectRatio, setMaintainAspectRatio] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const canvasRef = useRef(null);
+  const imageRef = useRef(null);
+  const [error, setError] = useState(null);
+  const [activeHandle, setActiveHandle] = useState(null);
+  const [isMovingCrop, setIsMovingCrop] = useState(false);
+  const [moveStart, setMoveStart] = useState(null);
+  const [convertFormat, setConvertFormat] = useState("image/png");
+  const [convertQuality, setConvertQuality] = useState(0.92);
+
+  // Handle initial URL params and direct navigation
+  useEffect(() => {
+    const pathParam = location.pathname.split("/").pop();
+    if (validTools.includes(pathParam)) {
+      setActiveTab(pathParam);
+    }
+  }, [location]);
+
+  // Update URL when tab changes
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    navigate(`/tools/image/${tabId}`);
+  };
+
+  // Reset crop when changing tabs
+  useEffect(() => {
+    if (activeTab !== "crop") {
+      setCropStart(null);
+      setCropEnd(null);
+      const canvas = canvasRef.current;
+      if (canvas && imageRef.current) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(imageRef.current, 0, 0, canvas.width, canvas.height);
+      }
+    }
+  }, [activeTab]);
+
+  const drawCropOverlay = () => {
+    if (!cropStart || !cropEnd) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const img = imageRef.current;
+
+    // Clear and redraw the original image
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // Calculate crop rectangle coordinates
+    const startX = Math.min(cropStart.x, cropEnd.x);
+    const startY = Math.min(cropStart.y, cropEnd.y);
+    const width = Math.abs(cropEnd.x - cropStart.x);
+    const height = Math.abs(cropEnd.y - cropStart.y);
+
+    // Create clipping path for the crop area
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.rect(startX, startY, width, height);
+    ctx.clip("evenodd");
+
+    // Draw semi-transparent overlay only outside the crop area
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    // Draw dotted border
+    ctx.setLineDash([6, 6]);
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(startX, startY, width, height);
+
+    // Reset line dash for handles
+    ctx.setLineDash([]);
+
+    // Draw corner handles
+    const handleSize = 12;
+    ctx.fillStyle = "white";
+    ctx.strokeStyle = "rgb(25, 118, 210)";
+    ctx.lineWidth = 2;
+
+    // Helper function to draw a handle
+    const drawHandle = (x, y) => {
+      ctx.beginPath();
+      ctx.arc(x, y, handleSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    };
+
+    // Draw handles at corners and midpoints
+    drawHandle(startX, startY);
+    drawHandle(startX + width, startY);
+    drawHandle(startX, startY + height);
+    drawHandle(startX + width, startY + height);
+    drawHandle(startX + width / 2, startY);
+    drawHandle(startX + width / 2, startY + height);
+    drawHandle(startX, startY + height / 2);
+    drawHandle(startX + width, startY + height / 2);
+  };
+
+  const onDrop = useCallback(async (acceptedFiles) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+
+    // Check if file is SVG
+    if (file.type === "image/svg+xml") {
+      setError(
+        "SVG files are not supported. Please upload a raster image (PNG, JPG, etc)."
+      );
+      return;
+    }
+
+    setError(null);
+    setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        setDimensions({ width: img.width, height: img.height });
+        setProcessedImage(img.src);
+
+        // Extract metadata
+        const metadata = {
+          name: file.name,
+          type: file.type,
+          size: (file.size / 1024).toFixed(2) + " KB",
+          dimensions: `${img.width.toFixed(2)}x${img.height.toFixed(2)}`,
+          lastModified: new Date(file.lastModified).toLocaleString(),
+        };
+        setMetadata(metadata);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { "image/*": [] },
+    maxFiles: 1,
+  });
+
+  const handleResize = useCallback(() => {
+    if (!selectedFile || !dimensions.width || !dimensions.height) return;
+
+    setLoading(true);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = dimensions.width;
+      canvas.height = dimensions.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, dimensions.width, dimensions.height);
+
+      canvas.toBlob((blob) => {
+        const resizedFile = new File([blob], selectedFile.name, {
+          type: selectedFile.type,
+          lastModified: new Date().getTime(),
+        });
+        setSelectedFile(resizedFile);
+        setProcessedImage(URL.createObjectURL(blob));
+
+        // Update metadata with resize info
+        setMetadata((prev) => ({
+          ...prev,
+          originalSize: prev.size,
+          size: (blob.size / 1024).toFixed(2) + " KB",
+          dimensions: `${dimensions.width.toFixed(
+            2
+          )}x${dimensions.height.toFixed(2)}`,
+          resized: true,
+          lastModified: new Date().toLocaleString(),
+        }));
+
+        setLoading(false);
+      }, selectedFile.type);
+    };
+    img.src = URL.createObjectURL(selectedFile);
+  }, [selectedFile, dimensions]);
+
+  const handleCompress = useCallback(async () => {
+    if (!selectedFile) return;
+
+    setLoading(true);
+    try {
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        quality: quality / 100,
+      };
+
+      const compressedFile = await imageCompression(selectedFile, options);
+      const compressedUrl = URL.createObjectURL(compressedFile);
+      setProcessedImage(compressedUrl);
+
+      // Update metadata with compression info
+      setMetadata((prev) => ({
+        ...prev,
+        originalSize: prev.size,
+        size: (compressedFile.size / 1024).toFixed(2) + " KB",
+        compressed: true,
+        lastModified: new Date().toLocaleString(),
+      }));
+
+      // Update selected file to use compressed version for future operations
+      setSelectedFile(compressedFile);
+    } catch (error) {
+      console.error("Error compressing image:", error);
+      setError("Error compressing image: " + error.message);
+    }
+    setLoading(false);
+  }, [selectedFile, quality]);
+
+  const handleCrop = useCallback(() => {
+    if (!selectedFile || !cropStart || !cropEnd) return;
+
+    const canvas = canvasRef.current;
+    const img = imageRef.current;
+
+    // Calculate the scale between displayed size and actual image size
+    const scaleX = img.naturalWidth / canvas.width;
+    const scaleY = img.naturalHeight / canvas.height;
+
+    const cropWidth = Math.abs(cropEnd.x - cropStart.x);
+    const cropHeight = Math.abs(cropEnd.y - cropStart.y);
+    const startX = Math.min(cropStart.x, cropEnd.x);
+    const startY = Math.min(cropStart.y, cropEnd.y);
+
+    // Scale the crop dimensions to match the original image size
+    const scaledStartX = startX * scaleX;
+    const scaledStartY = startY * scaleY;
+    const scaledWidth = cropWidth * scaleX;
+    const scaledHeight = cropHeight * scaleY;
+
+    const outputCanvas = document.createElement("canvas");
+    outputCanvas.width = scaledWidth;
+    outputCanvas.height = scaledHeight;
+    const outputCtx = outputCanvas.getContext("2d");
+
+    outputCtx.drawImage(
+      img,
+      scaledStartX,
+      scaledStartY,
+      scaledWidth,
+      scaledHeight,
+      0,
+      0,
+      scaledWidth,
+      scaledHeight
+    );
+
+    outputCanvas.toBlob((blob) => {
+      // Create a new File object from the blob
+      const croppedFile = new File([blob], selectedFile.name, {
+        type: selectedFile.type,
+        lastModified: new Date().getTime(),
+      });
+
+      // Update both the selected file and processed image
+      setSelectedFile(croppedFile);
+      setProcessedImage(URL.createObjectURL(blob));
+
+      // Update dimensions
+      setDimensions({
+        width: scaledWidth,
+        height: scaledHeight,
+      });
+
+      // Update metadata
+      setMetadata((prev) => ({
+        ...prev,
+        size: (blob.size / 1024).toFixed(2) + " KB",
+        dimensions: `${scaledWidth.toFixed(2)}x${scaledHeight.toFixed(2)}`,
+        lastModified: new Date().toLocaleString(),
+      }));
+
+      setCropStart(null);
+      setCropEnd(null);
+    }, selectedFile.type);
+  }, [selectedFile, cropStart, cropEnd]);
+
+  const getScaledCoordinates = (e, canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  };
+
+  const getHandle = (e, canvas) => {
+    if (!cropStart || !cropEnd) return null;
+
+    const coords = getScaledCoordinates(e, canvas);
+    const startX = Math.min(cropStart.x, cropEnd.x);
+    const startY = Math.min(cropStart.y, cropEnd.y);
+    const width = Math.abs(cropEnd.x - cropStart.x);
+    const height = Math.abs(cropEnd.y - cropStart.y);
+    const handleSize = 12;
+
+    const isNearPoint = (x, y) => {
+      const dx = coords.x - x;
+      const dy = coords.y - y;
+      return Math.sqrt(dx * dx + dy * dy) <= handleSize;
+    };
+
+    // Check corners
+    if (isNearPoint(startX, startY)) return "tl";
+    if (isNearPoint(startX + width, startY)) return "tr";
+    if (isNearPoint(startX, startY + height)) return "bl";
+    if (isNearPoint(startX + width, startY + height)) return "br";
+
+    // Check midpoints
+    if (isNearPoint(startX + width / 2, startY)) return "t";
+    if (isNearPoint(startX + width / 2, startY + height)) return "b";
+    if (isNearPoint(startX, startY + height / 2)) return "l";
+    if (isNearPoint(startX + width, startY + height / 2)) return "r";
+
+    // Check if inside crop box
+    if (
+      coords.x >= startX &&
+      coords.x <= startX + width &&
+      coords.y >= startY &&
+      coords.y <= startY + height
+    ) {
+      return "move";
+    }
+
+    return null;
+  };
+
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (activeTab !== "crop") return;
+
+    const canvas = canvasRef.current;
+    const handle = getHandle(e, canvas);
+    const coords = getScaledCoordinates(e, canvas);
+
+    if (handle === "move") {
+      setIsMovingCrop(true);
+      setMoveStart(coords);
+    } else if (handle) {
+      setActiveHandle(handle);
+    } else {
+      // Start new crop if there isn't one, or if we have a complete crop
+      if (!cropStart || (cropStart && cropEnd && !isDragging)) {
+        setCropStart(coords);
+        setCropEnd(null); // Clear end point when starting new crop
+        setIsDragging(true);
+      }
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (activeTab !== "crop") return;
+
+    const canvas = canvasRef.current;
+    const coords = getScaledCoordinates(e, canvas);
+
+    // Handle crop box creation
+    if (cropStart && isDragging && !isMovingCrop && !activeHandle) {
+      let newEnd = {
+        x: Math.max(0, Math.min(canvas.width, coords.x)),
+        y: Math.max(0, Math.min(canvas.height, coords.y)),
+      };
+
+      if (aspectRatio !== "free") {
+        const width = Math.abs(newEnd.x - cropStart.x);
+        const [ratioWidth, ratioHeight] = aspectRatio.split(":").map(Number);
+        const targetHeight = (width * ratioHeight) / ratioWidth;
+        newEnd.y =
+          newEnd.y > cropStart.y
+            ? cropStart.y + targetHeight
+            : cropStart.y - targetHeight;
+      }
+
+      setCropEnd(newEnd);
+      drawCropOverlay();
+      return;
+    }
+
+    // Handle moving existing crop box
+    if (isMovingCrop && moveStart) {
+      const dx = coords.x - moveStart.x;
+      const dy = coords.y - moveStart.y;
+
+      const newStart = {
+        x: Math.max(0, Math.min(canvas.width, cropStart.x + dx)),
+        y: Math.max(0, Math.min(canvas.height, cropStart.y + dy)),
+      };
+      const newEnd = {
+        x: Math.max(0, Math.min(canvas.width, cropEnd.x + dx)),
+        y: Math.max(0, Math.min(canvas.height, cropEnd.y + dy)),
+      };
+
+      setCropStart(newStart);
+      setCropEnd(newEnd);
+      setMoveStart(coords);
+      drawCropOverlay();
+      return;
+    }
+
+    // Handle resizing via handles
+    if (activeHandle) {
+      let newEnd = { ...cropEnd };
+      switch (activeHandle) {
+        case "tl":
+          setCropStart(coords);
+          break;
+        case "tr":
+          setCropStart({ ...cropStart, y: coords.y });
+          newEnd = { ...newEnd, x: coords.x };
+          break;
+        case "bl":
+          setCropStart({ ...cropStart, x: coords.x });
+          newEnd = { ...newEnd, y: coords.y };
+          break;
+        case "br":
+          newEnd = coords;
+          break;
+        case "t":
+          setCropStart({ ...cropStart, y: coords.y });
+          break;
+        case "b":
+          newEnd = { ...newEnd, y: coords.y };
+          break;
+        case "l":
+          setCropStart({ ...cropStart, x: coords.x });
+          break;
+        case "r":
+          newEnd = { ...newEnd, x: coords.x };
+          break;
+        default:
+          break;
+      }
+
+      if (
+        aspectRatio !== "free" &&
+        ["tl", "tr", "bl", "br"].includes(activeHandle)
+      ) {
+        const width = Math.abs(newEnd.x - cropStart.x);
+        const [ratioWidth, ratioHeight] = aspectRatio.split(":").map(Number);
+        const targetHeight = (width * ratioHeight) / ratioWidth;
+        newEnd.y =
+          newEnd.y > cropStart.y
+            ? cropStart.y + targetHeight
+            : cropStart.y - targetHeight;
+      }
+
+      setCropEnd(newEnd);
+      drawCropOverlay();
+    }
+
+    // Update cursor based on handle
+    const handle = getHandle(e, canvas);
+    if (handle === "tl" || handle === "br") canvas.style.cursor = "nw-resize";
+    else if (handle === "tr" || handle === "bl")
+      canvas.style.cursor = "ne-resize";
+    else if (handle === "t" || handle === "b")
+      canvas.style.cursor = "ns-resize";
+    else if (handle === "l" || handle === "r")
+      canvas.style.cursor = "ew-resize";
+    else if (handle === "move") canvas.style.cursor = "move";
+    else canvas.style.cursor = "crosshair";
+  };
+
+  const handleMouseUp = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isDragging && cropStart && !cropEnd) {
+      // If we're dragging but haven't set an end point, use current mouse position
+      const canvas = canvasRef.current;
+      const coords = getScaledCoordinates(e, canvas);
+      setCropEnd(coords);
+      drawCropOverlay();
+    }
+
+    setIsDragging(false);
+    setIsMovingCrop(false);
+    setActiveHandle(null);
+    setMoveStart(null);
+
+    document.body.style.userSelect = "";
+    document.body.style.WebkitUserSelect = "";
+    document.body.style.MozUserSelect = "";
+    document.body.style.msUserSelect = "";
+  };
+
+  const handleCancelCrop = () => {
+    setCropStart(null);
+    setCropEnd(null);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const img = imageRef.current;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  };
+
+  const downloadImage = () => {
+    if (!processedImage) return;
+
+    const link = document.createElement("a");
+    link.href = processedImage;
+    link.download = `processed-${selectedFile.name}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleClearImage = () => {
+    setSelectedFile(null);
+    setProcessedImage(null);
+    setMetadata(null);
+    setDimensions({ width: 0, height: 0 });
+    setCropStart(null);
+    setCropEnd(null);
+    setError(null);
+  };
+
+  const FullscreenModal = ({ image, onClose }) => (
+    <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+      <div className="relative max-w-full max-h-full">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 rounded-full bg-black bg-opacity-50"
+        >
+          <FaTimes size={24} />
+        </button>
+        <img
+          src={image}
+          alt="Fullscreen preview"
+          className="max-w-full max-h-[90vh] object-contain"
+        />
+      </div>
+    </div>
+  );
+
+  const renderPreview = (size = "w-32 h-32") => (
+    <div
+      className={`${size} mx-auto border rounded overflow-hidden relative group`}
+    >
+      <img
+        src={processedImage}
+        alt="Preview"
+        className="w-full h-full object-cover"
+      />
+      <button
+        onClick={() => setIsFullscreen(true)}
+        className="absolute top-2 right-2 w-8 h-8 bg-black bg-opacity-50 text-white rounded flex items-center justify-center opacity-100 hover:bg-opacity-75"
+        title="View fullscreen"
+      >
+        <FaExpand size={16} />
+      </button>
+    </div>
+  );
+
+  const handleConvert = useCallback(() => {
+    if (!selectedFile) return;
+
+    setLoading(true);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+
+      // Draw with white background for PNG to JPEG conversion
+      if (convertFormat === "image/jpeg") {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      ctx.drawImage(img, 0, 0);
+
+      // Get file extension from MIME type
+      const ext = convertFormat.split("/")[1];
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            setError("Failed to convert image. Please try a different format.");
+            setLoading(false);
+            return;
+          }
+
+          const convertedFile = new File([blob], `converted.${ext}`, {
+            type: convertFormat,
+            lastModified: new Date().getTime(),
+          });
+
+          const newUrl = URL.createObjectURL(blob);
+          setSelectedFile(convertedFile);
+          setProcessedImage(newUrl);
+
+          // Update metadata
+          setMetadata((prev) => ({
+            ...prev,
+            originalType: prev.type,
+            type: convertFormat,
+            size: (blob.size / 1024).toFixed(2) + " KB",
+            converted: true,
+            lastModified: new Date().toLocaleString(),
+          }));
+
+          setLoading(false);
+        },
+        convertFormat,
+        convertFormat.includes("jpeg") || convertFormat.includes("webp")
+          ? convertQuality
+          : undefined
+      );
+    };
+
+    img.onerror = () => {
+      setError("Failed to load image for conversion");
+      setLoading(false);
+    };
+
+    const objectUrl = URL.createObjectURL(selectedFile);
+    img.src = objectUrl;
+
+    // Clean up object URL after image loads or errors
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedFile, convertFormat, convertQuality]);
+
+  const renderTool = () => {
+    if (error) {
+      return (
+        <div className="p-4 border border-red-300 bg-red-50 rounded text-red-700">
+          {error}
+        </div>
+      );
+    }
+
+    switch (activeTab) {
+      case "resize":
+        return (
+          <div className="space-y-6">
+            {processedImage && renderPreview()}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Width (px)
+                </label>
+                <input
+                  type="number"
+                  value={dimensions.width}
+                  onChange={(e) => {
+                    const width = Number(e.target.value);
+                    setDimensions((prev) => ({
+                      width,
+                      height: maintainAspectRatio
+                        ? Math.round(width * (prev.height / prev.width))
+                        : prev.height,
+                    }));
+                  }}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Height (px)
+                </label>
+                <input
+                  type="number"
+                  value={dimensions.height}
+                  onChange={(e) => {
+                    const height = Number(e.target.value);
+                    setDimensions((prev) => ({
+                      width: maintainAspectRatio
+                        ? Math.round(height * (prev.width / prev.height))
+                        : prev.width,
+                      height,
+                    }));
+                  }}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+            </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="maintain-aspect"
+                checked={maintainAspectRatio}
+                onChange={(e) => setMaintainAspectRatio(e.target.checked)}
+                className="mr-2"
+              />
+              <label
+                htmlFor="maintain-aspect"
+                className="text-sm text-gray-600"
+              >
+                Maintain aspect ratio
+              </label>
+            </div>
+            <button
+              onClick={handleResize}
+              disabled={!selectedFile || loading}
+              className="w-full px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400"
+            >
+              {loading ? "Processing..." : "Resize Image"}
+            </button>
+            {metadata && processedImage && metadata.resized && (
+              <>
+                <div className="text-sm text-gray-600">
+                  Original size: {metadata.originalSize}
+                  <br />
+                  New size: {metadata.size}
+                  <br />
+                  New dimensions: {metadata.dimensions}
+                </div>
+                <button
+                  onClick={downloadImage}
+                  className="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
+                >
+                  <FaDownload className="mr-2" />
+                  Download Resized Image
+                </button>
+              </>
+            )}
+          </div>
+        );
+
+      case "crop":
+        return (
+          <div
+            className="space-y-6"
+            style={{
+              userSelect: "none",
+              WebkitUserSelect: "none",
+              MozUserSelect: "none",
+              msUserSelect: "none",
+            }}
+          >
+            <div
+              className="flex justify-between items-end"
+              style={{ pointerEvents: "auto" }}
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Aspect Ratio
+                </label>
+                <select
+                  value={aspectRatio}
+                  onChange={(e) => {
+                    setAspectRatio(e.target.value);
+                    if (cropStart && cropEnd) {
+                      // Recalculate crop end point based on new aspect ratio
+                      const width = Math.abs(cropEnd.x - cropStart.x);
+                      if (e.target.value !== "free") {
+                        const [ratioWidth, ratioHeight] = e.target.value
+                          .split(":")
+                          .map(Number);
+                        const targetHeight = (width * ratioHeight) / ratioWidth;
+                        const newEnd = {
+                          x: cropEnd.x,
+                          y:
+                            cropEnd.y > cropStart.y
+                              ? cropStart.y + targetHeight
+                              : cropStart.y - targetHeight,
+                        };
+                        setCropEnd(newEnd);
+                        drawCropOverlay();
+                      }
+                    }
+                  }}
+                  className="px-4 py-2 border rounded"
+                >
+                  <option value="free">Free Form</option>
+                  <option value="1:1">1:1 Square</option>
+                  <option value="4:3">4:3</option>
+                  <option value="16:9">16:9</option>
+                </select>
+              </div>
+              <div className="flex space-x-4">
+                <button
+                  onClick={handleClearImage}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                >
+                  Upload New Image
+                </button>
+                {processedImage && !cropStart && !cropEnd && (
+                  <button
+                    onClick={downloadImage}
+                    className="w-10 h-10 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
+                    title="Download Modified Image"
+                  >
+                    <FaDownload />
+                  </button>
+                )}
+                {cropStart && cropEnd && (
+                  <>
+                    <button
+                      onClick={handleCancelCrop}
+                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                    >
+                      Reset Crop
+                    </button>
+                    <button
+                      onClick={handleCrop}
+                      className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
+                    >
+                      Crop Image
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+            <div
+              className="relative"
+              style={{
+                userSelect: "none",
+                WebkitUserSelect: "none",
+                MozUserSelect: "none",
+                msUserSelect: "none",
+              }}
+            >
+              <canvas
+                ref={canvasRef}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onDragStart={(e) => e.preventDefault()}
+                className="border rounded max-w-full cursor-crosshair select-none"
+                style={{
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
+                  MozUserSelect: "none",
+                  msUserSelect: "none",
+                  KhtmlUserSelect: "none",
+                  WebkitTouchCallout: "none",
+                  WebkitUserDrag: "none",
+                  WebkitTapHighlightColor: "rgba(0,0,0,0)",
+                  touchAction: "none",
+                  pointerEvents: "auto",
+                }}
+                draggable="false"
+              />
+              <img
+                ref={imageRef}
+                src={processedImage}
+                alt="Preview"
+                className="hidden"
+                onLoad={(e) => {
+                  const canvas = canvasRef.current;
+                  const ctx = canvas.getContext("2d");
+                  canvas.width = e.target.width;
+                  canvas.height = e.target.height;
+                  ctx.drawImage(e.target, 0, 0);
+                }}
+              />
+            </div>
+            {processedImage && !cropStart && !cropEnd && (
+              <button
+                onClick={downloadImage}
+                className="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
+              >
+                <FaDownload className="mr-2" />
+                Download Modified Image
+              </button>
+            )}
+          </div>
+        );
+
+      case "compress":
+        return (
+          <div className="space-y-6">
+            {processedImage && renderPreview()}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quality ({quality}%)
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="100"
+                value={quality}
+                onChange={(e) => setQuality(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+            <button
+              onClick={handleCompress}
+              disabled={!selectedFile || loading}
+              className="w-full px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400"
+            >
+              {loading ? "Processing..." : "Compress Image"}
+            </button>
+            {metadata && processedImage && metadata.compressed && (
+              <>
+                <div className="text-sm text-gray-600">
+                  Original size: {metadata.originalSize || metadata.size}
+                  <br />
+                  New size: {metadata.size}
+                </div>
+                <button
+                  onClick={downloadImage}
+                  className="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
+                >
+                  <FaDownload className="mr-2" />
+                  Download Compressed Image
+                </button>
+              </>
+            )}
+          </div>
+        );
+
+      case "metadata":
+        return (
+          <div className="flex gap-6">
+            {processedImage && (
+              <div className="flex-none w-48">
+                <div className="w-full h-48 border rounded overflow-hidden relative group">
+                  <img
+                    src={processedImage}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    onClick={() => setIsFullscreen(true)}
+                    className="absolute top-2 right-2 w-8 h-8 bg-black bg-opacity-50 text-white rounded flex items-center justify-center opacity-100 hover:bg-opacity-75"
+                    title="View fullscreen"
+                  >
+                    <FaExpand size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+            <div className="flex-grow">
+              {metadata ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {Object.entries(metadata)
+                    .filter(([key]) => !["compressed", "resized"].includes(key))
+                    .map(([key, value]) => (
+                      <div key={key} className="border rounded p-4">
+                        <div className="text-sm font-medium text-gray-500">
+                          {key.charAt(0).toUpperCase() + key.slice(1)}
+                        </div>
+                        <div className="mt-1">{value}</div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center">
+                  Upload an image to view its metadata
+                </p>
+              )}
+            </div>
+          </div>
+        );
+
+      case "convert":
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Convert to Format
+                </label>
+                <select
+                  value={convertFormat}
+                  onChange={(e) => setConvertFormat(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="image/png">PNG</option>
+                  <option value="image/jpeg">JPEG</option>
+                  <option value="image/webp">WebP</option>
+                  <option value="image/gif">GIF</option>
+                </select>
+
+                {convertFormat === "image/jpeg" ||
+                convertFormat === "image/webp" ? (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Quality ({Math.round(convertQuality * 100)}%)
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={convertQuality}
+                      onChange={(e) =>
+                        setConvertQuality(parseFloat(e.target.value))
+                      }
+                      className="w-full"
+                    />
+                  </div>
+                ) : null}
+
+                <button
+                  onClick={handleConvert}
+                  disabled={!selectedFile || loading}
+                  className="w-full px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? "Converting..." : "Convert Image"}
+                </button>
+
+                {metadata && metadata.converted && (
+                  <>
+                    <div className="text-sm text-gray-600 mt-4">
+                      Original format: {metadata.originalType}
+                      <br />
+                      New format: {metadata.type}
+                      <br />
+                      New size: {metadata.size}
+                    </div>
+                    <button
+                      onClick={downloadImage}
+                      className="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
+                    >
+                      <FaDownload className="mr-2" />
+                      Download Converted Image
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Preview
+                </label>
+                <div className="border rounded-lg p-4 bg-gray-50 min-h-[200px] flex items-center justify-center">
+                  {processedImage ? (
+                    <img
+                      src={processedImage}
+                      alt="Preview"
+                      className="max-w-full max-h-[300px] object-contain"
+                    />
+                  ) : (
+                    <div className="text-gray-400">No image selected</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <ToolLayout
+      title="Image Tools"
+      description="Resize, compress, crop, and convert images"
+    >
+      <div className="space-y-6">
+        {isFullscreen && (
+          <FullscreenModal
+            image={processedImage}
+            onClose={() => setIsFullscreen(false)}
+          />
+        )}
+        {/* Tool Selection */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => handleTabChange("resize")}
+            className={`flex items-center px-3 py-2 rounded ${
+              activeTab === "resize"
+                ? "bg-primary-100 text-primary-700"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <FaRuler className="mr-2" />
+            Resize
+          </button>
+          <button
+            onClick={() => handleTabChange("compress")}
+            className={`flex items-center px-3 py-2 rounded ${
+              activeTab === "compress"
+                ? "bg-primary-100 text-primary-700"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <FaCompress className="mr-2" />
+            Compress
+          </button>
+          <button
+            onClick={() => handleTabChange("crop")}
+            className={`flex items-center px-3 py-2 rounded ${
+              activeTab === "crop"
+                ? "bg-primary-100 text-primary-700"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <FaCrop className="mr-2" />
+            Crop
+          </button>
+          <button
+            onClick={() => handleTabChange("convert")}
+            className={`flex items-center px-3 py-2 rounded ${
+              activeTab === "convert"
+                ? "bg-primary-100 text-primary-700"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <FaExchangeAlt className="mr-2" />
+            Convert
+          </button>
+          <button
+            onClick={() => handleTabChange("metadata")}
+            className={`flex items-center px-3 py-2 rounded ${
+              activeTab === "metadata"
+                ? "bg-primary-100 text-primary-700"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <FaInfo className="mr-2" />
+            Metadata
+          </button>
+        </div>
+
+        {/* File Upload */}
+        {!selectedFile && (
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+              isDragActive
+                ? "border-primary-500 bg-primary-50"
+                : "border-gray-300 hover:border-primary-500"
+            }`}
+          >
+            <input {...getInputProps()} />
+            <FaImage className="mx-auto text-4xl mb-4 text-gray-400" />
+            {error ? (
+              <p className="text-red-600">{error}</p>
+            ) : (
+              <p className="text-gray-600">
+                {isDragActive
+                  ? "Drop the image here"
+                  : "Drag & drop an image here, or click to select"}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Tool Interface */}
+        {selectedFile && renderTool()}
+      </div>
+    </ToolLayout>
+  );
+};
+
+export default ImageTools;

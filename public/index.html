@@ -2,12 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="%PUBLIC_URL%/favicon-96x96.png"
+      sizes="96x96"
+    />
+    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/favicon.svg" />
+    <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="%PUBLIC_URL%/apple-touch-icon.png"
+    />
+    <meta name="apple-mobile-web-app-title" content="MyWebSite" />
+    <link rel="manifest" href="%PUBLIC_URL%/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#536dfe" />
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="Benjamin Eppinger - Full Stack Developer"
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
@@ -24,7 +38,7 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>React App</title>
+    <title>Benjamin Eppinger</title>
 
     <script type="text/javascript">
       // Single Page Apps for GitHub Pages
@@ -38,14 +52,14 @@
       // the correct url will be waiting in the browser's history for
       // the single page app to route accordingly.
       (function (l) {
-        if (l.search[1] === '/') {
+        if (l.search[1] === "/") {
           var decoded = l.search
             .slice(1)
-            .split('&')
+            .split("&")
             .map(function (s) {
-              return s.replace(/~and~/g, '&');
+              return s.replace(/~and~/g, "&");
             })
-            .join('?');
+            .join("?");
           window.history.replaceState(
             null,
             null,
@@ -59,11 +73,11 @@
       (window.heap = window.heap || []),
         (heap.load = function (e, t) {
           (window.heap.appid = e), (window.heap.config = t = t || {});
-          var r = document.createElement('script');
-          (r.type = 'text/javascript'),
+          var r = document.createElement("script");
+          (r.type = "text/javascript"),
             (r.async = !0),
-            (r.src = 'https://cdn.heapanalytics.com/js/heap-' + e + '.js');
-          var a = document.getElementsByTagName('script')[0];
+            (r.src = "https://cdn.heapanalytics.com/js/heap-" + e + ".js");
+          var a = document.getElementsByTagName("script")[0];
           a.parentNode.insertBefore(r, a);
           for (
             var n = function (e) {
@@ -74,15 +88,15 @@
                 };
               },
               p = [
-                'addEventProperties',
-                'addUserProperties',
-                'clearEventProperties',
-                'identify',
-                'resetIdentity',
-                'removeEventProperty',
-                'setEventProperties',
-                'track',
-                'unsetEventProperty',
+                "addEventProperties",
+                "addUserProperties",
+                "clearEventProperties",
+                "identify",
+                "resetIdentity",
+                "removeEventProperty",
+                "setEventProperties",
+                "track",
+                "unsetEventProperty",
               ],
               o = 0;
             o < p.length;
@@ -90,7 +104,7 @@
           )
             heap[p[o]] = n(p[o]);
         });
-      heap.load('4214091514');
+      heap.load("4214091514");
     </script>
 
     <!-- Add some Fonts -->

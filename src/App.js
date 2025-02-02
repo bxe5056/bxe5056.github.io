@@ -1,37 +1,58 @@
-import React from 'react';
-import './App.css';
-import { Route, Routes } from 'react-router-dom';
-import Home from './Home/Home';
-import NavBar from './NavBar/NavBar';
-import LostPage from './LostPage/LostPage';
-import './importedApp.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import Resume from './Resume/Resume';
-import DataRepo from './DataRepo/DataRepo';
-import Hobbies from './Hobbies/Hobbies';
-import FootBar from './FootBar/FootBar';
+import React, { useEffect } from "react";
+import { Route, Routes, useLocation } from "react-router-dom";
+import MainLayout from "./components/layout/MainLayout";
+import Home from "./pages/Home";
+import Resume from "./pages/Resume";
+import Portfolio from "./pages/Portfolio";
+import About from "./pages/About";
+import NotFound from "./pages/NotFound";
+import Tools from "./pages/Tools";
+import TextTools from "./pages/tools/text";
+import ColorTools from "./pages/tools/color";
+import ImageTools from "./pages/tools/image";
+import SvgTools from "./pages/tools/svg";
+import DataTools from "./pages/tools/data";
+import DevTools from "./pages/tools/dev";
+import Experience from "./pages/Experience";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./styles/global.css";
+import posthog from "./utils/analytics";
 
 const App = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Track page views
+    posthog.capture("$pageview");
+  }, [location]);
+
   return (
-    <div className='App'>
-      <header className='App-header'>
-        <NavBar />
-      </header>
-
+    <MainLayout>
       <Routes>
-        <Route path='/'>
-          <Route index element={<Home />} />
-          <Route path='sample' element={<NavBar />} />
-          <Route path='resume' element={<Resume />} />
-          <Route path='resume.pdf' element={<Resume />} />
-          <Route path='datarepo' element={<DataRepo />} />
-          <Route path='hobbies' element={<Hobbies />} />
-          <Route path='*' element={<LostPage />} />
-        </Route>
-      </Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/resume" element={<Resume />} />
+        <Route path="/portfolio" element={<Portfolio />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/experience" element={<Experience />} />
 
-      <FootBar />
-    </div>
+        {/* Tools Routes */}
+        <Route path="/tools" element={<Tools />} />
+        <Route path="/tools/text" element={<TextTools />} />
+        <Route path="/tools/text/:tool" element={<TextTools />} />
+        <Route path="/tools/color" element={<ColorTools />} />
+        <Route path="/tools/color/:tool" element={<ColorTools />} />
+        <Route path="/tools/image" element={<ImageTools />} />
+        <Route path="/tools/image/:tool" element={<ImageTools />} />
+        <Route path="/tools/svg" element={<SvgTools />} />
+        <Route path="/tools/svg/:tool" element={<SvgTools />} />
+        <Route path="/tools/data" element={<DataTools />} />
+        <Route path="/tools/data/:tool" element={<DataTools />} />
+        <Route path="/tools/dev" element={<DevTools />} />
+        <Route path="/tools/dev/:tool" element={<DevTools />} />
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </MainLayout>
   );
 };
 

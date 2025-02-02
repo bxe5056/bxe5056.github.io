@@ -1,0 +1,12 @@
+.masonry-grid {
+  display: flex;
+  margin-left: -24px;
+  width: auto;
+}
+
+.masonry-grid_column {
+  padding-left: 24px;
+  background-clip: padding-box;
+}
+
+/* Remove the first-child override since we're handling featured projects separately */ 
