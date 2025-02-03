@@ -49,7 +49,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
         env:
-          NODE_ENV: development
+          NODE_ENV: development # Keep development for install to get devDependencies
           CI: true
           REACT_APP_PUBLIC_POSTHOG_HOST: ${{ secrets.REACT_APP_PUBLIC_POSTHOG_HOST }}
           REACT_APP_PUBLIC_POSTHOG_KEY: ${{ secrets.REACT_APP_PUBLIC_POSTHOG_KEY }}
@@ -65,7 +65,7 @@ jobs:
       - name: Build
         run: npm run build --if-present
         env:
-          NODE_ENV: production
+          NODE_ENV: production # Change to production for build
           CI: true
           REACT_APP_PUBLIC_POSTHOG_HOST: ${{ secrets.REACT_APP_PUBLIC_POSTHOG_HOST }}
           REACT_APP_PUBLIC_POSTHOG_KEY: ${{ secrets.REACT_APP_PUBLIC_POSTHOG_KEY }}
@@ -96,6 +96,7 @@ jobs:
         run: npm test
         env:
           CI: true
+          NODE_ENV: test
           REACT_APP_PUBLIC_POSTHOG_HOST: ${{ secrets.REACT_APP_PUBLIC_POSTHOG_HOST }}
           REACT_APP_PUBLIC_POSTHOG_KEY: ${{ secrets.REACT_APP_PUBLIC_POSTHOG_KEY }}
 
@@ -115,7 +116,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
         env:
-          NODE_ENV: development
+          NODE_ENV: development # Keep development for install
           CI: true
           REACT_APP_PUBLIC_POSTHOG_HOST: ${{ secrets.REACT_APP_PUBLIC_POSTHOG_HOST }}
           REACT_APP_PUBLIC_POSTHOG_KEY: ${{ secrets.REACT_APP_PUBLIC_POSTHOG_KEY }}
@@ -123,7 +124,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          NODE_ENV: production
+          NODE_ENV: production # Change to production for build
           CI: true
           REACT_APP_PUBLIC_POSTHOG_HOST: ${{ secrets.REACT_APP_PUBLIC_POSTHOG_HOST }}
           REACT_APP_PUBLIC_POSTHOG_KEY: ${{ secrets.REACT_APP_PUBLIC_POSTHOG_KEY }}
