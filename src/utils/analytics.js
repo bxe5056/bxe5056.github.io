@@ -52,7 +52,6 @@ const initializeRestrictedCapturing = () => {
         posthog.opt_out_capturing();
       }
     },
-    // Mask sensitive properties unless bug reporting is enabled
     property_blacklist: isBugReportingEnabled
       ? []
       : [
@@ -64,97 +63,77 @@ const initializeRestrictedCapturing = () => {
           "user_input",
           "processed_data",
         ],
-    mask_all_text: false,
-    mask_all_element_attributes: false,
-    // Add masking configuration for images and PDFs
     session_recording: {
-      maskAllInputs: false,
+      maskAllInputs: true,
       maskInputOptions: {
-        maskInputFn: (text, element) => {
-          if (!isBugReportingEnabled) {
-            // Mask filenames and image previews on the image page
-            if (element.closest('[data-tool="image"]')) {
-              // Mask filenames
-              if (element.getAttribute("data-content-type") === "filename") {
-                return "[Filename Hidden]";
-              }
-              // Mask image previews and thumbnails
-              if (
-                element instanceof HTMLImageElement ||
-                element.classList.contains("image-preview") ||
-                element.classList.contains("image-thumbnail")
-              ) {
-                return "[Image Preview Hidden]";
-              }
-            }
-            // Mask images in the Extract Colors section
-            if (
-              element instanceof HTMLImageElement &&
-              (element.closest('[data-tool="extract"]') ||
-                element.closest('[data-section="extract-colors"]'))
-            ) {
-              return "[Content Hidden]";
-            }
-            // Mask SVG previews and text outputs
-            if (element.closest('[data-tool="svg"]')) {
-              // Mask SVG previews
-              if (element.tagName === "svg" || element.querySelector("svg")) {
-                return "[SVG Preview Hidden]";
-              }
-              // Mask SVG text outputs
-              if (element.classList.contains("svg-output")) {
-                return "[SVG Content Hidden]";
-              }
-            }
-            // Mask color swap previews and SVG outputs
-            if (element.closest('[data-tool="color-swap"]')) {
-              // Mask SVG preview
-              if (element.tagName === "svg" || element.querySelector("svg")) {
-                return "[SVG Preview Hidden]";
-              }
-              // Mask SVG output text
-              if (element.classList.contains("svg-output")) {
-                return "[SVG Content Hidden]";
-              }
-            }
-            // Mask data conversion input and output
-            if (element.closest('[data-tool="data"]')) {
-              if (
-                element.classList.contains("data-input") ||
-                element.classList.contains("data-output")
-              ) {
-                return "[Data Content Hidden]";
-              }
-            }
-            // Mask text tool inputs and outputs
-            if (element.closest('[data-tool="text"]')) {
-              if (
-                element.classList.contains("text-input") ||
-                element.classList.contains("text-output") ||
-                element.classList.contains("markdown-input") ||
-                element.classList.contains("markdown-preview") ||
-                element.classList.contains("lorem-output")
-              ) {
-                return "[Text Content Hidden]";
-              }
-            }
-            // Mask dev tool inputs
-            if (element.closest('[data-tool="dev"]')) {
-              if (
-                element.classList.contains("hash-input") ||
-                element.classList.contains("regex-pattern") ||
-                element.classList.contains("regex-test-input")
-              ) {
-                return "[Dev Tool Input Hidden]";
-              }
-            }
-          }
+        password: true,
+        text: !isBugReportingEnabled,
+        textarea: !isBugReportingEnabled,
+      },
+      maskTextSelector: !isBugReportingEnabled ? "*" : "",
+      maskInputFn: (text, element) => {
+        if (isBugReportingEnabled) {
           return text;
-        },
+        }
+
+        // Check for specific tool sections
+        if (element.closest('[data-tool="dev"]')) {
+          // Mask hash generator input
+          if (element.classList.contains("hash-input")) {
+            return "[Hash Input Hidden]";
+          }
+          // Mask regex inputs
+          if (
+            element.classList.contains("regex-pattern") ||
+            element.classList.contains("regex-test-input")
+          ) {
+            return "[Regex Input Hidden]";
+          }
+        }
+
+        // Mask text tool inputs/outputs
+        if (element.closest('[data-tool="text"]')) {
+          if (
+            element.classList.contains("text-input") ||
+            element.classList.contains("text-output") ||
+            element.classList.contains("markdown-input") ||
+            element.classList.contains("markdown-preview") ||
+            element.classList.contains("lorem-output")
+          ) {
+            return "[Text Content Hidden]";
+          }
+        }
+
+        // Mask data tool inputs/outputs
+        if (element.closest('[data-tool="data"]')) {
+          if (
+            element.classList.contains("data-input") ||
+            element.classList.contains("data-output")
+          ) {
+            return "[Data Content Hidden]";
+          }
+        }
+
+        return text;
+      },
+      maskTextFn: (text, element) => {
+        if (isBugReportingEnabled) {
+          return text;
+        }
+
+        // Only mask text in specific tool sections
+        if (
+          element.closest('[data-tool="dev"]') ||
+          element.closest('[data-tool="text"]') ||
+          element.closest('[data-tool="data"]')
+        ) {
+          return "[Content Hidden]";
+        }
+
+        return text;
       },
       maskNetworkRequestFn: (request) => {
         if (!isBugReportingEnabled) {
-          // Mask image and SVG requests
           if (
             (request.url.match(/\.(jpg|jpeg|png|gif|bmp|svg)$/i) ||
               request.url.includes("data:image/") ||

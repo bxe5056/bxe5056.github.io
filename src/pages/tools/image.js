@@ -673,19 +673,17 @@ const ImageTools = () => {
   }, [selectedFile, convertFormat, convertQuality]);
 
   const renderTool = () => {
-    if (error) {
-      return (
-        <div className="p-4 border border-red-300 bg-red-50 rounded text-red-700">
-          {error}
-        </div>
-      );
-    }
-
     switch (activeTab) {
       case "resize":
         return (
           <div className="space-y-6">
-            {processedImage && renderPreview()}
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <img
+                src={processedImage}
+                alt="Preview"
+                className="max-h-64 mx-auto object-contain"
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -749,41 +747,61 @@ const ImageTools = () => {
               {loading ? "Processing..." : "Resize Image"}
             </button>
             {metadata && processedImage && metadata.resized && (
-              <>
-                <div className="text-sm text-gray-600">
-                  Original size: {metadata.originalSize}
-                  <br />
-                  New size: {metadata.size}
-                  <br />
-                  New dimensions: {metadata.dimensions}
-                </div>
-                <button
-                  onClick={downloadImage}
-                  className="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
-                >
-                  <FaDownload className="mr-2" />
-                  Download Resized Image
-                </button>
-              </>
+              <div className="text-sm text-gray-600">
+                Original size: {metadata.originalSize}
+                <br />
+                New size: {metadata.size}
+                <br />
+                New dimensions: {metadata.dimensions}
+              </div>
+            )}
+          </div>
+        );
+
+      case "compress":
+        return (
+          <div className="space-y-6">
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <img
+                src={processedImage}
+                alt="Preview"
+                className="max-h-64 mx-auto object-contain"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quality ({quality}%)
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="100"
+                value={quality}
+                onChange={(e) => setQuality(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+            <button
+              onClick={handleCompress}
+              disabled={!selectedFile || loading}
+              className="w-full px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400"
+            >
+              {loading ? "Processing..." : "Compress Image"}
+            </button>
+            {metadata && processedImage && metadata.compressed && (
+              <div className="text-sm text-gray-600">
+                Original size: {metadata.originalSize || metadata.size}
+                <br />
+                New size: {metadata.size}
+              </div>
             )}
           </div>
         );
 
       case "crop":
         return (
-          <div
-            className="space-y-6"
-            style={{
-              userSelect: "none",
-              WebkitUserSelect: "none",
-              MozUserSelect: "none",
-              msUserSelect: "none",
-            }}
-          >
-            <div
-              className="flex justify-between items-end"
-              style={{ pointerEvents: "auto" }}
-            >
+          <div className="space-y-6">
+            <div className="flex justify-between items-end">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Aspect Ratio
@@ -792,25 +810,15 @@ const ImageTools = () => {
                   value={aspectRatio}
                   onChange={(e) => {
                     setAspectRatio(e.target.value);
-                    if (cropStart && cropEnd) {
-                      // Recalculate crop end point based on new aspect ratio
-                      const width = Math.abs(cropEnd.x - cropStart.x);
-                      if (e.target.value !== "free") {
-                        const [ratioWidth, ratioHeight] = e.target.value
-                          .split(":")
-                          .map(Number);
-                        const targetHeight = (width * ratioHeight) / ratioWidth;
-                        const newEnd = {
-                          x: cropEnd.x,
-                          y:
-                            cropEnd.y > cropStart.y
-                              ? cropStart.y + targetHeight
-                              : cropStart.y - targetHeight,
-                        };
-                        setCropEnd(newEnd);
-                        drawCropOverlay();
-                      }
-                    }
+                    // Reset the crop box when aspect ratio changes
+                    setCropStart(null);
+                    setCropEnd(null);
+                    // Redraw the canvas to clear the overlay
+                    const canvas = canvasRef.current;
+                    const ctx = canvas.getContext("2d");
+                    const img = imageRef.current;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
                   }}
                   className="px-4 py-2 border rounded"
                 >
@@ -854,15 +862,7 @@ const ImageTools = () => {
                 )}
               </div>
             </div>
-            <div
-              className="relative"
-              style={{
-                userSelect: "none",
-                WebkitUserSelect: "none",
-                MozUserSelect: "none",
-                msUserSelect: "none",
-              }}
-            >
+            <div className="relative">
               <canvas
                 ref={canvasRef}
                 onMouseDown={handleMouseDown}
@@ -899,82 +899,19 @@ const ImageTools = () => {
                 }}
               />
             </div>
-            {processedImage && !cropStart && !cropEnd && (
-              <button
-                onClick={downloadImage}
-                className="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
-              >
-                <FaDownload className="mr-2" />
-                Download Modified Image
-              </button>
-            )}
-          </div>
-        );
-
-      case "compress":
-        return (
-          <div className="space-y-6">
-            {processedImage && renderPreview()}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Quality ({quality}%)
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="100"
-                value={quality}
-                onChange={(e) => setQuality(Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
-            <button
-              onClick={handleCompress}
-              disabled={!selectedFile || loading}
-              className="w-full px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400"
-            >
-              {loading ? "Processing..." : "Compress Image"}
-            </button>
-            {metadata && processedImage && metadata.compressed && (
-              <>
-                <div className="text-sm text-gray-600">
-                  Original size: {metadata.originalSize || metadata.size}
-                  <br />
-                  New size: {metadata.size}
-                </div>
-                <button
-                  onClick={downloadImage}
-                  className="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
-                >
-                  <FaDownload className="mr-2" />
-                  Download Compressed Image
-                </button>
-              </>
-            )}
           </div>
         );
 
       case "metadata":
         return (
-          <div className="flex gap-6">
-            {processedImage && (
-              <div className="flex-none w-48">
-                <div className="w-full h-48 border rounded overflow-hidden relative group">
-                  <img
-                    src={processedImage}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    onClick={() => setIsFullscreen(true)}
-                    className="absolute top-2 right-2 w-8 h-8 bg-black bg-opacity-50 text-white rounded flex items-center justify-center opacity-100 hover:bg-opacity-75"
-                    title="View fullscreen"
-                  >
-                    <FaExpand size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
+          <div className="space-y-6">
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <img
+                src={processedImage}
+                alt="Preview"
+                className="max-h-64 mx-auto object-contain"
+              />
+            </div>
             <div className="flex-grow">
               {metadata ? (
                 <div className="grid grid-cols-2 gap-4">
@@ -990,7 +927,7 @@ const ImageTools = () => {
                     ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center">
+                <p className="text-center text-gray-500">
                   Select an image to view its metadata
                 </p>
               )}
@@ -1140,56 +1077,11 @@ const ImageTools = () => {
           >
             <input {...getInputProps()} />
             <FaImage className="mx-auto text-4xl mb-4 text-gray-400" />
-            {error ? (
-              <p className="text-red-600">{error}</p>
-            ) : (
-              <p className="text-gray-600">
-                {isDragActive
-                  ? "Drop the image here"
-                  : "Drag & drop an image here, or click to select"}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Metadata Display */}
-        {metadata && (
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium mb-2">File Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="text-gray-600">Name:</span>{" "}
-                <span data-content-type="filename">{metadata.name}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Type:</span>{" "}
-                <span data-content-type="filename">{metadata.type}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Size:</span>{" "}
-                <span>{metadata.size}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Dimensions:</span>{" "}
-                <span>{metadata.dimensions}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Last Modified:</span>{" "}
-                <span>{metadata.lastModified}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Image Preview */}
-        {processedImage && (
-          <div className="relative">
-            <img
-              src={processedImage}
-              alt="Preview"
-              className="max-w-full h-auto rounded image-preview"
-              ref={imageRef}
-            />
+            <p className="text-gray-600">
+              {isDragActive
+                ? "Drop the image here"
+                : "Drag & drop an image here, or click to select"}
+            </p>
           </div>
         )}
 
