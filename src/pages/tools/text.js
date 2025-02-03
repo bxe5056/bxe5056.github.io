@@ -350,7 +350,7 @@ const TextTools = () => {
                 ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                className="w-full p-2 border rounded font-mono resize-none min-h-[16rem] overflow-y-auto"
+                className="w-full p-2 border rounded font-mono resize-none min-h-[16rem] overflow-y-auto markdown-input"
                 placeholder="Enter Markdown text..."
                 style={{ height: "16rem" }}
               />
@@ -359,7 +359,7 @@ const TextTools = () => {
               <h3 className="text-lg font-semibold mb-2">Preview</h3>
               <div
                 ref={previewRef}
-                className="prose max-w-none border rounded p-4 overflow-y-auto min-h-[16rem]"
+                className="prose max-w-none border rounded p-4 overflow-y-auto min-h-[16rem] markdown-preview"
                 style={{ height: "16rem" }}
               >
                 <ReactMarkdown>{input}</ReactMarkdown>
@@ -407,7 +407,7 @@ const TextTools = () => {
               )}
             </div>
             {loremOutput && (
-              <div className="p-4 border rounded bg-gray-50">
+              <div className="p-4 border rounded bg-gray-50 lorem-output">
                 <p>{loremOutput}</p>
               </div>
             )}
@@ -431,7 +431,7 @@ const TextTools = () => {
       title="Text Tools"
       description="A collection of text processing and conversion tools"
     >
-      <div className="space-y-6">
+      <div className="space-y-6" data-tool="text">
         {/* Tool Selection */}
         <div>
           {/* Mobile Dropdown */}
@@ -495,7 +495,7 @@ const TextTools = () => {
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                className="w-full h-32 p-2 border rounded font-mono"
+                className="w-full h-32 p-2 border rounded font-mono text-input"
                 placeholder="Enter text to process..."
               />
             </div>
@@ -510,7 +510,7 @@ const TextTools = () => {
                 <textarea
                   value={output}
                   readOnly
-                  className="w-full h-32 p-2 border rounded font-mono bg-gray-50"
+                  className="w-full h-32 p-2 border rounded font-mono bg-gray-50 text-output"
                 />
                 <button
                   onClick={() => copyToClipboard(output)}

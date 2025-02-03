@@ -18,20 +18,70 @@ import {
   FaArrowDown,
   FaArrowLeft,
   FaArrowRight,
+  FaExclamationCircle,
+  FaTimes as FaClose,
+  FaBug,
 } from "react-icons/fa";
 import { PDFDocument } from "pdf-lib";
 import FileSaver from "file-saver";
 import JSZip from "jszip";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as pdfjsLib from "pdfjs-dist";
+import { showErrorWithReporting } from "../../utils/analytics";
 
 // Initialize pdf.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
+
+const ErrorBanner = ({ error, onDismiss }) => {
+  if (!error) return null;
+
+  return (
+    <>
+      <style>
+        {`
+          @keyframes crawl {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(1px, 1px) rotate(5deg); }
+            50% { transform: translate(0, 2px) rotate(0deg); }
+            75% { transform: translate(-1px, 1px) rotate(-5deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+          }
+          .bug-crawl {
+            animation: crawl 1s ease-in-out infinite;
+            transform-origin: center;
+            display: inline-block;
+          }
+        `}
+      </style>
+      <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 relative">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <div className="bug-crawl">
+              <FaBug className="h-5 w-5 text-red-600" />
+            </div>
+          </div>
+          <div className="ml-3 pr-8">
+            <p className="text-sm text-red-700 whitespace-pre-line">{error}</p>
+          </div>
+          {onDismiss && (
+            <button
+              onClick={onDismiss}
+              className="absolute top-4 right-4 text-red-400 hover:text-red-500"
+            >
+              <FaClose className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
 
 const PDFTools = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [currentPdfUrl, setCurrentPdfUrl] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState(null);
   const defaultLayoutPluginInstance = defaultLayoutPlugin({
     scrollPlugin: {
       layoutEffect: false,
@@ -112,9 +162,15 @@ const PDFTools = () => {
     navigate(`${basePath}/${path}`, { replace: true });
   }, [activeTab, navigate]);
 
+  // Update effect to clear error on tab change
+  useEffect(() => {
+    setError(null);
+  }, [activeTab]);
+
   // Add a function to generate PDF preview
   const generatePDFPreview = async (file) => {
     try {
+      setError(null);
       const fileArrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument(fileArrayBuffer).promise;
       const page = await pdf.getPage(1);
@@ -133,11 +189,12 @@ const PDFTools = () => {
       setPdfPreview(canvas.toDataURL());
     } catch (error) {
       console.error("Error generating PDF preview:", error);
+      setError(showErrorWithReporting(error, "generating PDF preview"));
       setPdfPreview(null);
     }
   };
 
-  // Add a function to extract pages from PDF
+  // Update the extractPdfPages function to include more metadata
   const extractPdfPages = async (file) => {
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -147,7 +204,7 @@ const PDFTools = () => {
 
       for (let i = 1; i <= totalPages; i++) {
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 0.5 }); // Scale down for preview
+        const viewport = page.getViewport({ scale: 0.3 }); // Scale down for preview
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
         canvas.width = viewport.width;
@@ -161,13 +218,15 @@ const PDFTools = () => {
         pages.push({
           pageNumber: i,
           preview: canvas.toDataURL(),
+          originalIndex: i - 1,
         });
       }
 
       return pages;
     } catch (error) {
+      const message = showErrorWithReporting(error, "extracting PDF pages");
       console.error("Error extracting PDF pages:", error);
-      throw error;
+      throw new Error(message);
     }
   };
 
@@ -195,8 +254,7 @@ const PDFTools = () => {
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
       FileSaver.saveAs(blob, "reordered.pdf");
     } catch (error) {
-      console.error("Error reordering PDF pages:", error);
-      alert("Error reordering PDF pages. Please try again.");
+      alert(showErrorWithReporting(error, "reordering PDF pages"));
     } finally {
       setIsProcessing(false);
     }
@@ -210,7 +268,32 @@ const PDFTools = () => {
     setPdfPages(newPages);
   };
 
-  // Update onDrop for PDF files to handle page reordering
+  // Add thumbnail generation function
+  const generatePDFThumbnail = async (file) => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 0.3 }); // Smaller scale for thumbnails
+
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      await page.render({
+        canvasContext: context,
+        viewport: viewport,
+      }).promise;
+
+      return canvas.toDataURL();
+    } catch (error) {
+      console.error("Error generating thumbnail:", error);
+      return null;
+    }
+  };
+
+  // Update the onDrop handler to include thumbnail generation
   const { getRootProps: getPDFRootProps, getInputProps: getPDFInputProps } =
     useDropzone({
       accept: {
@@ -221,27 +304,25 @@ const PDFTools = () => {
           URL.revokeObjectURL(currentPdfUrl);
         }
 
-        if (activeTab === "viewer") {
-          if (acceptedFiles[0]) {
-            const url = URL.createObjectURL(acceptedFiles[0]);
-            setCurrentPdfUrl(url);
-            setSelectedFiles([
-              {
-                file: acceptedFiles[0],
+        if (activeTab === "merger") {
+          // For merger, append files to the list
+          const newFiles = await Promise.all(
+            acceptedFiles.map(async (file) => {
+              const thumbnail = await generatePDFThumbnail(file);
+              return {
+                file,
                 id: Math.random().toString(36).substr(2, 9),
-                name: acceptedFiles[0].name,
-              },
-            ]);
+                name: file.name,
+                url: URL.createObjectURL(file),
+                thumbnail,
+              };
+            })
+          );
+          setSelectedFiles((prev) => [...prev, ...newFiles]);
+          // Set the current PDF URL to the last added file
+          if (newFiles.length > 0) {
+            setCurrentPdfUrl(newFiles[newFiles.length - 1].url);
           }
-        } else if (activeTab === "merger") {
-          setSelectedFiles((prev) => [
-            ...prev,
-            ...acceptedFiles.map((file) => ({
-              file,
-              id: Math.random().toString(36).substr(2, 9),
-              name: file.name,
-            })),
-          ]);
         } else if (activeTab === "reorder" && acceptedFiles[0]) {
           const pages = await extractPdfPages(acceptedFiles[0]);
           setPdfPages(pages);
@@ -250,16 +331,23 @@ const PDFTools = () => {
               file: acceptedFiles[0],
               id: Math.random().toString(36).substr(2, 9),
               name: acceptedFiles[0].name,
+              url: URL.createObjectURL(acceptedFiles[0]),
             },
           ]);
-        } else if (acceptedFiles[0]) {
-          const newFiles = acceptedFiles.map((file) => ({
-            file,
-            id: Math.random().toString(36).substr(2, 9),
-            name: file.name,
-          }));
-          setSelectedFiles(newFiles);
-          generatePDFPreview(acceptedFiles[0]);
+        } else {
+          // For other tabs, replace the current file
+          if (acceptedFiles[0]) {
+            const url = URL.createObjectURL(acceptedFiles[0]);
+            setCurrentPdfUrl(url);
+            setSelectedFiles([
+              {
+                file: acceptedFiles[0],
+                id: Math.random().toString(36).substr(2, 9),
+                name: acceptedFiles[0].name,
+                url,
+              },
+            ]);
+          }
         }
       },
     });
@@ -312,6 +400,7 @@ const PDFTools = () => {
   const mergePDFs = async () => {
     try {
       setIsProcessing(true);
+      setError(null);
       const mergedPdf = await PDFDocument.create();
 
       for (const fileObj of selectedFiles) {
@@ -328,8 +417,7 @@ const PDFTools = () => {
       const blob = new Blob([mergedPdfBytes], { type: "application/pdf" });
       FileSaver.saveAs(blob, "merged.pdf");
     } catch (error) {
-      console.error("Error merging PDFs:", error);
-      alert("Error merging PDFs. Please try again.");
+      setError(showErrorWithReporting(error, "merging PDFs"));
     } finally {
       setIsProcessing(false);
     }
@@ -338,43 +426,35 @@ const PDFTools = () => {
   const convertToImages = async () => {
     try {
       setIsProcessing(true);
-      const file = selectedFiles[0];
+      setError(null);
+      const file = selectedFiles[0].file; // Get the actual File object
       if (!file) return;
 
       const fileArrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument(fileArrayBuffer).promise;
       const zip = new JSZip();
 
-      // Set a reasonable scale for the output images
-      const scale = 2.0; // Adjust this value to change image quality
-
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale });
-
-        // Create canvas
+        const viewport = page.getViewport({ scale: 2.0 });
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        // Render PDF page to canvas
         await page.render({
           canvasContext: context,
           viewport: viewport,
         }).promise;
 
-        // Convert canvas to PNG and add to zip
         const pngData = canvas.toDataURL("image/png").split(",")[1];
         zip.file(`page-${i}.png`, pngData, { base64: true });
       }
 
-      // Generate and download zip file
       const content = await zip.generateAsync({ type: "blob" });
       FileSaver.saveAs(content, "pdf-images.zip");
     } catch (error) {
-      console.error("Error converting PDF to images:", error);
-      alert("Error converting PDF to images. Please try again.");
+      setError(showErrorWithReporting(error, "converting PDF to images"));
     } finally {
       setIsProcessing(false);
     }
@@ -383,6 +463,7 @@ const PDFTools = () => {
   const convertToSinglePDF = async () => {
     try {
       setIsProcessing(true);
+      setError(null);
       const pdfDoc = await PDFDocument.create();
 
       for (const fileObj of selectedFiles) {
@@ -415,32 +496,95 @@ const PDFTools = () => {
       FileSaver.saveAs(blob, "images-to-pdf.pdf");
     } catch (error) {
       console.error("Error converting images to PDF:", error);
-      alert("Error converting images to PDF. Please try again.");
+      setError(showErrorWithReporting(error, "converting images to PDF"));
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const renderContent = () => {
+  const testError = () => {
+    try {
+      throw new Error(
+        "This is a test error to demonstrate the bug reporting prompt"
+      );
+    } catch (error) {
+      setError(showErrorWithReporting(error, "testing error reporting"));
+    }
+  };
+
+  const clearError = () => setError(null);
+
+  // Remove the Test Error Button and implement triple-click error generation
+  const handleTabClick = (tabId) => {
+    if (activeTab === tabId) {
+      setClickCount((prev) => prev + 1);
+    } else {
+      setClickCount(0);
+    }
+    setActiveTab(tabId);
+  };
+
+  const [clickCount, setClickCount] = useState(0);
+
+  useEffect(() => {
+    if (clickCount === 3) {
+      testError();
+      setClickCount(0);
+    }
+  }, [clickCount]);
+
+  // Add console logs for debugging
+  useEffect(() => {
+    console.log("Current PDF URL:", currentPdfUrl);
+    console.log("Selected Files:", selectedFiles);
+  }, [currentPdfUrl, selectedFiles]);
+
+  // Add moveImage function
+  const moveImage = (index, direction) => {
+    const newFiles = [...selectedFiles];
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex >= 0 && newIndex < newFiles.length) {
+      [newFiles[index], newFiles[newIndex]] = [
+        newFiles[newIndex],
+        newFiles[index],
+      ];
+      setSelectedFiles(newFiles);
+    }
+  };
+
+  // Add function to remove a page
+  const removePage = (pageNumber) => {
+    setPdfPages((prev) =>
+      prev.filter((page) => page.pageNumber !== pageNumber)
+    );
+  };
+
+  // Update the renderContent function to use handleTabClick
+  const renderToolContent = () => {
     switch (activeTab) {
       case "viewer":
         return (
-          <div className="h-[800px] w-full">
+          <div className="w-full">
             {currentPdfUrl && selectedFiles.length > 0 ? (
-              <div className="h-full">
+              <div className="min-h-full">
                 <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
-                  <Viewer
-                    fileUrl={currentPdfUrl}
-                    plugins={[defaultLayoutPluginInstance, zoomPluginInstance]}
-                    defaultScale={1}
-                    key={currentPdfUrl}
-                  />
+                  <ErrorBoundary>
+                    <Viewer
+                      fileUrl={currentPdfUrl}
+                      plugins={[
+                        defaultLayoutPluginInstance,
+                        zoomPluginInstance,
+                      ]}
+                      defaultScale={1}
+                      key={currentPdfUrl}
+                    />
+                  </ErrorBoundary>
                 </Worker>
               </div>
             ) : (
               <div
                 {...getPDFRootProps()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 h-full flex flex-col justify-center"
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 h-[300px] flex flex-col justify-center"
               >
                 <input {...getPDFInputProps()} />
                 <FaUpload className="mx-auto text-6xl mb-6 text-gray-400" />
@@ -453,300 +597,344 @@ const PDFTools = () => {
         );
       case "merger":
         return (
-          <div>
-            <div
-              {...getPDFRootProps()}
-              className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-8 text-center cursor-pointer hover:border-blue-500 mb-4"
-            >
-              <input {...getPDFInputProps()} />
-              <FaUpload className="mx-auto text-4xl mb-4 text-gray-400" />
-              <p>Drag & drop PDF files here, or click to add more PDFs</p>
-            </div>
-            {selectedFiles.length > 0 && (
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Selected Files:</h3>
+          <div className="">
+            <div className="flex flex-col space-y-4">
+              {selectedFiles.length > 1 && (
+                <div className="flex justify-between items-center">
                   <button
-                    onClick={clearAllPDFs}
-                    className="text-red-500 hover:text-red-700 flex items-center gap-2 text-sm whitespace-nowrap"
+                    onClick={mergePDFs}
+                    className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400"
+                    disabled={isProcessing}
                   >
-                    <FaTrash /> Clear All
+                    {isProcessing ? "Merging..." : "Merge PDFs"}
                   </button>
-                </div>
-                <ul className="list-none p-0 space-y-2 mb-4">
-                  {selectedFiles.map((file, index) => (
-                    <li
-                      key={file.id}
-                      className="flex bg-gray-50 p-2 rounded items-start"
-                    >
-                      <div className="min-w-0 flex-1 pr-4">
-                        <p className="text-sm break-words">{file.name}</p>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => movePDF(index, "up")}
-                          disabled={index === 0}
-                          className="text-gray-500 hover:text-gray-700 disabled:text-gray-300 p-2"
-                          title="Move up"
-                        >
-                          <FaArrowUp size={16} />
-                        </button>
-                        <button
-                          onClick={() => movePDF(index, "down")}
-                          disabled={index === selectedFiles.length - 1}
-                          className="text-gray-500 hover:text-gray-700 disabled:text-gray-300 p-2"
-                          title="Move down"
-                        >
-                          <FaArrowDown size={16} />
-                        </button>
-                        <button
-                          onClick={() => removePDF(file.id)}
-                          className="text-red-500 hover:text-red-700 p-2"
-                          title="Remove"
-                        >
-                          <FaTimes size={16} />
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={mergePDFs}
-                  disabled={isProcessing || selectedFiles.length < 2}
-                  className="w-full sm:w-auto bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  {isProcessing ? "Processing..." : "Merge PDFs"}
-                </button>
-              </div>
-            )}
-          </div>
-        );
-      case "to-images":
-        return (
-          <div className="h-[300px] flex flex-col">
-            {selectedFiles.length > 0 &&
-            selectedFiles[0].file.type === "application/pdf" ? (
-              <div className="border-2 border-gray-300 rounded-lg p-4 mb-4 flex-1">
-                <div className="flex justify-between items-start mb-2">
-                  <p className="text-sm break-words pr-4 flex-1">
-                    {selectedFiles[0].name}
-                  </p>
                   <button
                     onClick={() => {
                       setSelectedFiles([]);
-                      setPdfPreview(null);
+                      setCurrentPdfUrl(null);
                     }}
-                    className="text-red-500 hover:text-red-700 p-2"
-                    title="Remove"
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                   >
-                    <FaTimes size={16} />
+                    Clear All
                   </button>
                 </div>
-                <div className="h-32 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
-                  {pdfPreview ? (
-                    <img
-                      src={pdfPreview}
-                      alt="PDF Preview"
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  ) : (
-                    <FaFilePdf className="text-4xl text-gray-400" />
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div
-                {...getPDFRootProps()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 mb-4 flex-1 flex flex-col justify-center"
-              >
-                <input {...getPDFInputProps()} />
-                <FaUpload className="mx-auto text-4xl mb-4 text-gray-400" />
-                <p>Drop a PDF here to convert to images</p>
-              </div>
-            )}
-            <button
-              onClick={convertToImages}
-              disabled={
-                isProcessing ||
-                !selectedFiles.length ||
-                !selectedFiles[0].file.type === "application/pdf"
-              }
-              className={`w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed`}
-            >
-              {isProcessing ? "Processing..." : "Convert to Images"}
-            </button>
-          </div>
-        );
-      case "from-images":
-        return (
-          <div className="flex flex-col">
-            {selectedFiles.length > 0 &&
-            selectedFiles[0].file.type.startsWith("image/") ? (
-              <div className="border-2 border-gray-300 rounded-lg p-4 mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm">Selected Images:</p>
-                  <div className="flex items-center gap-2">
-                    <div
-                      {...getImageRootProps()}
-                      className="text-blue-500 hover:text-blue-700 flex items-center gap-2 text-sm cursor-pointer"
-                    >
-                      <input {...getImageInputProps()} />
-                      <FaUpload /> Select More
-                    </div>
-                    <button
-                      onClick={() => setSelectedFiles([])}
-                      className="text-red-500 hover:text-red-700 flex items-center gap-2 text-sm"
-                    >
-                      <FaTrash /> Clear All
-                    </button>
+              )}
+              {selectedFiles.length > 0 && (
+                <div className="border rounded p-4">
+                  <h3 className="text-lg font-medium mb-2">Selected PDFs:</h3>
+                  <div className="space-y-2">
+                    {selectedFiles.map((file, index) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between bg-gray-50 p-2 rounded"
+                      >
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <div className="w-16 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                            {file.thumbnail ? (
+                              <img
+                                src={file.thumbnail}
+                                alt={`Preview of ${file.name}`}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <FaFilePdf className="text-gray-400 text-2xl" />
+                              </div>
+                            )}
+                          </div>
+                          <span className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-900 break-words">
+                              {file.name}
+                            </p>
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2 flex-shrink-0">
+                          {index > 0 && (
+                            <button
+                              onClick={() => movePDF(index, "up")}
+                              className="p-1 hover:bg-gray-200 rounded"
+                              title="Move Up"
+                            >
+                              <FaArrowUp />
+                            </button>
+                          )}
+                          {index < selectedFiles.length - 1 && (
+                            <button
+                              onClick={() => movePDF(index, "down")}
+                              className="p-1 hover:bg-gray-200 rounded"
+                              title="Move Down"
+                            >
+                              <FaArrowDown />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              const newFiles = selectedFiles.filter(
+                                (f) => f.id !== file.id
+                              );
+                              setSelectedFiles(newFiles);
+                              if (newFiles.length > 0) {
+                                setCurrentPdfUrl(
+                                  newFiles[newFiles.length - 1].url
+                                );
+                              } else {
+                                setCurrentPdfUrl(null);
+                              }
+                            }}
+                            className="p-1 hover:bg-red-100 text-red-600 rounded"
+                            title="Remove"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <ul className="list-none p-0 space-y-2">
-                  {selectedFiles.map((file, index) => (
-                    <li
-                      key={file.id}
-                      className="flex bg-gray-50 p-2 rounded items-start"
-                    >
-                      <div className="h-16 w-16 bg-gray-100 rounded flex-shrink-0 mr-2 overflow-hidden">
-                        <img
-                          src={file.url}
-                          alt={`Preview ${index + 1}`}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm break-words">{file.name}</p>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => movePDF(index, "up")}
-                          disabled={index === 0}
-                          className="text-gray-500 hover:text-gray-700 disabled:text-gray-300 p-2"
-                          title="Move up"
-                        >
-                          <FaArrowUp size={16} />
-                        </button>
-                        <button
-                          onClick={() => movePDF(index, "down")}
-                          disabled={index === selectedFiles.length - 1}
-                          className="text-gray-500 hover:text-gray-700 disabled:text-gray-300 p-2"
-                          title="Move down"
-                        >
-                          <FaArrowDown size={16} />
-                        </button>
-                        <button
-                          onClick={() => removePDF(file.id)}
-                          className="text-red-500 hover:text-red-700 p-2"
-                          title="Remove"
-                        >
-                          <FaTimes size={16} />
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <div
-                {...getImageRootProps()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 mb-4 h-[300px] flex flex-col justify-center"
-              >
-                <input {...getImageInputProps()} />
-                <FaUpload className="mx-auto text-4xl mb-4 text-gray-400" />
-                <p>Drop PNG or JPEG images here to combine into PDF</p>
-              </div>
-            )}
-            <button
-              onClick={convertToSinglePDF}
-              disabled={
-                isProcessing ||
-                !selectedFiles.length ||
-                !selectedFiles[0].file.type.startsWith("image/")
-              }
-              className={`w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed`}
-            >
-              {isProcessing ? "Processing..." : "Convert to PDF"}
-            </button>
-          </div>
-        );
-      case "reorder":
-        return (
-          <div className="space-y-4">
-            {selectedFiles.length === 0 ? (
+              )}
               <div
                 {...getPDFRootProps()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 h-[400px] flex flex-col justify-center"
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 h-[300px] flex flex-col justify-center"
               >
                 <input {...getPDFInputProps()} />
                 <FaUpload className="mx-auto text-6xl mb-6 text-gray-400" />
                 <p className="text-lg">
-                  Drop a PDF file here to reorder its pages
+                  {selectedFiles.length === 0
+                    ? "Drag & drop PDFs here, or click to select multiple"
+                    : "Drop more PDFs here, or click to select more"}
                 </p>
               </div>
+            </div>
+          </div>
+        );
+      case "to-images":
+        return (
+          <div className="">
+            {selectedFiles.length > 0 && (
+              <button
+                onClick={convertToImages}
+                className="mb-4 px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400"
+                disabled={isProcessing}
+              >
+                {isProcessing ? "Converting..." : "Convert PDF to Images"}
+              </button>
+            )}
+            {selectedFiles.length > 0 ? (
+              <div className="min-h-full">
+                <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+                  <ErrorBoundary>
+                    <Viewer
+                      fileUrl={currentPdfUrl}
+                      plugins={[
+                        defaultLayoutPluginInstance,
+                        zoomPluginInstance,
+                      ]}
+                      defaultScale={1}
+                      key={currentPdfUrl}
+                    />
+                  </ErrorBoundary>
+                </Worker>
+              </div>
             ) : (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">
-                    Reorder Pages: {selectedFiles[0].name}
-                  </h3>
+              <div
+                {...getPDFRootProps()}
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 h-[300px] flex flex-col justify-center"
+              >
+                <input {...getPDFInputProps()} />
+                <FaUpload className="mx-auto text-6xl mb-6 text-gray-400" />
+                <p className="text-lg">
+                  Drag & drop a PDF file here, or click to select one
+                </p>
+              </div>
+            )}
+          </div>
+        );
+      case "from-images":
+        return (
+          <div className="">
+            <div className="flex flex-col space-y-4">
+              {selectedFiles.length > 0 && (
+                <div className="flex justify-between items-center">
+                  <button
+                    onClick={convertToSinglePDF}
+                    className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400"
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? "Converting..." : "Convert Images to PDF"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedFiles([]);
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              )}
+              {selectedFiles.length > 0 && (
+                <div className="border rounded p-4">
+                  <h3 className="text-lg font-medium mb-2">Selected Images:</h3>
+                  <div className="space-y-2">
+                    {selectedFiles.map((file, index) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between bg-gray-50 p-2 rounded"
+                      >
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <div className="w-16 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                            <img
+                              src={file.url}
+                              alt={`Preview of ${file.name}`}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <span className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-900 break-words">
+                              {file.name}
+                            </p>
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2 flex-shrink-0">
+                          {index > 0 && (
+                            <button
+                              onClick={() => moveImage(index, "up")}
+                              className="p-1 hover:bg-gray-200 rounded"
+                              title="Move Up"
+                            >
+                              <FaArrowUp />
+                            </button>
+                          )}
+                          {index < selectedFiles.length - 1 && (
+                            <button
+                              onClick={() => moveImage(index, "down")}
+                              className="p-1 hover:bg-gray-200 rounded"
+                              title="Move Down"
+                            >
+                              <FaArrowDown />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => removePDF(file.id)}
+                            className="p-1 hover:bg-red-100 text-red-600 rounded"
+                            title="Remove"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div
+                {...getImageRootProps()}
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 h-[300px] flex flex-col justify-center"
+              >
+                <input {...getImageInputProps()} />
+                <FaUpload className="mx-auto text-6xl mb-6 text-gray-400" />
+                <p className="text-lg">
+                  {selectedFiles.length === 0
+                    ? "Drag & drop images here, or click to select multiple"
+                    : "Drop more images here, or click to select more"}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      case "reorder":
+        return (
+          <div className="">
+            <div className="flex flex-col space-y-4">
+              {selectedFiles.length > 0 && pdfPages.length > 0 && (
+                <div className="flex justify-between items-center">
+                  <button
+                    onClick={reorderPages}
+                    className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400"
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? "Saving..." : "Save Reordered PDF"}
+                  </button>
                   <button
                     onClick={() => {
                       setSelectedFiles([]);
                       setPdfPages([]);
+                      setCurrentPdfUrl(null);
                     }}
-                    className="text-red-500 hover:text-red-700 flex items-center gap-2 text-sm"
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                   >
-                    <FaTrash /> Clear
+                    Clear All
                   </button>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {pdfPages.map((page, index) => (
-                    <div
-                      key={index}
-                      className="border rounded-lg p-2 bg-gray-50"
-                    >
-                      <div className="aspect-[3/4] mb-2">
-                        <img
-                          src={page.preview}
-                          alt={`Page ${page.pageNumber}`}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">
-                          Page {page.pageNumber}
-                        </span>
-                        <div className="flex gap-1">
+              )}
+              {pdfPages.length > 0 && (
+                <div className="border rounded p-4">
+                  <h3 className="text-lg font-medium mb-2">PDF Pages:</h3>
+                  <div className="space-y-2">
+                    {pdfPages.map((page, index) => (
+                      <div
+                        key={page.pageNumber}
+                        className="flex items-center justify-between bg-gray-50 p-2 rounded"
+                      >
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <div className="w-16 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                            <img
+                              src={page.preview}
+                              alt={`Page ${page.pageNumber}`}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <span className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-900">
+                              Page {page.pageNumber}
+                            </p>
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2 flex-shrink-0">
+                          {index > 0 && (
+                            <button
+                              onClick={() => movePage(index, index - 1)}
+                              className="p-1 hover:bg-gray-200 rounded"
+                              title="Move Up"
+                            >
+                              <FaArrowUp />
+                            </button>
+                          )}
+                          {index < pdfPages.length - 1 && (
+                            <button
+                              onClick={() => movePage(index, index + 1)}
+                              className="p-1 hover:bg-gray-200 rounded"
+                              title="Move Down"
+                            >
+                              <FaArrowDown />
+                            </button>
+                          )}
                           <button
-                            onClick={() => movePage(index, index - 1)}
-                            disabled={index === 0}
-                            className="p-1 text-gray-500 hover:text-gray-700 disabled:text-gray-300"
-                            title="Move left"
+                            onClick={() => removePage(page.pageNumber)}
+                            className="p-1 hover:bg-red-100 text-red-600 rounded"
+                            title="Remove"
                           >
-                            <FaArrowLeft size={14} />
-                          </button>
-                          <button
-                            onClick={() => movePage(index, index + 1)}
-                            disabled={index === pdfPages.length - 1}
-                            className="p-1 text-gray-500 hover:text-gray-700 disabled:text-gray-300"
-                            title="Move right"
-                          >
-                            <FaArrowRight size={14} />
+                            <FaTrash />
                           </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-                <button
-                  onClick={reorderPages}
-                  disabled={isProcessing || pdfPages.length === 0}
-                  className="w-full sm:w-auto bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed mt-4"
-                >
-                  {isProcessing ? "Processing..." : "Save Reordered PDF"}
-                </button>
-              </>
-            )}
+              )}
+              <div
+                {...getPDFRootProps()}
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 h-[300px] flex flex-col justify-center"
+              >
+                <input {...getPDFInputProps()} />
+                <FaUpload className="mx-auto text-6xl mb-6 text-gray-400" />
+                <p className="text-lg">
+                  {selectedFiles.length === 0
+                    ? "Drag & drop a PDF file here, or click to select one"
+                    : "Drop a new PDF here, or click to select one"}
+                </p>
+              </div>
+            </div>
           </div>
         );
       default:
@@ -754,12 +942,10 @@ const PDFTools = () => {
     }
   };
 
-  return (
-    <ToolLayout
-      title="PDF Tools"
-      description="A collection of PDF manipulation and conversion tools"
-    >
-      <div className="space-y-6">
+  const renderContent = () => {
+    return (
+      <>
+        <ErrorBanner error={error} onDismiss={clearError} />
         {/* Tool Selection */}
         <div>
           {/* Mobile Dropdown */}
@@ -796,7 +982,7 @@ const PDFTools = () => {
                 ].map((tool) => (
                   <button
                     key={tool.id}
-                    onClick={() => setActiveTab(tool.id)}
+                    onClick={() => handleTabClick(tool.id)}
                     className={`px-4 py-2 -mb-px whitespace-nowrap ${
                       activeTab === tool.id
                         ? "border-b-2 border-primary-600 text-primary-600"
@@ -810,10 +996,43 @@ const PDFTools = () => {
             </div>
           </div>
         </div>
-        {renderContent()}
-      </div>
+        <div className="mt-6">{renderToolContent()}</div>
+      </>
+    );
+  };
+
+  return (
+    <ToolLayout
+      title="PDF Tools"
+      description="A collection of PDF manipulation and conversion tools"
+    >
+      <div>{renderContent()}</div>
     </ToolLayout>
   );
 };
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Error caught in ErrorBoundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <h1>Something went wrong.</h1>;
+    }
+
+    return this.props.children;
+  }
+}
 
 export default PDFTools;

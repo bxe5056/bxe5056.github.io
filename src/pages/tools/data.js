@@ -369,9 +369,20 @@ const DataTools = () => {
         navigate(`/tools/data/${newTab}`);
       }
       setError("");
+      setInputData("");
+      setOutputData("");
+      setLoading(false);
     },
     [sourceFormat, targetFormat, navigate]
   );
+
+  // Add cleanup effect when switching tabs
+  useEffect(() => {
+    setInputData("");
+    setOutputData("");
+    setError("");
+    setLoading(false);
+  }, [activeTab]);
 
   // File drop handler
   const onDrop = useCallback(
@@ -418,21 +429,6 @@ const DataTools = () => {
     [targetFormat, detectFileFormat, navigate, convertData]
   );
 
-  // Add dropzone configuration
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: Object.values(SUPPORTED_FORMATS).reduce((acc, format) => {
-      format.extensions.forEach((ext) => {
-        format.mimeTypes.forEach((mime) => {
-          if (!acc[mime]) acc[mime] = [];
-          acc[mime].push(ext);
-        });
-      });
-      return acc;
-    }, {}),
-    maxFiles: 1,
-  });
-
   // Handle initial URL params
   useEffect(() => {
     const pathParam = location.pathname.split("/").pop();
@@ -453,6 +449,21 @@ const DataTools = () => {
       convertData(inputData);
     }
   }, [inputData, convertData]);
+
+  // Add dropzone configuration
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: Object.values(SUPPORTED_FORMATS).reduce((acc, format) => {
+      format.extensions.forEach((ext) => {
+        format.mimeTypes.forEach((mime) => {
+          if (!acc[mime]) acc[mime] = [];
+          acc[mime].push(ext);
+        });
+      });
+      return acc;
+    }, {}),
+    maxFiles: 1,
+  });
 
   const copyToClipboard = async (text) => {
     try {
@@ -704,7 +715,7 @@ const DataTools = () => {
       title="Data Conversion Tools"
       description="Convert between different data formats"
     >
-      <div className="space-y-6">
+      <div className="space-y-6" data-tool="data">
         {/* Tool Selection */}
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <h2 className="text-base font-medium text-gray-900 mb-4 text-center">
@@ -759,7 +770,7 @@ const DataTools = () => {
                     setInputData(e.target.value);
                     if (e.target.value) convertData(e.target.value);
                   }}
-                  className="w-full flex-1 p-4 font-mono text-sm rounded-b-lg resize-none focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  className="w-full flex-1 p-4 font-mono text-sm rounded-b-lg resize-none focus:outline-none focus:ring-1 focus:ring-primary-500 data-input"
                   placeholder="Enter or paste your data here..."
                 />
               </div>
@@ -799,7 +810,7 @@ const DataTools = () => {
                   <textarea
                     value={outputData}
                     readOnly
-                    className="w-full h-40 p-4 border rounded font-mono text-sm bg-gray-50"
+                    className="w-full h-40 p-4 border rounded font-mono text-sm bg-gray-50 data-output"
                     placeholder="Converted data will appear here..."
                   />
                 )}

@@ -341,6 +341,60 @@ const ColorTools = () => {
   const cssUpdateTimeout = useRef(null);
   const [tempGradientCSS, setTempGradientCSS] = useState("");
   const [cssError, setCssError] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Define savePalette before its usage
+  const savePalette = useCallback(
+    (colors, type, tag = "") => {
+      if (!colors || colors.length === 0) return;
+
+      const storageKey = `savedPalettes_${type}`;
+      const savedPalettes = JSON.parse(
+        localStorage.getItem(storageKey) || "[]"
+      );
+
+      // Convert colors array to string for comparison
+      const colorsString = JSON.stringify([...colors].sort());
+
+      // Check if this exact palette already exists
+      const paletteExists = savedPalettes.some(
+        (palette) => JSON.stringify([...palette.colors].sort()) === colorsString
+      );
+
+      if (!paletteExists) {
+        const newPalette = {
+          id: Date.now(),
+          colors: [...colors],
+          timestamp: new Date().toISOString(),
+          type,
+          tags: tag ? [tag] : [],
+        };
+        const updatedPalettes = [...savedPalettes, newPalette];
+        localStorage.setItem(storageKey, JSON.stringify(updatedPalettes));
+
+        // Update state based on type
+        switch (type) {
+          case "extracted":
+            setExtractedColors(colors);
+            break;
+          case "palette":
+            setPalette(colors);
+            break;
+          case "gradient":
+            // Don't update gradient stops here as they're managed separately
+            break;
+          case "picker":
+            if (colors.length > 0) {
+              setColor(colors[0]);
+            }
+            break;
+          default:
+            break;
+        }
+      }
+    },
+    [setExtractedColors, setPalette, setColor]
+  );
 
   // Handle initial URL params and direct navigation
   useEffect(() => {
@@ -356,206 +410,141 @@ const ColorTools = () => {
     navigate(`/tools/color/${tabId}`);
   };
 
+  // Reset state when changing tabs
+  useEffect(() => {
+    // Reset all states first
+    setUploadedImage((prevImage) => {
+      if (prevImage) {
+        URL.revokeObjectURL(prevImage);
+      }
+      return null;
+    });
+    setExtractedColors([]);
+    setNumColors(5);
+    setPaletteTag("");
+    setError(null);
+    setCssError(false);
+    setTempGradientCSS("");
+    setGradientCSS("");
+    // Reset gradient states
+    setGradientStops([
+      { color: "#536dfe", position: 0 },
+      { color: "#32408f", position: 100 },
+    ]);
+    setGradientType("linear");
+    setGradientAngle(90);
+    // Reset palette states
+    setPalette([]);
+    setPaletteType("analogous");
+    // Reset contrast states
+    setContrastText("#000000");
+
+    // Clear any pending timeouts
+    if (cssUpdateTimeout.current) {
+      clearTimeout(cssUpdateTimeout.current);
+    }
+  }, [activeTab]);
+
   // Save colors to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem("extractedColors", JSON.stringify(extractedColors));
-  }, [extractedColors]);
+    if (extractedColors.length > 0 && activeTab === "extract") {
+      localStorage.setItem("extractedColors", JSON.stringify(extractedColors));
+    }
+  }, [extractedColors, activeTab]);
 
-  // Update the auto-save effect for extracted colors
+  // Consolidate all auto-save effects into one
   useEffect(() => {
-    if (extractedColors.length > 0) {
-      const storageKey = "savedPalettes_extracted";
-      const savedPalettes = JSON.parse(
-        localStorage.getItem(storageKey) || "[]"
-      );
+    if (!autoSaving.current) {
+      let shouldSave = false;
+      let colors = [];
+      let type = "";
 
-      // Find the most recent extracted palette
-      const existingPaletteIndex = savedPalettes.findIndex(
-        (p) => p.source === "extracted"
-      );
-
-      if (existingPaletteIndex !== -1) {
-        // Update existing palette
-        savedPalettes[existingPaletteIndex] = {
-          ...savedPalettes[existingPaletteIndex],
-          colors: extractedColors,
-          timestamp: new Date().toISOString(),
-        };
-      } else {
-        // Create new palette if none exists
-        savedPalettes.push({
-          id: Date.now(),
-          colors: extractedColors,
-          timestamp: new Date().toISOString(),
-          source: "extracted",
-        });
+      if (extractedColors.length > 0 && activeTab === "extract") {
+        shouldSave = true;
+        colors = extractedColors;
+        type = "extracted";
+      } else if (palette.length > 0 && activeTab === "palette") {
+        shouldSave = true;
+        colors = palette;
+        type = "generated";
+      } else if (gradientStops.length >= 2 && activeTab === "gradient") {
+        shouldSave = true;
+        colors = gradientStops.map((stop) => stop.color);
+        type = "gradient";
       }
 
-      localStorage.setItem(storageKey, JSON.stringify(savedPalettes));
+      if (shouldSave) {
+        autoSaving.current = true;
+        savePalette(colors, type, paletteTag);
+        const timeoutId = setTimeout(() => {
+          autoSaving.current = false;
+        }, 1000);
+        return () => clearTimeout(timeoutId);
+      }
     }
-  }, [extractedColors]);
-
-  // Also auto-save generated palettes
-  useEffect(() => {
-    if (palette.length > 0) {
-      const savedPalettes = JSON.parse(
-        localStorage.getItem("savedPalettes") || "[]"
-      );
-      const newPalette = {
-        id: Date.now(),
-        colors: palette,
-        timestamp: new Date().toISOString(),
-        source: "generated",
-      };
-      localStorage.setItem(
-        "savedPalettes",
-        JSON.stringify([...savedPalettes, newPalette])
-      );
-    }
-  }, [palette]);
-
-  // Update the savePalette function to be more explicit
-  const savePalette = (colors, type, tag = "") => {
-    const storageKey = `savedPalettes_${type}`;
-    const savedPalettes = JSON.parse(localStorage.getItem(storageKey) || "[]");
-
-    // Convert colors array to string for comparison
-    const colorsString = JSON.stringify(colors.sort());
-
-    // Check if this exact palette already exists
-    const paletteExists = savedPalettes.some(
-      (palette) => JSON.stringify(palette.colors.sort()) === colorsString
-    );
-
-    if (!paletteExists) {
-      const newPalette = {
-        id: Date.now(),
-        colors,
-        timestamp: new Date().toISOString(),
-        type,
-        tags: tag ? [tag] : [],
-      };
-      const updatedPalettes = [...savedPalettes, newPalette];
-      localStorage.setItem(storageKey, JSON.stringify(updatedPalettes));
-      // Force re-render without modifying extractedColors
-      setActiveTab((prev) => prev);
-    }
-  };
-
-  // Add function to update palette tags
-  const updatePaletteTags = (paletteId, type, tags) => {
-    const storageKey = `savedPalettes_${type}`;
-    const savedPalettes = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    const updatedPalettes = savedPalettes.map((palette) =>
-      palette.id === paletteId ? { ...palette, tags } : palette
-    );
-    localStorage.setItem(storageKey, JSON.stringify(updatedPalettes));
-    setExtractedColors([...extractedColors]); // Force re-render
-  };
-
-  // Add function to delete palette
-  const deletePalette = (paletteId, type) => {
-    const storageKey = `savedPalettes_${type}`;
-    const savedPalettes = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    const updatedPalettes = savedPalettes.filter((p) => p.id !== paletteId);
-    localStorage.setItem(storageKey, JSON.stringify(updatedPalettes));
-    setExtractedColors([...extractedColors]); // Force re-render
-  };
-
-  // Add function to clear all palettes of a type
-  const clearAllPalettes = (type) => {
-    if (
-      window.confirm(`Are you sure you want to clear all ${type} palettes?`)
-    ) {
-      localStorage.setItem(`savedPalettes_${type}`, "[]");
-      setExtractedColors([...extractedColors]); // Force re-render
-    }
-  };
-
-  // Update the useEffect for auto-saving
-  useEffect(() => {
-    if (extractedColors.length > 0 && !autoSaving.current) {
-      autoSaving.current = true;
-      savePalette(extractedColors, "extracted", paletteTag);
-      setTimeout(() => {
-        autoSaving.current = false;
-      }, 1000); // Debounce saving
-    }
-  }, [extractedColors, paletteTag]);
-
-  useEffect(() => {
-    if (palette.length > 0 && !autoSaving.current) {
-      autoSaving.current = true;
-      savePalette(palette, "generated", paletteTag);
-      setTimeout(() => {
-        autoSaving.current = false;
-      }, 1000); // Debounce saving
-    }
-  }, [palette, paletteTag]);
-
-  useEffect(() => {
-    if (gradientStops.length >= 2 && !autoSaving.current) {
-      autoSaving.current = true;
-      savePalette(
-        gradientStops.map((stop) => stop.color),
-        "gradient",
-        paletteTag
-      );
-      setTimeout(() => {
-        autoSaving.current = false;
-      }, 1000); // Debounce saving
-    }
-  }, [gradientStops, paletteTag]);
+  }, [
+    extractedColors,
+    palette,
+    gradientStops,
+    activeTab,
+    paletteTag,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    savePalette,
+  ]);
 
   // Update the extractColors function to avoid similar colors
-  const extractColors = useCallback((imageData, count, existingColors = []) => {
-    const colorMap = new Map();
+  const extractColors = useCallback(
+    (imageData, count, existingColors = []) => {
+      const colorMap = new Map();
 
-    // Sample colors every 10 pixels
-    for (let i = 0; i < imageData.length; i += 40) {
-      const r = imageData[i];
-      const g = imageData[i + 1];
-      const b = imageData[i + 2];
-      const hex = rgbToHex(r, g, b);
-      colorMap.set(hex, (colorMap.get(hex) || 0) + 1);
-    }
+      // Sample colors every 10 pixels
+      for (let i = 0; i < imageData.length; i += 40) {
+        const r = imageData[i];
+        const g = imageData[i + 1];
+        const b = imageData[i + 2];
+        const hex = rgbToHex(r, g, b);
+        colorMap.set(hex, (colorMap.get(hex) || 0) + 1);
+      }
 
-    // Convert to array and sort by frequency
-    let colors = Array.from(colorMap.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([color]) => color);
+      // Convert to array and sort by frequency
+      let colors = Array.from(colorMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([color]) => color);
 
-    // Filter out similar colors
-    const uniqueColors = [];
-    const minDifference = 50; // Adjust this threshold to control how different colors should be
+      // Filter out similar colors
+      const uniqueColors = [];
+      const minDifference = 50; // Adjust this threshold to control how different colors should be
 
-    for (const color of colors) {
-      let isDifferentEnough = true;
+      for (const color of colors) {
+        let isDifferentEnough = true;
 
-      // Check against existing colors
-      for (const existingColor of existingColors) {
-        if (getColorDifference(color, existingColor) < minDifference) {
-          isDifferentEnough = false;
-          break;
+        // Check against existing colors
+        for (const existingColor of existingColors) {
+          if (getColorDifference(color, existingColor) < minDifference) {
+            isDifferentEnough = false;
+            break;
+          }
+        }
+
+        // Check against already selected colors
+        for (const selectedColor of uniqueColors) {
+          if (getColorDifference(color, selectedColor) < minDifference) {
+            isDifferentEnough = false;
+            break;
+          }
+        }
+
+        if (isDifferentEnough) {
+          uniqueColors.push(color);
+          if (uniqueColors.length === count) break;
         }
       }
 
-      // Check against already selected colors
-      for (const selectedColor of uniqueColors) {
-        if (getColorDifference(color, selectedColor) < minDifference) {
-          isDifferentEnough = false;
-          break;
-        }
-      }
-
-      if (isDifferentEnough) {
-        uniqueColors.push(color);
-        if (uniqueColors.length === count) break;
-      }
-    }
-
-    return uniqueColors;
-  }, []);
+      return uniqueColors;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   // Update the onDrop callback to save only after extraction
   const onDrop = useCallback(
@@ -588,6 +577,7 @@ const ColorTools = () => {
       };
       reader.readAsDataURL(file);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [numColors, extractColors, paletteTag]
   );
 
@@ -740,6 +730,7 @@ const ColorTools = () => {
     const generatedPalette = [color, ...newColors];
     setPalette(generatedPalette);
     savePalette(generatedPalette, "generated", paletteTag);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [color, paletteType, paletteTag]);
 
   // Calculate contrast ratio
@@ -984,6 +975,147 @@ const ColorTools = () => {
       setGradientStops(newStops);
     }
   };
+
+  // Add function to update palette tags
+  const updatePaletteTags = useCallback(
+    (paletteId, type, tags) => {
+      const storageKey = `savedPalettes_${type}`;
+      const savedPalettes = JSON.parse(
+        localStorage.getItem(storageKey) || "[]"
+      );
+      const updatedPalettes = savedPalettes.map((palette) =>
+        palette.id === paletteId ? { ...palette, tags } : palette
+      );
+      localStorage.setItem(storageKey, JSON.stringify(updatedPalettes));
+
+      // Update state based on type
+      switch (type) {
+        case "extracted":
+          setExtractedColors((prev) => {
+            if (prev.length > 0) {
+              savePalette(prev, type, tags);
+            }
+            return prev;
+          });
+          break;
+        case "palette":
+          setPalette((prev) => {
+            if (prev.length > 0) {
+              savePalette(prev, type, tags);
+            }
+            return prev;
+          });
+          break;
+        case "gradient":
+          setGradientStops((prev) => {
+            if (prev.length >= 2) {
+              savePalette(
+                prev.map((stop) => stop.color),
+                type,
+                tags
+              );
+            }
+            return prev;
+          });
+          break;
+        case "picker":
+          setColor((prev) => {
+            savePalette([prev], type, tags);
+            return prev;
+          });
+          break;
+        default:
+          break;
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [setExtractedColors, setPalette, setGradientStops, setColor, savePalette]
+  );
+
+  // Add function to delete palette
+  const deletePalette = useCallback(
+    (paletteId, type) => {
+      const storageKey = `savedPalettes_${type}`;
+      const savedPalettes = JSON.parse(
+        localStorage.getItem(storageKey) || "[]"
+      );
+      const updatedPalettes = savedPalettes.filter((p) => p.id !== paletteId);
+      localStorage.setItem(storageKey, JSON.stringify(updatedPalettes));
+
+      // Update state based on type
+      switch (type) {
+        case "extracted":
+          setExtractedColors((prev) => {
+            if (prev.length > 0) {
+              savePalette(prev, type);
+            }
+            return prev;
+          });
+          break;
+        case "palette":
+          setPalette((prev) => {
+            if (prev.length > 0) {
+              savePalette(prev, type);
+            }
+            return prev;
+          });
+          break;
+        case "gradient":
+          setGradientStops((prev) => {
+            if (prev.length >= 2) {
+              savePalette(
+                prev.map((stop) => stop.color),
+                type
+              );
+            }
+            return prev;
+          });
+          break;
+        case "picker":
+          setColor((prev) => {
+            savePalette([prev], type);
+            return prev;
+          });
+          break;
+        default:
+          break;
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [setExtractedColors, setPalette, setGradientStops, setColor, savePalette]
+  );
+
+  // Add function to clear all palettes of a type
+  const clearAllPalettes = useCallback(
+    (type) => {
+      if (
+        window.confirm(`Are you sure you want to clear all ${type} palettes?`)
+      ) {
+        localStorage.setItem(`savedPalettes_${type}`, "[]");
+        // Update relevant state based on type
+        switch (type) {
+          case "extracted":
+            setExtractedColors([]);
+            break;
+          case "palette":
+            setPalette([]);
+            break;
+          case "gradient":
+            setGradientStops([
+              { color: "#536dfe", position: 0 },
+              { color: "#32408f", position: 100 },
+            ]);
+            break;
+          case "picker":
+            // Don't reset color as it might disrupt user experience
+            break;
+          default:
+            break;
+        }
+      }
+    },
+    [setExtractedColors, setPalette, setGradientStops]
+  );
 
   const renderTool = () => {
     switch (activeTab) {
@@ -1481,7 +1613,7 @@ const ColorTools = () => {
 
       case "extract":
         return (
-          <div className="space-y-6">
+          <div className="space-y-6" data-tool="extract">
             <div
               {...getRootProps()}
               className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
@@ -1502,6 +1634,7 @@ const ColorTools = () => {
                     src={uploadedImage}
                     alt="Color source for extraction"
                     className="max-h-64 mx-auto"
+                    data-section="extract-colors"
                   />
                 )}
               </div>

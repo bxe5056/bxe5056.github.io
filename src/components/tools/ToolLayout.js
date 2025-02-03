@@ -11,6 +11,7 @@ import {
   FaTools,
   FaFilePdf,
 } from "react-icons/fa";
+import BugReportToggle from "../BugReportToggle";
 
 const categories = [
   { path: "/tools/text", icon: FaFont, label: "Text" },
@@ -98,7 +99,14 @@ const ToolLayout = ({ title, description, children }) => {
                 Back to Tool Overview
               </Link>
             </motion.div>
-            <div className="hidden md:flex space-x-2">
+            {/* Mobile View */}
+            <div className="flex md:hidden items-center space-x-2">
+              <div className="border-l border-gray-200 ml-2 pl-2">
+                <BugReportToggle />
+              </div>
+            </div>
+            {/* Desktop View */}
+            <div className="hidden md:flex items-center space-x-2">
               {categories.map((category) => (
                 <div key={category.path} className="relative">
                   <Link
@@ -132,6 +140,9 @@ const ToolLayout = ({ title, description, children }) => {
                   )}
                 </div>
               ))}
+              <div className="border-l border-gray-200 ml-2 pl-2">
+                <BugReportToggle />
+              </div>
             </div>
           </div>
         </div>

@@ -301,7 +301,7 @@ const DevTools = () => {
                       }
                     }}
                     placeholder="Enter text to hash..."
-                    className="w-full h-32 p-4 border rounded"
+                    className="w-full h-32 p-4 border rounded hash-input"
                   />
                 </div>
                 <div className="space-y-2">
@@ -400,7 +400,7 @@ const DevTools = () => {
                   value={regexPattern}
                   onChange={(e) => setRegexPattern(e.target.value)}
                   placeholder="Regular expression pattern"
-                  className="flex-1 px-4 py-2 border rounded"
+                  className="flex-1 px-4 py-2 border rounded regex-pattern"
                 />
                 <input
                   type="text"
@@ -420,7 +420,7 @@ const DevTools = () => {
                 value={regexText}
                 onChange={(e) => setRegexText(e.target.value)}
                 placeholder="Enter text to test..."
-                className="w-full h-32 p-4 border rounded"
+                className="w-full h-32 p-4 border rounded regex-test-input"
               />
             </div>
             {regexMatches.length > 0 && (
@@ -593,7 +593,7 @@ const DevTools = () => {
       title="Developer Utilities"
       description="A collection of useful tools for developers"
     >
-      <div className="space-y-6">
+      <div className="space-y-6" data-tool="dev">
         {/* Tool Selection */}
         <div className="mb-6">
           {/* Mobile Dropdown */}

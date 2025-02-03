@@ -149,7 +149,7 @@ const NavBar = () => {
                 className="h-14 w-14 object-cover object-[center_-1.5%]"
               />
               <motion.span
-                className="ml-3 text-lg font-semibold hidden sm:inline"
+                className="ml-3 text-lg font-semibold sm:hidden md:inline"
                 style={{
                   color: textColor,
                 }}

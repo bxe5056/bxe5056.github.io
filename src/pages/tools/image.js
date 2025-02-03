@@ -62,18 +62,27 @@ const ImageTools = () => {
     navigate(`/tools/image/${tabId}`);
   };
 
-  // Reset crop when changing tabs
+  // Reset state when changing tabs
   useEffect(() => {
-    if (activeTab !== "crop") {
-      setCropStart(null);
-      setCropEnd(null);
-      const canvas = canvasRef.current;
-      if (canvas && imageRef.current) {
-        const ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(imageRef.current, 0, 0, canvas.width, canvas.height);
+    // Reset all states first
+    setProcessedImage((prevImage) => {
+      if (prevImage) {
+        URL.revokeObjectURL(prevImage);
       }
-    }
+      return null;
+    });
+    setSelectedFile(null);
+    setLoading(false);
+    setMetadata(null);
+    setDimensions({ width: 0, height: 0 });
+    setCropStart(null);
+    setCropEnd(null);
+    setError(null);
+    setActiveHandle(null);
+    setIsMovingCrop(false);
+    setMoveStart(null);
+    setIsDragging(false);
+    setIsFullscreen(false);
   }, [activeTab]);
 
   const drawCropOverlay = () => {
@@ -584,21 +593,12 @@ const ImageTools = () => {
   );
 
   const renderPreview = (size = "w-32 h-32") => (
-    <div
-      className={`${size} mx-auto border rounded overflow-hidden relative group`}
-    >
+    <div className={`${size} relative group`}>
       <img
         src={processedImage}
         alt="Preview"
-        className="w-full h-full object-cover"
+        className="w-full h-full object-contain rounded image-thumbnail"
       />
-      <button
-        onClick={() => setIsFullscreen(true)}
-        className="absolute top-2 right-2 w-8 h-8 bg-black bg-opacity-50 text-white rounded flex items-center justify-center opacity-100 hover:bg-opacity-75"
-        title="View fullscreen"
-      >
-        <FaExpand size={16} />
-      </button>
     </div>
   );
 
@@ -1093,9 +1093,9 @@ const ImageTools = () => {
   return (
     <ToolLayout
       title="Image Tools"
-      description="Resize, compress, crop, and convert images"
+      description="A collection of image manipulation and conversion tools"
     >
-      <div className="space-y-6">
+      <div className="space-y-6" data-tool="image">
         {isFullscreen && (
           <FullscreenModal
             image={processedImage}
@@ -1149,6 +1149,47 @@ const ImageTools = () => {
                   : "Drag & drop an image here, or click to select"}
               </p>
             )}
+          </div>
+        )}
+
+        {/* Metadata Display */}
+        {metadata && (
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium mb-2">File Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-gray-600">Name:</span>{" "}
+                <span data-content-type="filename">{metadata.name}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Type:</span>{" "}
+                <span data-content-type="filename">{metadata.type}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Size:</span>{" "}
+                <span>{metadata.size}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Dimensions:</span>{" "}
+                <span>{metadata.dimensions}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Last Modified:</span>{" "}
+                <span>{metadata.lastModified}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Image Preview */}
+        {processedImage && (
+          <div className="relative">
+            <img
+              src={processedImage}
+              alt="Preview"
+              className="max-w-full h-auto rounded image-preview"
+              ref={imageRef}
+            />
           </div>
         )}
 

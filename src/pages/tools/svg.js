@@ -38,6 +38,7 @@ const SvgTools = () => {
   const [fillColor, setFillColor] = useState("#000000");
   const [strokeColor, setStrokeColor] = useState("#000000");
   const [strokeWidth, setStrokeWidth] = useState(1);
+  const [error, setError] = useState(null);
 
   const extractColors = useCallback((content) => {
     const parser = new DOMParser();
@@ -122,12 +123,29 @@ const SvgTools = () => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(content, "image/svg+xml");
         const svg = doc.querySelector("svg");
-        if (svg && svg.getAttribute("viewBox")) {
-          const [x, y, width, height] = svg
-            .getAttribute("viewBox")
-            .split(" ")
-            .map(Number);
-          setViewBox({ x, y, width, height });
+
+        // Calculate viewBox if not present
+        if (svg) {
+          if (!svg.getAttribute("viewBox")) {
+            const width = svg.getAttribute("width") || "100";
+            const height = svg.getAttribute("height") || "100";
+            const viewBoxValue = `0 0 ${parseFloat(width)} ${parseFloat(
+              height
+            )}`;
+            svg.setAttribute("viewBox", viewBoxValue);
+            setViewBox({
+              x: 0,
+              y: 0,
+              width: parseFloat(width),
+              height: parseFloat(height),
+            });
+          } else {
+            const [x, y, width, height] = svg
+              .getAttribute("viewBox")
+              .split(" ")
+              .map(Number);
+            setViewBox({ x, y, width, height });
+          }
         }
       };
       reader.readAsText(file);
@@ -349,7 +367,7 @@ const SvgTools = () => {
 
       case "colors":
         return (
-          <div className="space-y-6">
+          <div className="space-y-6" data-tool="color-swap">
             {svgColors.length > 0 ? (
               <>
                 <p className="text-sm text-gray-600 mb-4">
@@ -357,34 +375,34 @@ const SvgTools = () => {
                   swatch to choose a replacement color. You can also type the
                   color value and press Enter or click outside to apply.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 justify-center">
+                <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-4 mx-auto">
                   {svgColors.map((color, index) => (
                     <div
                       key={index}
-                      className="flex items-center p-2 border rounded bg-white"
+                      className="flex items-center p-3 border rounded bg-white"
                     >
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center justify-between w-full">
                         {/* Original Color Section */}
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-3">
                           <div
-                            className="flex-none w-8 h-8 rounded border shadow-sm"
+                            className="flex-none w-10 h-10 rounded border shadow-sm"
                             style={{ backgroundColor: color }}
                           />
                           <div>
-                            <div className="text-xs font-medium text-gray-500">
+                            <div className="text-sm font-medium text-gray-500">
                               Original
                             </div>
-                            <div className="text-xs font-mono mt-1">
+                            <div className="text-sm font-mono mt-1">
                               {color}
                             </div>
                           </div>
                         </div>
 
                         {/* Arrow */}
-                        <div className="text-gray-400 text-sm">→</div>
+                        <div className="text-gray-400 text-lg mx-2">→</div>
 
                         {/* New Color Section */}
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-5">
                           <div className="relative">
                             <input
                               type="color"
@@ -400,7 +418,7 @@ const SvgTools = () => {
                             />
                             <label
                               htmlFor={`color-picker-${index}`}
-                              className="block w-8 h-8 rounded border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                              className="block w-10 h-10 rounded border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                               style={{
                                 backgroundColor:
                                   colorReplacements[color] || color,
@@ -408,7 +426,7 @@ const SvgTools = () => {
                             />
                           </div>
                           <div>
-                            <div className="text-xs font-medium text-gray-500">
+                            <div className="text-sm font-medium text-gray-500">
                               New
                             </div>
                             <input
@@ -451,7 +469,7 @@ const SvgTools = () => {
                                   }));
                                 }
                               }}
-                              className="w-[4.5rem] px-1 py-0.5 text-xs font-mono border rounded mt-1"
+                              className="w-28 px-2 py-1 text-sm font-mono border rounded"
                               placeholder="#000000"
                             />
                           </div>
@@ -580,6 +598,16 @@ const SvgTools = () => {
     navigate(`/tools/svg/${tabId}`);
   };
 
+  // Reset state when changing tabs
+  useEffect(() => {
+    setSvgContent(null);
+    setProcessedSvg(null);
+    setSvgColors([]);
+    setColorReplacements({});
+    setViewBox({ x: 0, y: 0, width: 0, height: 0 });
+    setError(null);
+  }, [activeTab]);
+
   return (
     <ToolLayout
       title="SVG Tools"
@@ -669,7 +697,7 @@ const SvgTools = () => {
                     dangerouslySetInnerHTML={{
                       __html: processedSvg.replace(
                         /<svg/,
-                        '<svg class="w-full h-full" preserveAspectRatio="xMidYMid meet"'
+                        '<svg class="w-full h-full svg-preview" preserveAspectRatio="xMidYMid meet"'
                       ),
                     }}
                   />
@@ -692,20 +720,8 @@ const SvgTools = () => {
                 Download SVG
               </button>
             </div>
-            <div className="border rounded-lg p-4 bg-gray-50">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-medium text-gray-700">
-                  SVG Code
-                </label>
-                <button
-                  onClick={() => copyToClipboard(processedSvg)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <FaCode className="inline mr-1" />
-                  Copy
-                </button>
-              </div>
-              <pre className="text-sm overflow-x-auto p-4 bg-white border rounded">
+            <div className="mt-4">
+              <pre className="bg-gray-50 p-4 rounded-lg overflow-x-auto svg-output">
                 {processedSvg}
               </pre>
             </div>
