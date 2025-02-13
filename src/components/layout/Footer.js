@@ -6,6 +6,7 @@ import {
   FaEnvelope,
   FaMapMarkerAlt,
   FaPhone,
+  FaCalendar,
 } from "react-icons/fa";
 
 const Footer = () => {
@@ -85,6 +86,15 @@ const Footer = () => {
               >
                 <FaEnvelope />
                 bxe5056@gmail.com
+              </a>
+              <a
+                href="https://calendar.app.google/V54vF6Rr9GzkHDjw6"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-gray-400 hover:text-primary-400 transition-colors"
+              >
+                <FaCalendar />
+                Schedule a Meeting
               </a>
               <div className="flex gap-4 pt-2">
                 <a

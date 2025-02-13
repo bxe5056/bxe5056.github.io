@@ -7,6 +7,7 @@ import {
   FaEnvelope,
   FaPhone,
   FaToolbox,
+  FaCalendar,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 
@@ -199,6 +200,22 @@ const Home = () => {
                     <FaArrowRight className="ml-2 transition-transform group-hover:translate-x-1 text-[20px] min-w-[20px]" />
                   </Link>
                 </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  className="w-full"
+                >
+                  <a
+                    href="https://calendar.app.google/V54vF6Rr9GzkHDjw6"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn text-xs xs:text-sm sm:text-base w-full inline-flex items-center justify-center gap-2 border-2 border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white transition-colors bg-white/80 backdrop-blur-sm"
+                  >
+                    <FaCalendar className="text-[20px] min-w-[20px]" />
+                    <AnimatedText>Schedule a Meeting</AnimatedText>
+                  </a>
+                </motion.div>
                 <div className="flex gap-2 w-full">
                   <motion.div
                     whileHover={{ scale: 1.05, y: -2 }}
@@ -261,7 +278,7 @@ const Home = () => {
       <section className="py-10 bg-white">
         <div className="container mx-auto px-4">
           <motion.div
-            className="max-w-4xl mx-auto text-center"
+            className="max-w-7xl mx-auto text-center"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-50px" }}
@@ -280,7 +297,7 @@ const Home = () => {
               I'm always open to discussing new projects, opportunities, and
               collaborations.
             </motion.p>
-            <div className="grid md:grid-cols-4 gap-8">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8">
               {[
                 {
                   icon: FaEnvelope,
@@ -289,16 +306,22 @@ const Home = () => {
                   href: "mailto:bxe5056@gmail.com",
                 },
                 {
-                  icon: FaGithub,
-                  title: "GitHub",
-                  text: "@bxe5056",
-                  href: "https://github.com/bxe5056",
+                  icon: FaCalendar,
+                  title: "Schedule",
+                  text: "Book a Meeting",
+                  href: "https://calendar.app.google/V54vF6Rr9GzkHDjw6",
                 },
                 {
                   icon: FaPhone,
                   title: "Phone",
                   text: "(814) 310-8292",
                   href: "tel:+18143108292",
+                },
+                {
+                  icon: FaGithub,
+                  title: "GitHub",
+                  text: "@bxe5056",
+                  href: "https://github.com/bxe5056",
                 },
                 {
                   icon: FaLinkedin,
@@ -319,7 +342,7 @@ const Home = () => {
                       ? undefined
                       : "noopener noreferrer"
                   }
-                  className="group p-6 bg-gray-50 rounded-xl hover:bg-primary-50 transition-all duration-300 hover:shadow-lg"
+                  className="group p-6 bg-gray-50 rounded-xl hover:bg-primary-50 transition-all duration-300 hover:shadow-lg flex-1 basis-[200px] max-w-[240px]"
                 >
                   <div className="mb-4">
                     <item.icon className="text-3xl text-primary-600 mx-auto group-hover:scale-110 transition-transform" />
