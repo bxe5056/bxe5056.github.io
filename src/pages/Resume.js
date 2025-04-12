@@ -15,7 +15,7 @@ const Resume = () => {
   const [useBoxViewer, setUseBoxViewer] = useState(false);
   const [pdfError, setPdfError] = useState(false);
 
-  const resumePath = "/fileFolder/EppingerResume-032525.pdf";
+  const resumePath = "/fileFolder/EppingerResume-041225.pdf";
   const boxEmbedUrl =
     "https://app.box.com/embed/preview/q15bsl0ont4er07suzw5sllndp6uehap?direction=ASC&theme=dark";
 
