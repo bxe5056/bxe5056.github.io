@@ -27,7 +27,7 @@ const toolCategories = [
     path: "/tools/data",
     icon: <FaTable className="text-2xl" />,
     description: "Convert between multiple data formats",
-    features: ["CSV", "JSON/JSON5", "YAML", "XML", "MD Table", "HTML Table"],
+    features: ["CSV", "JSON", "YAML", "XML", "MD Table", "HTML Table"],
     color: "purple",
   },
   {
@@ -114,6 +114,13 @@ const toolCategories = [
 const getToolPath = (category, feature) => {
   // Map feature names to their URL-friendly identifiers
   const featureMap = {
+    // Data Tools
+    CSV: "csvToJson",
+    JSON: "jsonToCsv",
+    YAML: "yamlToJson",
+    XML: "xmlToJson",
+    "MD Table": "md_tableTojson",
+    "HTML Table": "html_tableTojson",
     // Text Tools
     "Base64 Encoder/Decoder": "base64",
     "URL Encoder/Decoder": "url",
