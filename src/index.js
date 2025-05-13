@@ -1,19 +1,22 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
-import { BrowserRouter } from 'react-router-dom';
-import LogRocket from 'logrocket';
+import React from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import App from "./App";
+import reportWebVitals from "./reportWebVitals";
+import { BrowserRouter } from "react-router-dom";
+import LogRocket from "logrocket";
+import HttpsRedirect from "react-https-redirect";
 
-LogRocket.init('qjbrmo/bentheitguyme');
+LogRocket.init("qjbrmo/bentheitguyme");
 
-const container = document.getElementById('root');
+const container = document.getElementById("root");
 const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <HttpsRedirect>
+        <App />
+      </HttpsRedirect>
     </BrowserRouter>
   </React.StrictMode>
 );
