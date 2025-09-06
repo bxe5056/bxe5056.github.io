@@ -62,6 +62,12 @@ const Footer = () => {
               >
                 Tools
               </Link>
+              <Link
+                to="/privacy"
+                className="block text-gray-400 hover:text-primary-400 transition-colors"
+              >
+                Privacy Policy
+              </Link>
             </div>
           </div>
 

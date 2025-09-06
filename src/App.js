@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import Resume from "./pages/Resume";
 import Portfolio from "./pages/Portfolio";
 import About from "./pages/About";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import Tools from "./pages/Tools";
 import TextTools from "./pages/tools/text";
@@ -34,6 +35,7 @@ const App = () => {
         <Route path="/resume" element={<Resume />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/about" element={<About />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/experience" element={<Experience />} />
 
         {/* Tools Routes */}
