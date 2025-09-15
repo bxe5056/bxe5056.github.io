@@ -63,7 +63,7 @@ const toolCategories = [
     path: "/tools/svg",
     icon: <FaVectorSquare className="text-2xl" />,
     description: "SVG optimization and manipulation tools",
-    features: ["SVG Optimizer", "Color Replacer", "ViewBox Calculator"],
+    features: ["SVG Optimizer", "Color Replacer", "ViewBox Calculator", "Image to SVG"],
     color: "blue",
   },
   {
@@ -138,6 +138,7 @@ const getToolPath = (category, feature) => {
     "SVG Optimizer": "optimize",
     "Color Replacer": "colors",
     "ViewBox Calculator": "viewbox",
+    "Image to SVG": "image-to-svg",
     // Image Tools
     "Image Resize": "resize",
     "Image Compress": "compress",

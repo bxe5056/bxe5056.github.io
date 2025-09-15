@@ -57,6 +57,7 @@ const toolCategories = [
       "SVG optimizer",
       "Color replacer",
       "ViewBox calculator",
+      "Image to SVG converter",
       "SVG preview",
     ],
   },
