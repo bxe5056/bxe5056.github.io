@@ -16,6 +16,7 @@ import DataTools from "./pages/tools/data";
 import DevTools from "./pages/tools/dev";
 import PDFTools from "./pages/tools/pdf";
 import Experience from "./pages/Experience";
+import Present from "./pages/Present";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles/global.css";
 import posthog from "./utils/analytics";
@@ -37,6 +38,7 @@ const App = () => {
         <Route path="/about" element={<About />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/experience" element={<Experience />} />
+        <Route path="/present" element={<Present />} />
 
         {/* Tools Routes */}
         <Route path="/tools" element={<Tools />} />

@@ -15,6 +15,7 @@ const NavBar = () => {
   });
 
   const isHomePage = location.pathname === "/";
+  const isPresentPage = location.pathname === "/present";
 
   // Enhanced scroll animations with adjusted thresholds
   const headerHeight = useTransform(scrollY, [0, 50], ["4rem", "3.5rem"]);
@@ -68,6 +69,8 @@ const NavBar = () => {
     [0, 50],
     isHomePage
       ? ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 1)"]
+      : isPresentPage
+      ? ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 1)"]
       : ["rgba(31, 41, 55, 1)", "rgba(255, 255, 255, 1)"]
   );
 
@@ -75,6 +78,8 @@ const NavBar = () => {
     scrollY,
     [0, 50],
     isHomePage
+      ? ["rgba(255, 255, 255, 0.8)", "rgba(255, 255, 255, 0.8)"]
+      : isPresentPage
       ? ["rgba(255, 255, 255, 0.8)", "rgba(255, 255, 255, 0.8)"]
       : ["rgba(55, 65, 81, 0.9)", "rgba(241, 245, 249, 1)"]
   );
@@ -84,6 +89,8 @@ const NavBar = () => {
     [0, 50],
     isHomePage
       ? ["rgba(255, 255, 255, 0.8)", "rgba(255, 255, 255, 0.8)"]
+      : isPresentPage
+      ? ["rgba(255, 255, 255, 0.8)", "rgba(255, 255, 255, 0.8)"]
       : ["rgba(55, 65, 81, 0.9)", "rgba(241, 245, 249, 1)"]
   );
 
@@ -92,6 +99,8 @@ const NavBar = () => {
     [0, 50],
     isHomePage
       ? ["rgb(255, 255, 255)", "rgb(255, 255, 255)"]
+      : isPresentPage
+      ? ["rgb(255, 255, 255)", "rgb(255, 255, 255)"]
       : ["rgb(31, 41, 55)", "rgb(255, 255, 255)"]
   );
 
@@ -99,6 +108,11 @@ const NavBar = () => {
     scrollY,
     [0, 50],
     isHomePage
+      ? [
+          "linear-gradient(to right, rgb(255, 255, 255), rgb(255, 255, 255))",
+          "linear-gradient(to right, rgb(255, 255, 255), rgb(255, 255, 255))",
+        ]
+      : isPresentPage
       ? [
           "linear-gradient(to right, rgb(255, 255, 255), rgb(255, 255, 255))",
           "linear-gradient(to right, rgb(255, 255, 255), rgb(255, 255, 255))",
