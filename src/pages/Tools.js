@@ -41,6 +41,7 @@ const toolCategories = [
       "PDF to Images",
       "Images to PDF",
       "PDF Page Reorder",
+      "PDF Rotation",
     ],
     color: "red",
   },

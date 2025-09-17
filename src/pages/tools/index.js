@@ -32,7 +32,7 @@ const toolCategories = [
     path: "/tools/pdf",
     icon: FaFilePdf,
     description: "View, modify, and convert PDF files",
-    features: ["PDF Viewer", "PDF Merger", "PDF to Images", "Images to PDF"],
+    features: ["PDF Viewer", "PDF Merger", "PDF to Images", "Images to PDF", "PDF Page Reorder", "PDF Rotation"],
   },
   {
     title: "Color Tools",

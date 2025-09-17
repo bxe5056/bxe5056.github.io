@@ -21,8 +21,12 @@ import {
   FaExclamationCircle,
   FaTimes as FaClose,
   FaBug,
+  FaRedo,
+  FaUndo,
+  FaSync,
+  FaSyncAlt,
 } from "react-icons/fa";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, degrees } from "pdf-lib";
 import FileSaver from "file-saver";
 import JSZip from "jszip";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -91,6 +95,11 @@ const PDFTools = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [pdfPreview, setPdfPreview] = useState(null);
+  
+  // Rotation state
+  const [rotationAngles, setRotationAngles] = useState({}); // pageNumber -> angle
+  const [selectedPages, setSelectedPages] = useState([]);
+  const [rotationMode, setRotationMode] = useState("all"); // "all" or "selected"
 
   // Get the active tab from the URL path
   const getActiveTabFromPath = () => {
@@ -106,6 +115,8 @@ const PDFTools = () => {
         return "from-images";
       case "reorder":
         return "reorder";
+      case "rotate":
+        return "rotate";
       default:
         return "viewer";
     }
@@ -134,6 +145,10 @@ const PDFTools = () => {
     setSelectedFiles([]);
     setCurrentPdfUrl(null);
     setPdfPreview(null);
+    setPdfPages([]);
+    setRotationAngles({});
+    setSelectedPages([]);
+    setRotationMode("all");
   }, [activeTab]);
 
   // Update URL when tab changes
@@ -155,6 +170,9 @@ const PDFTools = () => {
         break;
       case "reorder":
         path = "reorder";
+        break;
+      case "rotate":
+        path = "rotate";
         break;
       default:
         path = "viewer";
@@ -323,7 +341,7 @@ const PDFTools = () => {
           if (newFiles.length > 0) {
             setCurrentPdfUrl(newFiles[newFiles.length - 1].url);
           }
-        } else if (activeTab === "reorder" && acceptedFiles[0]) {
+        } else if ((activeTab === "reorder" || activeTab === "rotate") && acceptedFiles[0]) {
           const pages = await extractPdfPages(acceptedFiles[0]);
           setPdfPages(pages);
           setSelectedFiles([
@@ -557,6 +575,101 @@ const PDFTools = () => {
     setPdfPages((prev) =>
       prev.filter((page) => page.pageNumber !== pageNumber)
     );
+  };
+
+  // Rotation functions
+  const rotatePDF = async (angle) => {
+    try {
+      setIsProcessing(true);
+      setError(null);
+      
+      if (selectedFiles.length === 0) {
+        setError("Please select a PDF file first");
+        return;
+      }
+
+      const pdfDoc = await PDFDocument.load(
+        await selectedFiles[0].file.arrayBuffer()
+      );
+      const pages = pdfDoc.getPages();
+
+      if (rotationMode === "all") {
+        // Rotate all pages
+        pages.forEach((page) => {
+          page.setRotation(degrees(angle));
+        });
+      } else {
+        // Rotate only selected pages
+        selectedPages.forEach((pageNumber) => {
+          if (pageNumber <= pages.length) {
+            pages[pageNumber - 1].setRotation(degrees(angle));
+          }
+        });
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      FileSaver.saveAs(blob, "rotated.pdf");
+    } catch (error) {
+      setError(showErrorWithReporting(error, "rotating PDF"));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const rotatePage = async (pageNumber, angle) => {
+    try {
+      setIsProcessing(true);
+      setError(null);
+      
+      if (selectedFiles.length === 0) {
+        setError("Please select a PDF file first");
+        return;
+      }
+
+      const pdfDoc = await PDFDocument.load(
+        await selectedFiles[0].file.arrayBuffer()
+      );
+      const pages = pdfDoc.getPages();
+
+      if (pageNumber <= pages.length) {
+        pages[pageNumber - 1].setRotation(degrees(angle));
+        
+        // Update rotation angles state
+        setRotationAngles(prev => ({
+          ...prev,
+          [pageNumber]: angle
+        }));
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      FileSaver.saveAs(blob, `page-${pageNumber}-rotated.pdf`);
+    } catch (error) {
+      setError(showErrorWithReporting(error, "rotating page"));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const togglePageSelection = (pageNumber) => {
+    setSelectedPages(prev => {
+      if (prev.includes(pageNumber)) {
+        return prev.filter(p => p !== pageNumber);
+      } else {
+        return [...prev, pageNumber];
+      }
+    });
+  };
+
+  const selectAllPages = () => {
+    if (pdfPages.length > 0) {
+      setSelectedPages(pdfPages.map(page => page.pageNumber));
+    }
+  };
+
+  const clearPageSelection = () => {
+    setSelectedPages([]);
   };
 
   // Update the renderContent function to use handleTabClick
@@ -937,6 +1050,195 @@ const PDFTools = () => {
             </div>
           </div>
         );
+      case "rotate":
+        return (
+          <div className="">
+            <div className="flex flex-col space-y-4">
+              {selectedFiles.length > 0 && pdfPages.length > 0 && (
+                <div className="flex justify-between items-center">
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => rotatePDF(90)}
+                      className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400 flex items-center gap-2"
+                      disabled={isProcessing}
+                    >
+                      <FaSync className="mr-1" />
+                      Rotate All 90°
+                    </button>
+                    <button
+                      onClick={() => rotatePDF(180)}
+                      className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400 flex items-center gap-2"
+                      disabled={isProcessing}
+                    >
+                      <FaSync className="mr-1" />
+                      Rotate All 180°
+                    </button>
+                    <button
+                      onClick={() => rotatePDF(270)}
+                      className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400 flex items-center gap-2"
+                      disabled={isProcessing}
+                    >
+                      <FaSyncAlt className="mr-1" />
+                      Rotate All 270°
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedFiles([]);
+                      setPdfPages([]);
+                      setCurrentPdfUrl(null);
+                      setRotationAngles({});
+                      setSelectedPages([]);
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              )}
+              
+              {/* Rotation Mode Selection */}
+              {pdfPages.length > 0 && (
+                <div className="border rounded p-4">
+                  <h3 className="text-lg font-medium mb-4">Rotation Mode</h3>
+                  <div className="flex space-x-4 mb-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        value="all"
+                        checked={rotationMode === "all"}
+                        onChange={(e) => setRotationMode(e.target.value)}
+                        className="mr-2"
+                      />
+                      Rotate All Pages
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        value="selected"
+                        checked={rotationMode === "selected"}
+                        onChange={(e) => setRotationMode(e.target.value)}
+                        className="mr-2"
+                      />
+                      Rotate Selected Pages
+                    </label>
+                  </div>
+                  
+                  {rotationMode === "selected" && (
+                    <div className="flex space-x-2 mb-4">
+                      <button
+                        onClick={selectAllPages}
+                        className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
+                      >
+                        Select All
+                      </button>
+                      <button
+                        onClick={clearPageSelection}
+                        className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
+                      >
+                        Clear Selection
+                      </button>
+                      <span className="text-sm text-gray-600 self-center">
+                        {selectedPages.length} page(s) selected
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {pdfPages.length > 0 && (
+                <div className="border rounded p-4">
+                  <h3 className="text-lg font-medium mb-2">PDF Pages:</h3>
+                  <div className="space-y-2">
+                    {pdfPages.map((page, index) => (
+                      <div
+                        key={page.pageNumber}
+                        className={`flex items-center justify-between p-2 rounded ${
+                          selectedPages.includes(page.pageNumber) 
+                            ? "bg-blue-50 border-2 border-blue-200" 
+                            : "bg-gray-50"
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <div className="w-16 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                            <img
+                              src={page.preview}
+                              alt={`Page ${page.pageNumber}`}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <span className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-900">
+                              Page {page.pageNumber}
+                            </p>
+                            {rotationAngles[page.pageNumber] && (
+                              <p className="text-xs text-gray-500">
+                                Rotated: {rotationAngles[page.pageNumber]}°
+                              </p>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2 flex-shrink-0">
+                          {rotationMode === "selected" && (
+                            <button
+                              onClick={() => togglePageSelection(page.pageNumber)}
+                              className={`px-3 py-1 rounded text-sm ${
+                                selectedPages.includes(page.pageNumber)
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                              }`}
+                            >
+                              {selectedPages.includes(page.pageNumber) ? "Selected" : "Select"}
+                            </button>
+                          )}
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={() => rotatePage(page.pageNumber, 90)}
+                              className="p-1 hover:bg-gray-200 rounded"
+                              title="Rotate 90°"
+                              disabled={isProcessing}
+                            >
+                              <FaSync className="text-gray-600" />
+                            </button>
+                            <button
+                              onClick={() => rotatePage(page.pageNumber, 180)}
+                              className="p-1 hover:bg-gray-200 rounded"
+                              title="Rotate 180°"
+                              disabled={isProcessing}
+                            >
+                              <FaRedo className="text-gray-600" />
+                            </button>
+                            <button
+                              onClick={() => rotatePage(page.pageNumber, 270)}
+                              className="p-1 hover:bg-gray-200 rounded"
+                              title="Rotate 270°"
+                              disabled={isProcessing}
+                            >
+                              <FaSyncAlt className="text-gray-600" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div
+                {...getPDFRootProps()}
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 h-[300px] flex flex-col justify-center"
+              >
+                <input {...getPDFInputProps()} />
+                <FaUpload className="mx-auto text-6xl mb-6 text-gray-400" />
+                <p className="text-lg">
+                  {selectedFiles.length === 0
+                    ? "Drag & drop a PDF file here, or click to select one"
+                    : "Drop a new PDF here, or click to select one"}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -961,6 +1263,7 @@ const PDFTools = () => {
                 { id: "to-images", label: "PDF to Images" },
                 { id: "from-images", label: "Images to PDF" },
                 { id: "reorder", label: "Page Reorder" },
+                { id: "rotate", label: "Rotate PDF" },
               ].map((tool) => (
                 <option key={tool.id} value={tool.id}>
                   {tool.label}
@@ -979,6 +1282,7 @@ const PDFTools = () => {
                   { id: "to-images", label: "PDF to Images" },
                   { id: "from-images", label: "Images to PDF" },
                   { id: "reorder", label: "Reorder Pages" },
+                  { id: "rotate", label: "Rotate PDF" },
                 ].map((tool) => (
                   <button
                     key={tool.id}
