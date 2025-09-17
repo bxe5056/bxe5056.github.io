@@ -56,11 +56,11 @@ const slides = [
       content: {
         achievement: "• New auto-focused team required immediate technical leadership and onboarding from day seven\n• Legacy monolithic JavaScript backend was limiting scalability and reusability\n• Third-party integrations required for comprehensive claims processing\n• Test suites were slow, flaky, and unreliable across the platform\n• Architecture patterns needed standardization across all claim systems",
         impact: "• Successfully onboarded entire new auto-focused development team\n• Implemented comprehensive third-party integrations for claims processing\n• Migrated from monolithic JavaScript backend to distributed AWS Lambda architecture\n• Applied DNA Software Pattern team expertise to fix pipeline and testing issues\n• Enabled reusability across all Liberty Mutual claim teams",
-        implementation: "• Led technical onboarding for new auto-focused team starting day 7\n• Architected migration from monolithic backend to distributed Lambda functions\n• Applied DNA Software Pattern team knowledge to resolve flaky test suites\n• Implemented pipeline fixes and testing improvements across the platform\n• Created reusable components and services for cross-system compatibility",
+        implementation: "• Led technical onboarding for new auto-focused team starting day seven\n• Architected migration from monolithic backend to distributed Lambda functions\n• Applied DNA Software Pattern team knowledge to resolve flaky test suites\n• Implemented pipeline fixes and testing improvements across the platform\n• Created reusable components and services for cross-system compatibility",
         benefits: "• Faster, more reliable test execution through pipeline improvements\n• Scalable distributed architecture enabling system-wide reusability\n• Streamlined team onboarding with clear technical foundations\n• Robust third-party integrations supporting comprehensive claims processing\n• Standardized architecture patterns across all claim systems\n• Reduced technical debt and improved maintainability",
         technologies: ["AWS Lambda", "JavaScript", "Third-Party APIs", "Test Automation", "CI/CD Pipelines", "Microservices", "DNA Software Patterns", "Team Onboarding"],
         metrics: [
-          "Complete team onboarding starting day 7",
+          "Complete team onboarding starting day seven",
           "Monolithic to distributed architecture migration",
           "Third-party integrations implemented",
           "Pipeline and testing reliability improvements"
