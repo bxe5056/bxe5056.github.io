@@ -27,14 +27,14 @@ const CATEGORIES = {
 const Experience = () => {
   const experiences = [
     {
-      title: "USA Climbing Volunteer Bouldering Judge",
+      title: "USA Climbing Volunteer Bouldering/TR/Lead Judge",
       company: "USA Climbing",
       date: "October 2024 - Ongoing",
       location: "Central & Northern CO (Region 42)",
       category: CATEGORIES.VOLUNTEER,
       keywords: ["Competition Judging", "Indoor Rock Climbing", "Safety"],
       points: [
-        "Certified Level 2 Bouldering Judge responsible for ensuring safety and rule compliance at USA Climbing competitions.",
+        "Certified Level 2 Bouldering/Top Rope/ Lead ClimbingJudge responsible for ensuring safety and rule compliance at USA Climbing competitions.",
         "Evaluate climber attempts according to official rules and standards, maintaining competition integrity.",
         "Collaborate with other judges and event staff to facilitate smooth competition operations.",
         "Contribute to the climbing community by supporting youth and adult competitive climbing events.",
