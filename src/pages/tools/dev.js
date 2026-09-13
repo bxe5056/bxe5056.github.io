@@ -24,7 +24,6 @@ import {
 } from "react-icons/fa";
 import { v4 as uuidv4 } from "uuid";
 import CryptoJS from "crypto-js";
-import cronstrue from "cronstrue";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { consumeSessionPayload } from "../../utils/tools/session";
 import { getCategoryTools } from "./catalog";
@@ -32,6 +31,7 @@ import { getCategoryTools } from "./catalog";
 const QrTool = lazy(() => import("./dev/QrTool"));
 const TimestampTool = lazy(() => import("./dev/TimestampTool"));
 const UnitsTool = lazy(() => import("./dev/UnitsTool"));
+const CronTool = lazy(() => import("./dev/CronTool"));
 
 const validTools = [
   "uuid",
@@ -44,7 +44,7 @@ const validTools = [
   "units",
 ];
 const defaultTool = "uuid";
-const LAZY_DEV_TOOLS = ["qr", "timestamp", "units"];
+const LAZY_DEV_TOOLS = ["qr", "timestamp", "units", "cron"];
 
 const DEV_ICONS = {
   uuid: FaRandom,
@@ -137,8 +137,6 @@ const DevTools = () => {
   const [regexReplacement, setRegexReplacement] = useState("");
   const [regexReplacePreview, setRegexReplacePreview] = useState(null);
   const [regexCheatOpen, setRegexCheatOpen] = useState(false);
-  const [cronExpression, setCronExpression] = useState("* * * * *");
-  const [cronDescription, setCronDescription] = useState("");
   const [faviconText, setFaviconText] = useState("");
   const [faviconColor, setFaviconColor] = useState("#000000");
   const [faviconBg, setFaviconBg] = useState("#ffffff");
@@ -278,16 +276,6 @@ const DevTools = () => {
       consumeSessionPayload();
     }
   }, [activeTab]);
-
-  // Cron Expression Generator
-  const parseCronExpression = useCallback(() => {
-    try {
-      const description = cronstrue.toString(cronExpression);
-      setCronDescription(description);
-    } catch (error) {
-      setCronDescription("Invalid cron expression");
-    }
-  }, [cronExpression]);
 
   // Favicon Generator
   const generateFavicon = useCallback(() => {
@@ -679,60 +667,6 @@ const DevTools = () => {
           </motion.div>
         );
 
-      case "cron":
-        return (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6"
-          >
-            <div className="space-y-4">
-              <input
-                type="text"
-                value={cronExpression}
-                onChange={(e) => setCronExpression(e.target.value)}
-                placeholder="Cron expression"
-                className="w-full px-4 py-2 border rounded"
-              />
-              <button
-                onClick={parseCronExpression}
-                className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
-              >
-                Parse Expression
-              </button>
-            </div>
-            {cronDescription && (
-              <div className="p-4 bg-gray-50 rounded">
-                <p>{cronDescription}</p>
-              </div>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-center text-sm">
-              <div>
-                <div className="font-medium">Minutes</div>
-                <div className="text-gray-500">0-59</div>
-              </div>
-              <div>
-                <div className="font-medium">Hours</div>
-                <div className="text-gray-500">0-23</div>
-              </div>
-              <div>
-                <div className="font-medium">Day of Month</div>
-                <div className="text-gray-500">1-31</div>
-              </div>
-              <div>
-                <div className="font-medium">Month</div>
-                <div className="text-gray-500">1-12</div>
-              </div>
-              <div>
-                <div className="font-medium">Day of Week</div>
-                <div className="text-gray-500">0-6</div>
-              </div>
-            </div>
-          </motion.div>
-        );
-
       case "favicon":
         return (
           <motion.div
@@ -808,6 +742,7 @@ const DevTools = () => {
       case "qr":
       case "timestamp":
       case "units":
+      case "cron":
         return null;
 
       default:
@@ -862,6 +797,19 @@ const DevTools = () => {
               }
             >
               <UnitsTool />
+            </Suspense>
+          </div>
+        )}
+        {lazyMounted.has("cron") && (
+          <div className={activeTab === "cron" ? "block" : "hidden"}>
+            <Suspense
+              fallback={
+                <div className="text-center text-gray-500 py-8">
+                  Loading cron tool…
+                </div>
+              }
+            >
+              <CronTool />
             </Suspense>
           </div>
         )}
