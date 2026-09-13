@@ -20,6 +20,9 @@ import {
   FaArrowRight,
   FaCode,
   FaExclamationTriangle,
+  FaDownload,
+  FaEye,
+  FaExchangeAlt,
 } from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
 import {
@@ -29,6 +32,12 @@ import {
   hslToRgb,
 } from "../../utils/colorConversion";
 import { copyText } from "../../utils/tools/clipboard";
+import { downloadText } from "../../utils/tools/download";
+import { openToolWithPayload } from "../../utils/tools/handoff";
+import {
+  paletteToCssVariables,
+  paletteToSvgSwatches,
+} from "../../utils/tools/paletteExport";
 import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
 
 const BlindnessTool = lazy(() => import("./color/BlindnessTool"));
@@ -119,6 +128,81 @@ const QuickActionButtons = ({
   </div>
 );
 
+/** Export / handoff actions for a color list (extract results + saved palettes). */
+const PaletteExportActions = ({ colors, copyToClipboard, navigate }) => {
+  const list = Array.isArray(colors) ? colors.filter(Boolean) : [];
+  if (list.length === 0) return null;
+
+  const css = paletteToCssVariables(list);
+  const svg = paletteToSvgSwatches(list);
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={() => copyToClipboard(css)}
+        className="px-3 py-1.5 text-xs border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center gap-1"
+        title="Copy CSS custom properties"
+      >
+        <FaCode className="text-xs" />
+        Copy CSS
+      </button>
+      <button
+        type="button"
+        onClick={() => downloadText(css, "palette.css", "text/css")}
+        className="px-3 py-1.5 text-xs border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center gap-1"
+        title="Download CSS variables"
+      >
+        <FaDownload className="text-xs" />
+        CSS file
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          downloadText(svg, "palette-swatches.svg", "image/svg+xml")
+        }
+        className="px-3 py-1.5 text-xs border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center gap-1"
+        title="Download SVG swatches"
+      >
+        <FaDownload className="text-xs" />
+        SVG swatches
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          openToolWithPayload({
+            category: "color",
+            toolId: "blindness",
+            payload: { type: "colors", colors: list },
+            navigate,
+          })
+        }
+        className="px-3 py-1.5 text-xs border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center gap-1"
+        title="Open colors in Color Blindness"
+      >
+        <FaEye className="text-xs" />
+        Open in Color Blindness
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          openToolWithPayload({
+            category: "svg",
+            toolId: "colors",
+            payload: { type: "colors", colors: list },
+            navigate,
+          })
+        }
+        className="px-3 py-1.5 text-xs border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center gap-1"
+        title="Open colors in SVG Color Swap"
+      >
+        <FaExchangeAlt className="text-xs" />
+        Open in SVG Color Swap
+      </button>
+    </div>
+  );
+};
+
 // Update the saved palette display in SavedPalettesSection
 const SavedPalettesSection = ({
   type,
@@ -128,6 +212,7 @@ const SavedPalettesSection = ({
   onColorSelect,
   setColor,
   setActiveTab,
+  navigate,
 }) => {
   const storageKey = `savedPalettes_${type}`;
   const savedPalettes = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -224,6 +309,11 @@ const SavedPalettesSection = ({
           </div>
         );
       })}
+      <PaletteExportActions
+        colors={palette.colors}
+        copyToClipboard={copyToClipboard}
+        navigate={navigate}
+      />
     </div>
   );
 
@@ -302,6 +392,11 @@ const SavedPalettesSection = ({
           );
         })}
       </div>
+      <PaletteExportActions
+        colors={palette.colors}
+        copyToClipboard={copyToClipboard}
+        navigate={navigate}
+      />
     </div>
   );
 
@@ -1262,6 +1357,7 @@ const ColorTools = () => {
               onColorSelect={handleColorSelect}
               setColor={setColor}
               setActiveTab={handleTabChange}
+              navigate={navigate}
             />
           </div>
         );
@@ -1341,6 +1437,7 @@ const ColorTools = () => {
               onColorSelect={handleColorSelect}
               setColor={setColor}
               setActiveTab={handleTabChange}
+              navigate={navigate}
             />
           </div>
         );
@@ -1529,6 +1626,7 @@ const ColorTools = () => {
               onColorSelect={handleColorSelect}
               setColor={setColor}
               setActiveTab={handleTabChange}
+              navigate={navigate}
             />
           </div>
         );
@@ -1704,6 +1802,11 @@ const ColorTools = () => {
                     </div>
                   ))}
                 </div>
+                <PaletteExportActions
+                  colors={extractedColors}
+                  copyToClipboard={copyToClipboard}
+                  navigate={navigate}
+                />
               </div>
             )}
             <SavedPalettesSection
@@ -1714,6 +1817,7 @@ const ColorTools = () => {
               onColorSelect={handleColorSelect}
               setColor={setColor}
               setActiveTab={handleTabChange}
+              navigate={navigate}
             />
           </div>
         );
