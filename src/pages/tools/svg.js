@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import ToolLayout from "../../components/tools/ToolLayout";
 import { useDropzone } from "react-dropzone";
 import {
@@ -13,6 +13,8 @@ import {
 } from "react-icons/fa";
 import { optimize } from "svgo/dist/svgo.browser";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
+
+const SvgColorTool = lazy(() => import("./svg/SvgColorTool"));
 
 const validTools = ["optimize", "colors", "viewbox", "image-to-svg"];
 const defaultTool = "optimize";
@@ -33,13 +35,16 @@ const SvgTools = () => {
     width: 100,
     height: 100,
   });
-  const [svgColors, setSvgColors] = useState([]);
-  const [colorReplacements, setColorReplacements] = useState({});
-  const [tempInputValues, setTempInputValues] = useState({});
   const [fillColor, setFillColor] = useState("#000000");
   const [strokeColor, setStrokeColor] = useState("#000000");
   const [strokeWidth, setStrokeWidth] = useState(1);
   const [error, setError] = useState(null);
+  // Keep Color Swap mounted after first visit so its local SVG state survives tab changes
+  const [colorToolMounted, setColorToolMounted] = useState(() => {
+    const pathParam = location.pathname.split("/").pop();
+    if (pathParam === "colors") return true;
+    return (searchParams.get("tool") || defaultTool) === "colors";
+  });
   
   // Image to SVG states
   const [uploadedImage, setUploadedImage] = useState(null);
@@ -48,32 +53,6 @@ const SvgTools = () => {
   const [editableColors, setEditableColors] = useState([]);
   const [generatedSvgs, setGeneratedSvgs] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const extractColors = useCallback((content) => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(content, "image/svg+xml");
-    const elements = doc.querySelectorAll("*");
-    const uniqueColors = new Set();
-
-    elements.forEach((el) => {
-      const fill = el.getAttribute("fill");
-      const stroke = el.getAttribute("stroke");
-      const style = el.getAttribute("style");
-
-      if (fill && fill !== "none") uniqueColors.add(fill);
-      if (stroke && stroke !== "none") uniqueColors.add(stroke);
-      if (style) {
-        const fillMatch = style.match(/fill:\s*([^;]+)/);
-        const strokeMatch = style.match(/stroke:\s*([^;]+)/);
-        if (fillMatch && fillMatch[1] !== "none")
-          uniqueColors.add(fillMatch[1]);
-        if (strokeMatch && strokeMatch[1] !== "none")
-          uniqueColors.add(strokeMatch[1]);
-      }
-    });
-
-    return Array.from(uniqueColors);
-  }, []);
 
   // Color quantization algorithm using k-means clustering
   const quantizeColors = useCallback((imageData, numColors) => {
@@ -354,16 +333,6 @@ const SvgTools = () => {
           setSvgContent(contentWithMetadata);
           setProcessedSvg(contentWithMetadata);
 
-          // Extract colors from SVG
-          const colors = extractColors(content);
-          setSvgColors(colors);
-          // Initialize color replacements object
-          const initialReplacements = {};
-          colors.forEach((color) => {
-            initialReplacements[color] = color;
-          });
-          setColorReplacements(initialReplacements);
-
           // Extract viewBox from SVG
           const parser = new DOMParser();
           const doc = parser.parseFromString(content, "image/svg+xml");
@@ -396,7 +365,7 @@ const SvgTools = () => {
         reader.readAsText(file);
       }
     },
-    [activeTab, extractColors, removeOtherComments, addMetadata, processImageForColors, generateSvgsFromImage]
+    [activeTab, removeOtherComments, addMetadata, processImageForColors, generateSvgsFromImage]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -538,48 +507,6 @@ const SvgTools = () => {
     URL.revokeObjectURL(url);
   };
 
-  const replaceColors = useCallback(() => {
-    if (!svgContent) return;
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgContent, "image/svg+xml");
-    const elements = doc.querySelectorAll("*");
-
-    elements.forEach((el) => {
-      const fill = el.getAttribute("fill");
-      const stroke = el.getAttribute("stroke");
-      const style = el.getAttribute("style");
-
-      if (fill && fill !== "none" && colorReplacements[fill]) {
-        el.setAttribute("fill", colorReplacements[fill]);
-      }
-      if (stroke && stroke !== "none" && colorReplacements[stroke]) {
-        el.setAttribute("stroke", colorReplacements[stroke]);
-      }
-      if (style) {
-        let newStyle = style;
-        Object.entries(colorReplacements).forEach(([oldColor, newColor]) => {
-          newStyle = newStyle.replace(
-            new RegExp(`fill:\\s*${oldColor}`, "g"),
-            `fill: ${newColor}`
-          );
-          newStyle = newStyle.replace(
-            new RegExp(`stroke:\\s*${oldColor}`, "g"),
-            `stroke: ${newColor}`
-          );
-        });
-        if (newStyle !== style) {
-          el.setAttribute("style", newStyle);
-        }
-      }
-    });
-
-    const serializer = new XMLSerializer();
-    let result = serializer.serializeToString(doc);
-    result = removeOtherComments(result);
-    setProcessedSvg(addMetadata(result));
-  }, [svgContent, colorReplacements, removeOtherComments, addMetadata]);
-
   // Handle color editing for image-to-svg
   const updateEditableColor = useCallback((index, newColor) => {
     setEditableColors(prev => 
@@ -672,137 +599,8 @@ const SvgTools = () => {
         );
 
       case "colors":
-        return (
-          <div className="space-y-6" data-tool="color-swap">
-            {svgColors.length > 0 ? (
-              <>
-                <p className="text-sm text-gray-600 mb-4">
-                  Click on any <span className="font-medium">New</span> color
-                  swatch to choose a replacement color. You can also type the
-                  color value and press Enter or click outside to apply.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-4 mx-auto">
-                  {svgColors.map((color, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center p-3 border rounded bg-white"
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        {/* Original Color Section */}
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className="flex-none w-10 h-10 rounded border shadow-sm"
-                            style={{ backgroundColor: color }}
-                          />
-                          <div>
-                            <div className="text-sm font-medium text-gray-500">
-                              Original
-                            </div>
-                            <div className="text-sm font-mono mt-1">
-                              {color}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Arrow */}
-                        <div className="text-gray-400 text-lg mx-2">→</div>
-
-                        {/* New Color Section */}
-                        <div className="flex items-center space-x-5">
-                          <div className="relative">
-                            <input
-                              type="color"
-                              value={colorReplacements[color] || color}
-                              onChange={(e) =>
-                                setColorReplacements((prev) => ({
-                                  ...prev,
-                                  [color]: e.target.value,
-                                }))
-                              }
-                              className="sr-only"
-                              id={`color-picker-${index}`}
-                            />
-                            <label
-                              htmlFor={`color-picker-${index}`}
-                              className="block w-10 h-10 rounded border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                              style={{
-                                backgroundColor:
-                                  colorReplacements[color] || color,
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-500">
-                              New
-                            </div>
-                            <input
-                              type="text"
-                              value={
-                                tempInputValues[color] ??
-                                (colorReplacements[color] || color)
-                              }
-                              onChange={(e) => {
-                                const newValue = e.target.value;
-                                setTempInputValues((prev) => ({
-                                  ...prev,
-                                  [color]: newValue,
-                                }));
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.target.blur();
-                                }
-                              }}
-                              onBlur={(e) => {
-                                const newValue = e.target.value;
-                                const isValidHex =
-                                  /^#([0-9A-Fa-f]{3}){1,2}$/.test(newValue);
-                                const isValidRgb =
-                                  /^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/.test(
-                                    newValue
-                                  );
-
-                                if (isValidHex || isValidRgb) {
-                                  setColorReplacements((prev) => ({
-                                    ...prev,
-                                    [color]: newValue,
-                                  }));
-                                } else {
-                                  // Reset input to the last valid color
-                                  setTempInputValues((prev) => ({
-                                    ...prev,
-                                    [color]: colorReplacements[color] || color,
-                                  }));
-                                }
-                              }}
-                              className="w-28 px-2 py-1 text-sm font-mono border rounded"
-                              placeholder="#000000"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  onClick={() => {
-                    // Clear any temporary input values
-                    setTempInputValues({});
-                    replaceColors();
-                  }}
-                  disabled={!svgContent}
-                  className="w-full max-w-[1200px] mx-auto px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400"
-                >
-                  Replace Colors
-                </button>
-              </>
-            ) : (
-              <p className="text-center text-gray-500">
-                Select an SVG to replace its colors
-              </p>
-            )}
-          </div>
-        );
+        // Rendered via keep-alive below so upload state survives tab switches
+        return null;
 
       case "viewbox":
         return (
@@ -1067,21 +865,13 @@ const SvgTools = () => {
     navigate(`/tools/svg/${tabId}`);
   };
 
-  // Reset state when changing tabs
+  // Keep SVG / image work when switching tabs (Color Swap owns its own state).
+  // Only clear transient error banners on tab change.
   useEffect(() => {
-    setSvgContent(null);
-    setProcessedSvg(null);
-    setSvgColors([]);
-    setColorReplacements({});
-    setViewBox({ x: 0, y: 0, width: 0, height: 0 });
     setError(null);
-    
-    // Reset image-to-svg states
-    setUploadedImage(null);
-    setImageColors([]);
-    setEditableColors([]);
-    setGeneratedSvgs([]);
-    setIsProcessing(false);
+    if (activeTab === "colors") {
+      setColorToolMounted(true);
+    }
   }, [activeTab]);
 
   return (
@@ -1140,8 +930,10 @@ const SvgTools = () => {
           </div>
         </div>
 
-        {/* File Selector */}
-        {((activeTab !== "image-to-svg" && !svgContent) || (activeTab === "image-to-svg" && !uploadedImage)) && (
+        {/* File Selector — Color Swap uses its own dropzone inside SvgColorTool */}
+        {activeTab !== "colors" &&
+          ((activeTab !== "image-to-svg" && !svgContent) ||
+            (activeTab === "image-to-svg" && !uploadedImage)) && (
           <div
             {...getRootProps()}
             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
@@ -1162,11 +954,29 @@ const SvgTools = () => {
           </div>
         )}
 
-        {/* Tool Interface */}
-        {((activeTab !== "image-to-svg" && svgContent) || (activeTab === "image-to-svg" && uploadedImage)) && renderTool()}
+        {/* Color Swap keep-alive (lazy) — prefer editing ./svg/* over this shell */}
+        {colorToolMounted && (
+          <div className={activeTab === "colors" ? "block" : "hidden"}>
+            <Suspense
+              fallback={
+                <div className="text-center text-gray-500 py-8">
+                  Loading color tool…
+                </div>
+              }
+            >
+              <SvgColorTool />
+            </Suspense>
+          </div>
+        )}
 
-        {/* Preview and Actions */}
-        {processedSvg && (
+        {/* Tool Interface */}
+        {activeTab !== "colors" &&
+          ((activeTab !== "image-to-svg" && svgContent) ||
+            (activeTab === "image-to-svg" && uploadedImage)) &&
+          renderTool()}
+
+        {/* Preview and Actions — Color Swap renders its own preview */}
+        {activeTab !== "colors" && processedSvg && (
           <div className="space-y-4">
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2">Preview</h3>
