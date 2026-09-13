@@ -1,14 +1,31 @@
 /**
  * SVG color extract / replace engine.
  * Walks paint attributes, inline style, and <style> blocks.
- * Solid colors are grouped via normalizeSvgColor; none / currentColor / url()
- * are left alone unless the caller opts in.
+ * Solid colors are grouped via normalizeSvgColor; none / transparent /
+ * currentColor / url() are left alone unless the caller opts in.
+ * Replacements may target TRANSPARENT_PAINT (`none`) for any solid color.
  */
 
 import {
   normalizeSvgColor,
   isPaintServerOrSpecial,
 } from "../../../utils/tools/svgColorNormalize";
+
+/**
+ * Canonical replacement for “no paint” / transparent in SVG fill & stroke.
+ * Prefer `none` over the CSS keyword `transparent` for paint attributes.
+ */
+export const TRANSPARENT_PAINT = "none";
+
+/**
+ * True for SVG/CSS tokens that mean fully transparent / no paint.
+ * @param {unknown} token
+ * @returns {boolean}
+ */
+export function isTransparentPaint(token) {
+  const t = String(token ?? "").trim().toLowerCase();
+  return t === "none" || t === "transparent";
+}
 
 /** @type {readonly string[]} */
 export const PAINT_ATTRIBUTES = Object.freeze([
@@ -29,7 +46,9 @@ const PAINT_STYLE_PROPS = new Set(PAINT_ATTRIBUTES);
 function classifyToken(token) {
   const t = String(token ?? "").trim();
   if (!t) return "other";
-  if (isPaintServerOrSpecial(t)) return "special";
+  // `transparent` is not a paint-server special in normalize helpers, but it is
+  // meaningful “no paint” — treat like none/currentColor for extract/opt-in.
+  if (isPaintServerOrSpecial(t) || isTransparentPaint(t)) return "special";
   if (normalizeSvgColor(t)) return "solid";
   return "other";
 }

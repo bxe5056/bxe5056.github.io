@@ -13,7 +13,13 @@ import {
   extractSvgColors,
   replaceSvgColors,
   splitSvgByColor,
+  isTransparentPaint,
+  TRANSPARENT_PAINT,
 } from "./svgColorEngine";
+
+/** Checkerboard so transparent paints / empty regions are visible. */
+const CHECKERBOARD =
+  "bg-[length:12px_12px] bg-[linear-gradient(45deg,#e5e7eb_25%,transparent_25%,transparent_75%,#e5e7eb_75%),linear-gradient(45deg,#e5e7eb_25%,transparent_25%,transparent_75%,#e5e7eb_75%)] bg-[position:0_0,6px_6px]";
 
 /**
  * Self-contained SVG color extract + replace UI.
@@ -218,14 +224,17 @@ const SvgColorTool = () => {
 
   const commitTextReplacement = useCallback((canonical, rawValue) => {
     const value = String(rawValue ?? "").trim();
+    const isTransparent = isTransparentPaint(value);
     const isHex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(value);
     const isRgb = /^rgba?\(\s*[\d.%]+\s*[,/\s]+[\d.%]+\s*[,/\s]+[\d.%]+(?:\s*[,/]\s*[\d.%]+)?\s*\)$/i.test(
       value
     );
     const isNamed = /^[a-zA-Z]+$/.test(value);
 
-    if (isHex || isRgb || isNamed) {
-      setReplacements((prev) => ({ ...prev, [canonical]: value }));
+    if (isTransparent || isHex || isRgb || isNamed) {
+      // Prefer SVG `none` for no-paint; accept typed `transparent` as the same intent
+      const committed = isTransparent ? TRANSPARENT_PAINT : value;
+      setReplacements((prev) => ({ ...prev, [canonical]: committed }));
       setTempInputs((prev) => {
         const next = { ...prev };
         delete next[canonical];
@@ -238,6 +247,15 @@ const SvgColorTool = () => {
       }));
     }
   }, [replacements]);
+
+  const setTransparentReplacement = useCallback((canonical) => {
+    setReplacements((prev) => ({ ...prev, [canonical]: TRANSPARENT_PAINT }));
+    setTempInputs((prev) => {
+      const next = { ...prev };
+      delete next[canonical];
+      return next;
+    });
+  }, []);
 
   if (!workingSvg) {
     return (
@@ -305,10 +323,12 @@ const SvgColorTool = () => {
 
       <p className="text-sm text-gray-600">
         Equivalent colors (e.g. <code className="text-xs">#f00</code> and{" "}
-        <code className="text-xs">red</code>) are grouped.{" "}
+        <code className="text-xs">red</code>) are grouped. Use{" "}
+        <span className="font-medium">None</span> on any row to replace with transparent SVG{" "}
+        <code className="text-xs">none</code>. Existing{" "}
         <span className="font-medium">none</span>,{" "}
         <span className="font-medium">currentColor</span>, and{" "}
-        <span className="font-medium">url(...)</span> paints are left alone unless you opt in below.
+        <span className="font-medium">url(...)</span> paints stay untouched unless you opt in below.
       </p>
 
       {colorGroups.length === 0 ? (
@@ -320,6 +340,7 @@ const SvgColorTool = () => {
           {colorGroups.map((group, index) => {
             const current = replacements[group.canonical] || group.canonical;
             const inputValue = tempInputs[group.canonical] ?? current;
+            const currentIsTransparent = isTransparentPaint(current);
             return (
               <div
                 key={group.canonical}
@@ -359,19 +380,35 @@ const SvgColorTool = () => {
                             ? current
                             : group.canonical
                         }
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setReplacements((prev) => ({
                             ...prev,
                             [group.canonical]: e.target.value,
-                          }))
-                        }
+                          }));
+                          setTempInputs((prev) => {
+                            const next = { ...prev };
+                            delete next[group.canonical];
+                            return next;
+                          });
+                        }}
                         className="sr-only"
                         id={`svg-color-picker-${index}`}
                       />
                       <label
                         htmlFor={`svg-color-picker-${index}`}
-                        className="block w-10 h-10 rounded border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                        style={{ backgroundColor: current }}
+                        className={`block w-10 h-10 rounded border shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                          currentIsTransparent ? CHECKERBOARD : ""
+                        }`}
+                        style={
+                          currentIsTransparent
+                            ? undefined
+                            : { backgroundColor: current }
+                        }
+                        title={
+                          currentIsTransparent
+                            ? "Transparent (none) — click to pick a solid color"
+                            : "Pick a solid color"
+                        }
                       />
                     </div>
                     <div>
@@ -393,8 +430,20 @@ const SvgColorTool = () => {
                           commitTextReplacement(group.canonical, e.target.value)
                         }
                         className="w-28 px-2 py-1 text-sm font-mono border rounded"
-                        placeholder="#000000"
+                        placeholder="#000000 or none"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setTransparentReplacement(group.canonical)}
+                        className={`mt-1 text-xs px-2 py-0.5 rounded border transition-colors ${
+                          currentIsTransparent
+                            ? "bg-gray-800 text-white border-gray-800"
+                            : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                        }`}
+                        title="Replace with SVG none (transparent / no paint)"
+                      >
+                        None / transparent
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -470,8 +519,10 @@ const SvgColorTool = () => {
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold mb-2">Preview</h3>
-            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-              <div className="relative w-full aspect-video overflow-hidden flex items-center justify-center">
+            <div className="border border-gray-200 rounded-lg p-4 bg-white">
+              <div
+                className={`relative w-full aspect-video overflow-hidden flex items-center justify-center rounded ${CHECKERBOARD}`}
+              >
                 <img
                   src={previewUrl}
                   alt="SVG color preview"
