@@ -5,12 +5,42 @@ import { copyText } from "../../../utils/tools/clipboard";
 import { consumeSessionPayload } from "../../../utils/tools/session";
 
 const PRESETS = [
-  { id: "every-minute", label: "Every minute", expression: "* * * * *" },
-  { id: "hourly", label: "Hourly", expression: "0 * * * *" },
-  { id: "daily", label: "Daily", expression: "0 0 * * *" },
-  { id: "weekly", label: "Weekly", expression: "0 0 * * 0" },
-  { id: "weekdays", label: "Weekdays", expression: "0 0 * * 1-5" },
-  { id: "custom", label: "Custom", expression: null },
+  {
+    id: "every-minute",
+    label: "Every minute",
+    expression: "* * * * *",
+    editableFields: [],
+  },
+  {
+    id: "hourly",
+    label: "Hourly",
+    expression: "0 * * * *",
+    editableFields: ["minute"],
+  },
+  {
+    id: "daily",
+    label: "Daily",
+    expression: "0 0 * * *",
+    editableFields: ["minute", "hour"],
+  },
+  {
+    id: "weekly",
+    label: "Weekly",
+    expression: "0 0 * * 0",
+    editableFields: ["minute", "hour", "dow"],
+  },
+  {
+    id: "weekdays",
+    label: "Weekdays",
+    expression: "0 0 * * 1-5",
+    editableFields: ["minute", "hour"],
+  },
+  {
+    id: "custom",
+    label: "Custom",
+    expression: null,
+    editableFields: ["minute", "hour", "dom", "month", "dow"],
+  },
 ];
 
 const MONTH_LABELS = [
@@ -505,7 +535,7 @@ function matchPresetId(expression) {
   return hit ? hit.id : "custom";
 }
 
-function FieldBuilder({ def, field, onChange, disabled }) {
+function FieldBuilder({ def, field, onChange }) {
   const options = [];
   for (let i = def.min; i <= def.max; i++) {
     options.push(i);
@@ -514,11 +544,7 @@ function FieldBuilder({ def, field, onChange, disabled }) {
   const setMode = (mode) => onChange({ ...field, mode });
 
   return (
-    <div
-      className={`border border-gray-200 rounded-lg p-3 bg-white ${
-        disabled ? "opacity-60 pointer-events-none" : ""
-      }`}
-    >
+    <div className="border border-gray-200 rounded-lg p-3 bg-white">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <h3 className="text-sm font-medium text-gray-800">{def.label}</h3>
         <span className="text-xs text-gray-500 font-mono">
@@ -662,12 +688,30 @@ export default function CronTool() {
   const [nextCount, setNextCount] = useState(5);
   const [syncFromRaw, setSyncFromRaw] = useState(false);
 
+  const activePreset = useMemo(
+    () => PRESETS.find((p) => p.id === presetId) || PRESETS[PRESETS.length - 1],
+    [presetId]
+  );
+
+  const visibleFieldKeys = activePreset.editableFields;
+
   const expression = useMemo(() => {
-    if (presetId !== "custom") {
-      const preset = PRESETS.find((p) => p.id === presetId);
-      return preset?.expression || "* * * * *";
+    if (presetId === "custom") {
+      return fieldsToExpression(fields);
     }
-    return fieldsToExpression(fields);
+    const preset = PRESETS.find((p) => p.id === presetId);
+    if (!preset?.expression) return fieldsToExpression(fields);
+
+    const editable = preset.editableFields || [];
+    if (editable.length === 0) return preset.expression;
+
+    const baseParts = preset.expression.split(/\s+/);
+    return FIELD_DEFS.map((def, i) => {
+      if (editable.includes(def.key)) {
+        return fieldToPart(fields[def.key], def);
+      }
+      return baseParts[i];
+    }).join(" ");
   }, [presetId, fields]);
 
   // Keep raw textarea in sync when builders change (unless user is editing raw)
@@ -753,9 +797,15 @@ export default function CronTool() {
   };
 
   const handleFieldChange = (key, nextField) => {
-    setPresetId("custom");
     setSyncFromRaw(false);
     setFields((prev) => ({ ...prev, [key]: nextField }));
+    const preset = PRESETS.find((p) => p.id === presetId);
+    const editable = preset?.editableFields || [];
+    // Stay on the current preset when editing one of its allowed fields;
+    // otherwise fall back to Custom (e.g. unexpected key).
+    if (presetId !== "custom" && !editable.includes(key)) {
+      setPresetId("custom");
+    }
   };
 
   const handleRawChange = (value) => {
@@ -774,8 +824,6 @@ export default function CronTool() {
     const ok = await copyText(rawText.trim());
     setStatus(ok ? "Copied cron expression" : "Could not copy to clipboard");
   };
-
-  const buildersDisabled = presetId !== "custom";
 
   return (
     <div data-tool="cron">
@@ -822,23 +870,24 @@ export default function CronTool() {
         }
         controls={
           <div className="w-full space-y-3">
-            {buildersDisabled && (
-              <p className="text-xs text-gray-500">
-                Switch to Custom to edit individual fields, or edit the expression
-                above.
+            {visibleFieldKeys.length === 0 ? (
+              <p className="text-sm text-gray-600 px-1 py-2">
+                Uses fixed schedule — switch to Custom to edit fields
               </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 w-full">
+                {FIELD_DEFS.filter((def) =>
+                  visibleFieldKeys.includes(def.key)
+                ).map((def) => (
+                  <FieldBuilder
+                    key={def.key}
+                    def={def}
+                    field={fields[def.key]}
+                    onChange={(next) => handleFieldChange(def.key, next)}
+                  />
+                ))}
+              </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 w-full">
-              {FIELD_DEFS.map((def) => (
-                <FieldBuilder
-                  key={def.key}
-                  def={def}
-                  field={fields[def.key]}
-                  disabled={buildersDisabled}
-                  onChange={(next) => handleFieldChange(def.key, next)}
-                />
-              ))}
-            </div>
           </div>
         }
         preview={
