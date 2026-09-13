@@ -21,10 +21,25 @@ import {
   rgbToHsl,
   hslToRgb,
 } from "../../utils/colorConversion";
+import { copyText } from "../../utils/tools/clipboard";
 import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
 
 const validTools = ["picker", "palette", "gradient", "contrast", "extract"];
 const defaultTool = "picker";
+/** Cap longest edge so color sampling stays responsive on large images */
+const MAX_EXTRACT_DIMENSION = 200;
+
+const getDownsampledImageData = (img) => {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const maxDim = Math.max(img.width, img.height) || 1;
+  const scale =
+    maxDim > MAX_EXTRACT_DIMENSION ? MAX_EXTRACT_DIMENSION / maxDim : 1;
+  canvas.width = Math.max(1, Math.round(img.width * scale));
+  canvas.height = Math.max(1, Math.round(img.height * scale));
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+};
 
 // Update QuickActionButtons component
 const QuickActionButtons = ({
@@ -404,42 +419,20 @@ const ColorTools = () => {
     }
   }, [location]);
 
-  // Update URL when tab changes
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
-    navigate(`/tools/color/${tabId}`);
-  };
+  // Update URL when tab changes (also used by quick actions / saved palettes)
+  const handleTabChange = useCallback(
+    (tabId) => {
+      if (!validTools.includes(tabId)) return;
+      setActiveTab(tabId);
+      navigate(`/tools/color/${tabId}`);
+    },
+    [navigate]
+  );
 
-  // Reset state when changing tabs
+  // Soft cleanup only: preserve picker/palette/gradient/extract work across tabs
   useEffect(() => {
-    // Reset all states first
-    setUploadedImage((prevImage) => {
-      if (prevImage) {
-        URL.revokeObjectURL(prevImage);
-      }
-      return null;
-    });
-    setExtractedColors([]);
-    setNumColors(5);
-    setPaletteTag("");
     setError(null);
     setCssError(false);
-    setTempGradientCSS("");
-    setGradientCSS("");
-    // Reset gradient states
-    setGradientStops([
-      { color: "#536dfe", position: 0 },
-      { color: "#32408f", position: 100 },
-    ]);
-    setGradientType("linear");
-    setGradientAngle(90);
-    // Reset palette states
-    setPalette([]);
-    setPaletteType("analogous");
-    // Reset contrast states
-    setContrastText("#000000");
-
-    // Clear any pending timeouts
     if (cssUpdateTimeout.current) {
       clearTimeout(cssUpdateTimeout.current);
     }
@@ -554,31 +547,24 @@ const ColorTools = () => {
 
       const reader = new FileReader();
       reader.onload = (e) => {
+        const dataUrl = e.target.result;
         const img = new Image();
         img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx.drawImage(img, 0, 0);
-
-          const imageData = ctx.getImageData(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-          ).data;
-          const extractedColors = extractColors(imageData, numColors);
-          setUploadedImage(e.target.result);
-          setExtractedColors(extractedColors);
-          savePalette(extractedColors, "extracted", paletteTag);
+          // Show preview immediately, then sample on a downsampled canvas
+          setUploadedImage(dataUrl);
+          setTimeout(() => {
+            const imageData = getDownsampledImageData(img);
+            const colors = extractColors(imageData, numColors);
+            setExtractedColors(colors);
+            savePalette(colors, "extracted", paletteTag);
+          }, 0);
         };
-        img.src = e.target.result;
+        img.src = dataUrl;
       };
       reader.readAsDataURL(file);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [numColors, extractColors, paletteTag]
+    [numColors, extractColors, paletteTag, savePalette]
   );
 
   // Initialize dropzone after onDrop is defined
@@ -766,62 +752,49 @@ const ColorTools = () => {
 
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
+      setTimeout(() => {
+        const imageData = getDownsampledImageData(img);
+        const newColors = extractColors(imageData, 1, extractedColors);
 
-      const imageData = ctx.getImageData(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      ).data;
-      const newColors = extractColors(imageData, 1, extractedColors);
+        if (newColors.length > 0) {
+          const updatedColors = [...extractedColors, ...newColors];
+          setExtractedColors(updatedColors);
+          setNumColors((prev) => prev + 1);
 
-      if (newColors.length > 0) {
-        const updatedColors = [...extractedColors, ...newColors];
-        setExtractedColors(updatedColors);
-        setNumColors((prev) => prev + 1);
+          // Immediately update the saved palette
+          const storageKey = "savedPalettes_extracted";
+          const savedPalettes = JSON.parse(
+            localStorage.getItem(storageKey) || "[]"
+          );
+          const existingPaletteIndex = savedPalettes.findIndex(
+            (p) => p.source === "extracted"
+          );
 
-        // Immediately update the saved palette
-        const storageKey = "savedPalettes_extracted";
-        const savedPalettes = JSON.parse(
-          localStorage.getItem(storageKey) || "[]"
-        );
-        const existingPaletteIndex = savedPalettes.findIndex(
-          (p) => p.source === "extracted"
-        );
+          if (existingPaletteIndex !== -1) {
+            savedPalettes[existingPaletteIndex] = {
+              ...savedPalettes[existingPaletteIndex],
+              colors: updatedColors,
+              timestamp: new Date().toISOString(),
+            };
+          } else {
+            savedPalettes.push({
+              id: Date.now(),
+              colors: updatedColors,
+              timestamp: new Date().toISOString(),
+              source: "extracted",
+            });
+          }
 
-        if (existingPaletteIndex !== -1) {
-          savedPalettes[existingPaletteIndex] = {
-            ...savedPalettes[existingPaletteIndex],
-            colors: updatedColors,
-            timestamp: new Date().toISOString(),
-          };
-        } else {
-          savedPalettes.push({
-            id: Date.now(),
-            colors: updatedColors,
-            timestamp: new Date().toISOString(),
-            source: "extracted",
-          });
+          localStorage.setItem(storageKey, JSON.stringify(savedPalettes));
         }
-
-        localStorage.setItem(storageKey, JSON.stringify(savedPalettes));
-      }
+      }, 0);
     };
     img.src = uploadedImage;
   }, [uploadedImage, extractedColors, extractColors]);
 
   const copyToClipboard = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      alert("Copied to clipboard!");
-    } catch (err) {
-      alert("Failed to copy text");
-    }
+    const ok = await copyText(text);
+    alert(ok ? "Copied to clipboard!" : "Failed to copy text");
   };
 
   const addGradientStop = () => {
@@ -951,7 +924,7 @@ const ColorTools = () => {
         window.confirm("Would you like to open this color in the color picker?")
       ) {
         setColor(selectedColor);
-        setActiveTab("picker");
+        handleTabChange("picker");
       } else {
         setColor(selectedColor);
       }
@@ -1211,7 +1184,7 @@ const ColorTools = () => {
                   <button
                     onClick={() => {
                       setColor(color);
-                      setActiveTab("palette");
+                      handleTabChange("palette");
                     }}
                     className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center justify-center gap-1 whitespace-nowrap text-sm"
                   >
@@ -1221,7 +1194,7 @@ const ColorTools = () => {
                   <button
                     onClick={() => {
                       setColor(color);
-                      setActiveTab("gradient");
+                      handleTabChange("gradient");
                     }}
                     className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center justify-center gap-1 whitespace-nowrap text-sm"
                   >
@@ -1231,7 +1204,7 @@ const ColorTools = () => {
                   <button
                     onClick={() => {
                       setColor(color);
-                      setActiveTab("contrast");
+                      handleTabChange("contrast");
                     }}
                     className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center justify-center gap-1 whitespace-nowrap text-sm"
                   >
@@ -1254,7 +1227,7 @@ const ColorTools = () => {
               copyToClipboard={copyToClipboard}
               onColorSelect={handleColorSelect}
               setColor={setColor}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleTabChange}
             />
           </div>
         );
@@ -1333,7 +1306,7 @@ const ColorTools = () => {
               copyToClipboard={copyToClipboard}
               onColorSelect={handleColorSelect}
               setColor={setColor}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleTabChange}
             />
           </div>
         );
@@ -1521,7 +1494,7 @@ const ColorTools = () => {
               copyToClipboard={copyToClipboard}
               onColorSelect={handleColorSelect}
               setColor={setColor}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleTabChange}
             />
           </div>
         );
@@ -1706,7 +1679,7 @@ const ColorTools = () => {
               copyToClipboard={copyToClipboard}
               onColorSelect={handleColorSelect}
               setColor={setColor}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleTabChange}
             />
           </div>
         );
