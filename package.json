@@ -1,4 +1,4 @@
-  {
+{
   "name": "bentheitguy.me",
   "version": "0.1.0",
   "private": true,
@@ -24,6 +24,7 @@
     "file-saver": "^2.0.5",
     "framer-motion": "^12.0.6",
     "html-table-to-json": "^1.0.0",
+    "imagetracerjs": "^1.2.6",
     "ini": "^5.0.0",
     "js-yaml": "^4.1.0",
     "json5": "^2.2.3",

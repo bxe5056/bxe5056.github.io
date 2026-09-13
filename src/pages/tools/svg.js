@@ -15,6 +15,7 @@ import { optimize } from "svgo/dist/svgo.browser";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 
 const SvgColorTool = lazy(() => import("./svg/SvgColorTool"));
+const SvgPhotoTool = lazy(() => import("./svg/SvgPhotoTool"));
 
 const validTools = ["optimize", "colors", "viewbox", "image-to-svg"];
 const defaultTool = "optimize";
@@ -45,227 +46,12 @@ const SvgTools = () => {
     if (pathParam === "colors") return true;
     return (searchParams.get("tool") || defaultTool) === "colors";
   });
-  
-  // Image to SVG states
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [imageColors, setImageColors] = useState([]);
-  const [numColors, setNumColors] = useState(8);
-  const [editableColors, setEditableColors] = useState([]);
-  const [generatedSvgs, setGeneratedSvgs] = useState([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  // Color quantization algorithm using k-means clustering
-  const quantizeColors = useCallback((imageData, numColors) => {
-    const pixels = [];
-    for (let i = 0; i < imageData.length; i += 4) {
-      const r = imageData[i];
-      const g = imageData[i + 1];
-      const b = imageData[i + 2];
-      const a = imageData[i + 3];
-      if (a > 128) { // Only include non-transparent pixels
-        pixels.push([r, g, b]);
-      }
-    }
-
-    if (pixels.length === 0) return [];
-
-    // Initialize centroids randomly
-    const centroids = [];
-    for (let i = 0; i < numColors; i++) {
-      const randomPixel = pixels[Math.floor(Math.random() * pixels.length)];
-      centroids.push([...randomPixel]);
-    }
-
-    // K-means iterations
-    for (let iter = 0; iter < 20; iter++) {
-      const clusters = Array(numColors).fill().map(() => []);
-      
-      // Assign pixels to nearest centroid
-      pixels.forEach(pixel => {
-        let minDist = Infinity;
-        let nearestCentroid = 0;
-        
-        centroids.forEach((centroid, index) => {
-          const dist = Math.sqrt(
-            Math.pow(pixel[0] - centroid[0], 2) +
-            Math.pow(pixel[1] - centroid[1], 2) +
-            Math.pow(pixel[2] - centroid[2], 2)
-          );
-          if (dist < minDist) {
-            minDist = dist;
-            nearestCentroid = index;
-          }
-        });
-        
-        clusters[nearestCentroid].push(pixel);
-      });
-
-      // Update centroids
-      centroids.forEach((centroid, index) => {
-        if (clusters[index].length > 0) {
-          const avgR = clusters[index].reduce((sum, pixel) => sum + pixel[0], 0) / clusters[index].length;
-          const avgG = clusters[index].reduce((sum, pixel) => sum + pixel[1], 0) / clusters[index].length;
-          const avgB = clusters[index].reduce((sum, pixel) => sum + pixel[2], 0) / clusters[index].length;
-          centroids[index] = [Math.round(avgR), Math.round(avgG), Math.round(avgB)];
-        }
-      });
-    }
-
-    // Convert to hex colors
-    return centroids.map(([r, g, b]) => {
-      const toHex = (n) => n.toString(16).padStart(2, '0');
-      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-    });
-  }, []);
-
-  // Process uploaded image for color extraction
-  const processImageForColors = useCallback((file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx.drawImage(img, 0, 0);
-          
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-          const colors = quantizeColors(imageData, numColors);
-          resolve({ colors, imageUrl: e.target.result, width: img.width, height: img.height });
-        };
-        img.onerror = reject;
-        img.src = e.target.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }, [numColors, quantizeColors]);
-
-  // Utility function to convert hex to RGB
-  const hexToRgb = useCallback((hex) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : null;
-  }, []);
-
-  // Generate SVG from image with color separation
-  const generateSvgsFromImage = useCallback((imageUrl, colors, width, height) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0);
-        
-        const imageData = ctx.getImageData(0, 0, width, height);
-        const svgs = [];
-
-        // Generate SVG for each color
-        colors.forEach((targetColor, colorIndex) => {
-          const paths = [];
-          const visited = new Set();
-
-          const targetRgb = hexToRgb(targetColor);
-          if (!targetRgb) return;
-
-          // Find pixels that match this color (with tolerance)
-          const tolerance = 50;
-          const matchesColor = (r, g, b) => {
-            const distance = Math.sqrt(
-              Math.pow(r - targetRgb.r, 2) +
-              Math.pow(g - targetRgb.g, 2) +
-              Math.pow(b - targetRgb.b, 2)
-            );
-            return distance <= tolerance;
-          };
-
-          // Create rectangles for matching pixels (simplified approach)
-          for (let y = 0; y < height; y += 4) { // Sample every 4 pixels for performance
-            for (let x = 0; x < width; x += 4) {
-              const index = (y * width + x) * 4;
-              const r = imageData.data[index];
-              const g = imageData.data[index + 1];
-              const b = imageData.data[index + 2];
-              const a = imageData.data[index + 3];
-
-              if (a > 128 && matchesColor(r, g, b)) {
-                const key = `${x},${y}`;
-                if (!visited.has(key)) {
-                  visited.add(key);
-                  paths.push(`<rect x="${x}" y="${y}" width="4" height="4" fill="${targetColor}"/>`);
-                }
-              }
-            }
-          }
-
-          if (paths.length > 0) {
-            const svgContent = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-  <!-- Generated from image - Color layer ${colorIndex + 1}: ${targetColor} -->
-  ${paths.join('\n  ')}
-</svg>`;
-
-            svgs.push({
-              color: targetColor,
-              content: svgContent,
-              name: `layer-${colorIndex + 1}-${targetColor.replace('#', '')}.svg`
-            });
-          }
-        });
-
-        // Generate combined SVG
-        const allPaths = [];
-        colors.forEach((targetColor, colorIndex) => {
-          const targetRgb = hexToRgb(targetColor);
-          if (!targetRgb) return;
-
-          const tolerance = 50;
-          const matchesColor = (r, g, b) => {
-            const distance = Math.sqrt(
-              Math.pow(r - targetRgb.r, 2) +
-              Math.pow(g - targetRgb.g, 2) +
-              Math.pow(b - targetRgb.b, 2)
-            );
-            return distance <= tolerance;
-          };
-
-          for (let y = 0; y < height; y += 4) {
-            for (let x = 0; x < width; x += 4) {
-              const index = (y * width + x) * 4;
-              const r = imageData.data[index];
-              const g = imageData.data[index + 1];
-              const b = imageData.data[index + 2];
-              const a = imageData.data[index + 3];
-
-              if (a > 128 && matchesColor(r, g, b)) {
-                allPaths.push(`<rect x="${x}" y="${y}" width="4" height="4" fill="${targetColor}"/>`);
-              }
-            }
-          }
-        });
-
-        const combinedSvg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-  <!-- Generated from image - All color layers combined -->
-  ${allPaths.join('\n  ')}
-</svg>`;
-
-        svgs.push({
-          color: 'combined',
-          content: combinedSvg,
-          name: 'combined-all-layers.svg'
-        });
-
-        resolve(svgs);
-      };
-      img.src = imageUrl;
-    });
-  }, [hexToRgb]);
+  // Keep Photo ↔ SVG mounted after first visit (owns its own upload / trace state)
+  const [photoToolMounted, setPhotoToolMounted] = useState(() => {
+    const pathParam = location.pathname.split("/").pop();
+    if (pathParam === "image-to-svg") return true;
+    return (searchParams.get("tool") || defaultTool) === "image-to-svg";
+  });
 
   const addMetadata = useCallback((svgString) => {
     const now = new Date().toISOString();
@@ -300,28 +86,7 @@ const SvgTools = () => {
       const file = acceptedFiles[0];
       if (!file) return;
 
-      // Handle image files for image-to-svg conversion
-      if (activeTab === "image-to-svg" && file.type.startsWith('image/')) {
-        setIsProcessing(true);
-        try {
-          const result = await processImageForColors(file);
-          setUploadedImage(result.imageUrl);
-          setImageColors(result.colors);
-          setEditableColors(result.colors.map(color => ({ original: color, edited: color })));
-          
-          // Generate SVGs
-          const svgs = await generateSvgsFromImage(result.imageUrl, result.colors, result.width, result.height);
-          setGeneratedSvgs(svgs);
-        } catch (error) {
-          console.error('Error processing image:', error);
-          setError('Error processing image. Please try a different image.');
-        } finally {
-          setIsProcessing(false);
-        }
-        return;
-      }
-
-      // Handle SVG files for other tools
+      // Handle SVG files for optimize / viewbox (photo tool has its own dropzone)
       if (file.type === "image/svg+xml") {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -365,14 +130,12 @@ const SvgTools = () => {
         reader.readAsText(file);
       }
     },
-    [activeTab, removeOtherComments, addMetadata, processImageForColors, generateSvgsFromImage]
+    [removeOtherComments, addMetadata]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: activeTab === "image-to-svg" 
-      ? { "image/*": [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"] }
-      : { "image/svg+xml": [".svg"] },
+    accept: { "image/svg+xml": [".svg"] },
     maxFiles: 1,
   });
 
@@ -507,64 +270,6 @@ const SvgTools = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Handle color editing for image-to-svg
-  const updateEditableColor = useCallback((index, newColor) => {
-    setEditableColors(prev => 
-      prev.map((color, i) => i === index ? { ...color, edited: newColor } : color)
-    );
-  }, []);
-
-  // Regenerate SVGs with edited colors
-  const regenerateSvgs = useCallback(async () => {
-    if (!uploadedImage || editableColors.length === 0) return;
-    
-    setIsProcessing(true);
-    try {
-      const colors = editableColors.map(c => c.edited);
-      
-      // Get image dimensions
-      const img = new Image();
-      await new Promise((resolve) => {
-        img.onload = resolve;
-        img.src = uploadedImage;
-      });
-      
-      const svgs = await generateSvgsFromImage(uploadedImage, colors, img.width, img.height);
-      setGeneratedSvgs(svgs);
-    } catch (error) {
-      console.error('Error regenerating SVGs:', error);
-      setError('Error regenerating SVGs. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [uploadedImage, editableColors, generateSvgsFromImage]);
-
-  // Download individual SVG
-  const downloadSvg = useCallback((svgData) => {
-    const blob = new Blob([svgData.content], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = svgData.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, []);
-
-  // Download all SVGs as zip
-  const downloadAllSvgs = useCallback(async () => {
-    if (generatedSvgs.length === 0) return;
-
-    // For now, download each SVG individually
-    // In a real app, you might want to use a zip library
-    generatedSvgs.forEach((svg, index) => {
-      setTimeout(() => {
-        downloadSvg(svg);
-      }, index * 100); // Small delay between downloads
-    });
-  }, [generatedSvgs, downloadSvg]);
-
   const renderTool = () => {
     switch (activeTab) {
       case "optimize":
@@ -684,167 +389,8 @@ const SvgTools = () => {
         );
 
       case "image-to-svg":
-        return (
-          <div className="space-y-6">
-            {uploadedImage && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Image Preview */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Original Image</h3>
-                  <div className="border rounded-lg p-4 bg-gray-50">
-                    <img
-                      src={uploadedImage}
-                      alt="Uploaded for conversion"
-                      className="max-w-full h-auto mx-auto max-h-64 object-contain"
-                    />
-                  </div>
-                </div>
-
-                {/* Controls */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Number of Colors: {numColors}
-                    </label>
-                    <input
-                      type="range"
-                      min="2"
-                      max="16"
-                      value={numColors}
-                      onChange={(e) => setNumColors(Number(e.target.value))}
-                      className="w-full"
-                      disabled={isProcessing}
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>2</span>
-                      <span>16</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={async () => {
-                      if (!uploadedImage) return;
-                      setIsProcessing(true);
-                      try {
-                        const file = await fetch(uploadedImage).then(r => r.blob());
-                        const result = await processImageForColors(file);
-                        setImageColors(result.colors);
-                        setEditableColors(result.colors.map(color => ({ original: color, edited: color })));
-                        const svgs = await generateSvgsFromImage(uploadedImage, result.colors, result.width, result.height);
-                        setGeneratedSvgs(svgs);
-                      } catch (error) {
-                        console.error('Error reprocessing:', error);
-                        setError('Error reprocessing image.');
-                      } finally {
-                        setIsProcessing(false);
-                      }
-                    }}
-                    disabled={isProcessing}
-                    className="w-full px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400"
-                  >
-                    {isProcessing ? "Processing..." : "Reprocess with New Color Count"}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Color Editing */}
-            {editableColors.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">Edit Colors</h3>
-                  <button
-                    onClick={regenerateSvgs}
-                    disabled={isProcessing}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
-                  >
-                    {isProcessing ? "Generating..." : "Regenerate SVGs"}
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {editableColors.map((colorData, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="text-sm font-medium text-gray-700">
-                        Color {index + 1}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div
-                          className="w-8 h-8 rounded border border-gray-300"
-                          style={{ backgroundColor: colorData.original }}
-                          title={`Original: ${colorData.original}`}
-                        />
-                        <span className="text-gray-400">→</span>
-                        <input
-                          type="color"
-                          value={colorData.edited}
-                          onChange={(e) => updateEditableColor(index, e.target.value)}
-                          className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
-                        />
-                      </div>
-                      <div className="text-xs text-gray-500 font-mono">
-                        {colorData.edited}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Generated SVGs */}
-            {generatedSvgs.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">Generated SVGs</h3>
-                  <button
-                    onClick={downloadAllSvgs}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"
-                  >
-                    <FaDownload />
-                    Download All
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {generatedSvgs.map((svg, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex justify-between items-center">
-                        <div className="text-sm font-medium">
-                          {svg.color === 'combined' ? 'Combined' : `Layer ${index + 1}`}
-                        </div>
-                        <button
-                          onClick={() => downloadSvg(svg)}
-                          className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
-                        >
-                          <FaDownload />
-                        </button>
-                      </div>
-                      {svg.color !== 'combined' && (
-                        <div className="flex items-center space-x-2">
-                          <div
-                            className="w-4 h-4 rounded border"
-                            style={{ backgroundColor: svg.color }}
-                          />
-                          <span className="text-xs font-mono">{svg.color}</span>
-                        </div>
-                      )}
-                      <div className="bg-gray-50 p-2 rounded max-h-32 overflow-hidden">
-                        <div
-                          dangerouslySetInnerHTML={{ __html: svg.content }}
-                          className="w-full h-24 flex items-center justify-center"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="text-red-800">{error}</div>
-              </div>
-            )}
-          </div>
-        );
+        // Rendered via keep-alive below so upload / trace state survives tab switches
+        return null;
 
       default:
         return null;
@@ -872,6 +418,9 @@ const SvgTools = () => {
     if (activeTab === "colors") {
       setColorToolMounted(true);
     }
+    if (activeTab === "image-to-svg") {
+      setPhotoToolMounted(true);
+    }
   }, [activeTab]);
 
   return (
@@ -893,7 +442,7 @@ const SvgTools = () => {
                 { id: "optimize", label: "Optimize", icon: FaCompress },
                 { id: "colors", label: "Color Swap", icon: FaPalette },
                 { id: "viewbox", label: "ViewBox", icon: FaRuler },
-                { id: "image-to-svg", label: "Image to SVG", icon: FaImage },
+                { id: "image-to-svg", label: "Photo ↔ SVG", icon: FaImage },
               ].map((tool) => (
                 <option key={tool.id} value={tool.id}>
                   {tool.label}
@@ -910,7 +459,7 @@ const SvgTools = () => {
                   { id: "optimize", label: "Optimize", icon: FaCompress },
                   { id: "colors", label: "Color Swap", icon: FaPalette },
                   { id: "viewbox", label: "ViewBox", icon: FaRuler },
-                  { id: "image-to-svg", label: "Image to SVG", icon: FaImage },
+                  { id: "image-to-svg", label: "Photo ↔ SVG", icon: FaImage },
                 ].map((tool) => (
                   <button
                     key={tool.id}
@@ -930,10 +479,10 @@ const SvgTools = () => {
           </div>
         </div>
 
-        {/* File Selector — Color Swap uses its own dropzone inside SvgColorTool */}
+        {/* File Selector — Color Swap / Photo tool use their own dropzones */}
         {activeTab !== "colors" &&
-          ((activeTab !== "image-to-svg" && !svgContent) ||
-            (activeTab === "image-to-svg" && !uploadedImage)) && (
+          activeTab !== "image-to-svg" &&
+          !svgContent && (
           <div
             {...getRootProps()}
             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
@@ -946,10 +495,8 @@ const SvgTools = () => {
             <FaUpload className="mx-auto text-4xl mb-4 text-gray-400" />
             <p className="text-gray-600">
               {isDragActive
-                ? (activeTab === "image-to-svg" ? "Drop the image here" : "Drop the SVG here")
-                : (activeTab === "image-to-svg" 
-                  ? "Drag & drop an image file here, or click to select" 
-                  : "Drag & drop an SVG file here, or click to select")}
+                ? "Drop the SVG here"
+                : "Drag & drop an SVG file here, or click to select"}
             </p>
           </div>
         )}
@@ -969,14 +516,31 @@ const SvgTools = () => {
           </div>
         )}
 
+        {/* Photo ↔ SVG keep-alive (lazy) */}
+        {photoToolMounted && (
+          <div className={activeTab === "image-to-svg" ? "block" : "hidden"}>
+            <Suspense
+              fallback={
+                <div className="text-center text-gray-500 py-8">
+                  Loading photo tool…
+                </div>
+              }
+            >
+              <SvgPhotoTool />
+            </Suspense>
+          </div>
+        )}
+
         {/* Tool Interface */}
         {activeTab !== "colors" &&
-          ((activeTab !== "image-to-svg" && svgContent) ||
-            (activeTab === "image-to-svg" && uploadedImage)) &&
+          activeTab !== "image-to-svg" &&
+          svgContent &&
           renderTool()}
 
         {/* Preview and Actions — Color Swap renders its own preview */}
-        {activeTab !== "colors" && processedSvg && (
+        {activeTab !== "colors" &&
+          activeTab !== "image-to-svg" &&
+          processedSvg && (
           <div className="space-y-4">
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2">Preview</h3>
