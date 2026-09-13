@@ -8,6 +8,8 @@ import styles from "./ToolScaffold.module.css";
 const ToolScaffold = ({
   title,
   description,
+  /** Hide title when ToolLayout / tool select already shows the same label. */
+  hideTitle = false,
   input,
   controls,
   preview,
@@ -15,7 +17,8 @@ const ToolScaffold = ({
   stickyActions = true,
   className = "",
 }) => {
-  const showHeader = Boolean(title || description);
+  const visibleTitle = hideTitle ? null : title;
+  const showHeader = Boolean(visibleTitle || description);
   const showInput = input != null && input !== false;
   const showControls = controls != null && controls !== false;
   const showPreview = preview != null && preview !== false;
@@ -25,9 +28,17 @@ const ToolScaffold = ({
     <div className={`${styles.root}${className ? ` ${className}` : ""}`}>
       {showHeader && (
         <header className={styles.header}>
-          {title ? <h2 className={styles.title}>{title}</h2> : null}
+          {visibleTitle ? <h2 className={styles.title}>{visibleTitle}</h2> : null}
           {description ? (
-            <p className={styles.description}>{description}</p>
+            <p
+              className={
+                visibleTitle
+                  ? styles.description
+                  : `${styles.description} ${styles.descriptionAlone}`
+              }
+            >
+              {description}
+            </p>
           ) : null}
         </header>
       )}

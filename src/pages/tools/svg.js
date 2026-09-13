@@ -321,6 +321,7 @@ const SvgTools = () => {
     return (
       <ToolScaffold
         title="Optimize"
+        hideTitle
         description="Compress SVG markup with SVGO while preserving visual quality."
         input={!svgContent ? svgDropzone : null}
         controls={

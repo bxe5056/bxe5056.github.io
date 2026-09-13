@@ -26,6 +26,10 @@
   color: #6b7280;
 }
 
+.descriptionAlone {
+  margin-top: 0;
+}
+
 .section {
   min-width: 0;
 }

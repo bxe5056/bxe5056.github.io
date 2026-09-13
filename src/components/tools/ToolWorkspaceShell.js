@@ -86,7 +86,7 @@ const ToolWorkspaceShell = ({
   return (
     <div className="relative flex flex-1 flex-col">
       {hasToolNav && (
-        <div className="mb-2 max-w-md lg:hidden">
+        <div className="mb-2 w-full lg:hidden">
           <ToolSideNav
             tools={tools}
             activeId={activeToolId}
@@ -146,9 +146,10 @@ const ToolWorkspaceShell = ({
           </aside>
         )}
 
-        <div className="min-w-0 self-start rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-3.5 lg:min-h-[inherit]">
+        <div className="min-w-0 w-full rounded-lg border border-gray-200 bg-white p-3 pb-20 shadow-sm sm:p-3.5 max-lg:pb-24 lg:min-h-[inherit] lg:pb-3.5">
+          {/* Below lg the tool <select> is the title; only show H2 once the rail is visible. */}
           {workspaceTitle ? (
-            <h2 className="mb-2.5 text-base font-semibold tracking-tight text-gray-900 sm:text-lg">
+            <h2 className="mb-2.5 hidden text-base font-semibold tracking-tight text-gray-900 sm:text-lg lg:block">
               {workspaceTitle}
             </h2>
           ) : null}

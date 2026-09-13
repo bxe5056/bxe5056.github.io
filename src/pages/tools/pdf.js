@@ -734,6 +734,7 @@ const PDFTools = () => {
         return (
           <ToolScaffold
             title="PDF Viewer"
+            hideTitle
             description="Open a PDF in your browser to browse and zoom pages."
             input={
               !hasPdf ? (
