@@ -1,4 +1,4 @@
-/** Matches MainLayout `pt-16` / NavBar resting height. */
+/** Matches MainLayout `pt-16` / NavBar height on /tools* (scroll shrink locked). */
 export const TOOLS_SITE_HEADER = "4rem";
 
 /** Solid tools chrome under the site header. */

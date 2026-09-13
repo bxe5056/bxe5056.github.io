@@ -16,9 +16,16 @@ const NavBar = () => {
 
   const isHomePage = location.pathname === "/";
   const isPresentPage = location.pathname === "/present";
+  // Tools sticky chrome is offset to MainLayout `pt-16` (4rem). Lock navbar
+  // height on /tools* so scroll shrink (4rem→3.5rem) does not leave an 8px gap.
+  const isToolsPage = location.pathname.startsWith("/tools");
 
   // Enhanced scroll animations with adjusted thresholds
-  const headerHeight = useTransform(scrollY, [0, 50], ["4rem", "3.5rem"]);
+  const headerHeight = useTransform(
+    scrollY,
+    [0, 50],
+    ["4rem", isToolsPage ? "4rem" : "3.5rem"]
+  );
   const backgroundColor = useTransform(
     scrollY,
     [0, 50],
