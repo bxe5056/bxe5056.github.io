@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import ToolLayout from "../../components/tools/ToolLayout";
+import ToolScaffold from "../../components/tools/ToolScaffold";
 import { useDropzone } from "react-dropzone";
 import {
   FaUpload,
@@ -290,38 +291,111 @@ const SvgTools = () => {
     URL.revokeObjectURL(url);
   };
 
+  const svgDropzone = (
+    <div
+      {...getRootProps()}
+      className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+        isDragActive
+          ? "border-primary-500 bg-primary-50"
+          : "border-gray-300 hover:border-primary-500"
+      }`}
+    >
+      <input {...getInputProps()} />
+      <FaUpload className="mx-auto text-4xl mb-4 text-gray-400" />
+      <p className="text-gray-600">
+        {isDragActive
+          ? "Drop the SVG here"
+          : "Drag & drop an SVG file here, or click to select"}
+      </p>
+    </div>
+  );
+
+  const renderOptimizeTool = () => {
+    const originalSize = svgContent ? new Blob([svgContent]).size : 0;
+    const optimizedSize = processedSvg ? new Blob([processedSvg]).size : 0;
+    const reduction =
+      originalSize > 0
+        ? Math.round(((originalSize - optimizedSize) / originalSize) * 100)
+        : 0;
+
+    return (
+      <ToolScaffold
+        title="Optimize"
+        description="Compress SVG markup with SVGO while preserving visual quality."
+        input={!svgContent ? svgDropzone : null}
+        controls={
+          svgContent ? (
+            <>
+              <button
+                onClick={optimizeSvg}
+                disabled={!svgContent || loading}
+                className="w-full px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400"
+              >
+                {loading ? "Optimizing..." : "Optimize SVG"}
+              </button>
+              {processedSvg && (
+                <div className="w-full text-sm text-gray-600">
+                  Original size: {originalSize} bytes
+                  <br />
+                  Optimized size: {optimizedSize} bytes
+                  <br />
+                  Reduction: {reduction}%
+                </div>
+              )}
+            </>
+          ) : null
+        }
+        preview={
+          processedSvg ? (
+            <div className="space-y-4">
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div className="relative w-full aspect-video overflow-hidden">
+                  <div
+                    className="absolute inset-0 flex items-center justify-center"
+                    dangerouslySetInnerHTML={{
+                      __html: processedSvg.replace(
+                        /<svg/,
+                        '<svg class="w-full h-full svg-preview" preserveAspectRatio="xMidYMid meet"'
+                      ),
+                    }}
+                  />
+                </div>
+              </div>
+              <pre className="bg-gray-50 p-4 rounded-lg overflow-x-auto svg-output">
+                {processedSvg}
+              </pre>
+            </div>
+          ) : null
+        }
+        actions={
+          processedSvg ? (
+            <>
+              <button
+                onClick={() => copyToClipboard(processedSvg)}
+                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center justify-center"
+              >
+                <FaCopy className="mr-2" />
+                Copy SVG
+              </button>
+              <button
+                onClick={downloadProcessedSvg}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
+              >
+                <FaDownload className="mr-2" />
+                Download SVG
+              </button>
+            </>
+          ) : null
+        }
+      />
+    );
+  };
+
   const renderTool = () => {
     switch (activeTab) {
       case "optimize":
-        return (
-          <div className="space-y-6">
-            <button
-              onClick={optimizeSvg}
-              disabled={!svgContent || loading}
-              className="w-full px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400"
-            >
-              {loading ? "Optimizing..." : "Optimize SVG"}
-            </button>
-            {processedSvg && (
-              <div className="space-y-4">
-                <div className="text-sm text-gray-600">
-                  Original size: {new Blob([svgContent]).size} bytes
-                  <br />
-                  Optimized size: {new Blob([processedSvg]).size} bytes
-                  <br />
-                  Reduction:{" "}
-                  {Math.round(
-                    ((new Blob([svgContent]).size -
-                      new Blob([processedSvg]).size) /
-                      new Blob([svgContent]).size) *
-                      100
-                  )}
-                  %
-                </div>
-              </div>
-            )}
-          </div>
-        );
+        // Rendered via ToolScaffold below
+        return null;
 
       case "colors":
         // Rendered via keep-alive below so upload state survives tab switches
@@ -459,28 +533,10 @@ const SvgTools = () => {
       toolNavLabel="SVG tool"
     >
       <div className="space-y-6">
-        {/* File Selector — Color Swap / Photo / Sprite tools use their own dropzones */}
-        {activeTab !== "colors" &&
-          activeTab !== "image-to-svg" &&
-          activeTab !== "sprite" &&
-          !svgContent && (
-          <div
-            {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-              isDragActive
-                ? "border-primary-500 bg-primary-50"
-                : "border-gray-300 hover:border-primary-500"
-            }`}
-          >
-            <input {...getInputProps()} />
-            <FaUpload className="mx-auto text-4xl mb-4 text-gray-400" />
-            <p className="text-gray-600">
-              {isDragActive
-                ? "Drop the SVG here"
-                : "Drag & drop an SVG file here, or click to select"}
-            </p>
-          </div>
-        )}
+        {activeTab === "optimize" && renderOptimizeTool()}
+
+        {/* File Selector — ViewBox only (Optimize uses ToolScaffold input) */}
+        {activeTab === "viewbox" && !svgContent && svgDropzone}
 
         {/* Color Swap keep-alive (lazy) — prefer editing ./svg/* over this shell */}
         {colorToolMounted && (
@@ -527,18 +583,11 @@ const SvgTools = () => {
           </div>
         )}
 
-        {/* Tool Interface */}
-        {activeTab !== "colors" &&
-          activeTab !== "image-to-svg" &&
-          activeTab !== "sprite" &&
-          svgContent &&
-          renderTool()}
+        {/* Tool Interface — ViewBox (and any non-scaffold tabs) */}
+        {activeTab === "viewbox" && svgContent && renderTool()}
 
-        {/* Preview and Actions — Color Swap renders its own preview */}
-        {activeTab !== "colors" &&
-          activeTab !== "image-to-svg" &&
-          activeTab !== "sprite" &&
-          processedSvg && (
+        {/* Preview and Actions — ViewBox only (Optimize uses ToolScaffold) */}
+        {activeTab === "viewbox" && processedSvg && (
           <div className="space-y-4">
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2">Preview</h3>

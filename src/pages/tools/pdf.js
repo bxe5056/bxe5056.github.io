@@ -7,6 +7,7 @@ import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 import "@react-pdf-viewer/zoom/lib/styles/index.css";
 import { useDropzone } from "react-dropzone";
 import ToolLayout from "../../components/tools/ToolLayout";
+import ToolScaffold from "../../components/tools/ToolScaffold";
 import {
   FaUpload,
   FaDownload,
@@ -728,39 +729,48 @@ const PDFTools = () => {
   // Update the renderContent function to use handleTabClick
   const renderToolContent = () => {
     switch (activeTab) {
-      case "viewer":
+      case "viewer": {
+        const hasPdf = Boolean(currentPdfUrl && selectedFiles.length > 0);
         return (
-          <div className="w-full">
-            {currentPdfUrl && selectedFiles.length > 0 ? (
-              <div className="min-h-full">
-                <Worker workerUrl={PDF_WORKER_URL}>
-                  <ErrorBoundary>
-                    <Viewer
-                      fileUrl={currentPdfUrl}
-                      plugins={[
-                        defaultLayoutPluginInstance,
-                        zoomPluginInstance,
-                      ]}
-                      defaultScale={1}
-                      key={currentPdfUrl}
-                    />
-                  </ErrorBoundary>
-                </Worker>
-              </div>
-            ) : (
-              <div
-                {...getPDFRootProps()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 h-[300px] flex flex-col justify-center"
-              >
-                <input {...getPDFInputProps()} />
-                <FaUpload className="mx-auto text-6xl mb-6 text-gray-400" />
-                <p className="text-lg">
-                  Drag & drop a PDF file here, or click to select one
-                </p>
-              </div>
-            )}
-          </div>
+          <ToolScaffold
+            title="PDF Viewer"
+            description="Open a PDF in your browser to browse and zoom pages."
+            input={
+              !hasPdf ? (
+                <div
+                  {...getPDFRootProps()}
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 h-[300px] flex flex-col justify-center"
+                >
+                  <input {...getPDFInputProps()} />
+                  <FaUpload className="mx-auto text-6xl mb-6 text-gray-400" />
+                  <p className="text-lg">
+                    Drag & drop a PDF file here, or click to select one
+                  </p>
+                </div>
+              ) : null
+            }
+            preview={
+              hasPdf ? (
+                <div className="min-h-full">
+                  <Worker workerUrl={PDF_WORKER_URL}>
+                    <ErrorBoundary>
+                      <Viewer
+                        fileUrl={currentPdfUrl}
+                        plugins={[
+                          defaultLayoutPluginInstance,
+                          zoomPluginInstance,
+                        ]}
+                        defaultScale={1}
+                        key={currentPdfUrl}
+                      />
+                    </ErrorBoundary>
+                  </Worker>
+                </div>
+              ) : null
+            }
+          />
         );
+      }
       case "merger":
         return (
           <div className="">
