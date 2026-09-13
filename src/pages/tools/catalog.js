@@ -74,7 +74,7 @@ export const TOOL_CATEGORIES = [
       { id: "colors", label: "Color Swap", shortLabel: "Colors" },
       { id: "viewbox", label: "ViewBox", shortLabel: "ViewBox" },
       { id: "image-to-svg", label: "Photo ↔ SVG", shortLabel: "Photo ↔ SVG" },
-      { id: "sprite", label: "Sprite / Favicon Pack", shortLabel: "Sprite" },
+      { id: "sprite", label: "Sprite / Favicon Pack", shortLabel: "Sprites" },
     ],
   },
   {

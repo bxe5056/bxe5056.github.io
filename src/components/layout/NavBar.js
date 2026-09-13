@@ -21,11 +21,8 @@ const NavBar = () => {
   const isToolsPage = location.pathname.startsWith("/tools");
 
   // Enhanced scroll animations with adjusted thresholds
-  const headerHeight = useTransform(
-    scrollY,
-    [0, 50],
-    ["4rem", isToolsPage ? "4rem" : "3.5rem"]
-  );
+  const headerHeightMotion = useTransform(scrollY, [0, 50], ["4rem", "3.5rem"]);
+  const headerHeight = isToolsPage ? "4rem" : headerHeightMotion;
   const backgroundColor = useTransform(
     scrollY,
     [0, 50],
@@ -65,6 +62,11 @@ const NavBar = () => {
           "linear-gradient(to right, rgb(255, 255, 255), rgb(219, 234, 254))",
           "linear-gradient(to right, rgb(255, 255, 255), rgb(219, 234, 254))",
         ]
+      : isToolsPage
+      ? [
+          "linear-gradient(to right, rgb(37, 99, 235), rgb(59, 130, 246))",
+          "linear-gradient(to right, rgb(37, 99, 235), rgb(59, 130, 246))",
+        ]
       : [
           "linear-gradient(to right, rgb(37, 99, 235), rgb(59, 130, 246))",
           "linear-gradient(to right, rgb(255, 255, 255), rgb(219, 234, 254))",
@@ -78,6 +80,8 @@ const NavBar = () => {
       ? ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 1)"]
       : isPresentPage
       ? ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 1)"]
+      : isToolsPage
+      ? ["rgba(31, 41, 55, 1)", "rgba(31, 41, 55, 1)"]
       : ["rgba(31, 41, 55, 1)", "rgba(255, 255, 255, 1)"]
   );
 
@@ -88,6 +92,8 @@ const NavBar = () => {
       ? ["rgba(255, 255, 255, 0.8)", "rgba(255, 255, 255, 0.8)"]
       : isPresentPage
       ? ["rgba(255, 255, 255, 0.8)", "rgba(255, 255, 255, 0.8)"]
+      : isToolsPage
+      ? ["rgba(55, 65, 81, 0.9)", "rgba(55, 65, 81, 0.9)"]
       : ["rgba(55, 65, 81, 0.9)", "rgba(241, 245, 249, 1)"]
   );
 
@@ -98,6 +104,8 @@ const NavBar = () => {
       ? ["rgba(255, 255, 255, 0.8)", "rgba(255, 255, 255, 0.8)"]
       : isPresentPage
       ? ["rgba(255, 255, 255, 0.8)", "rgba(255, 255, 255, 0.8)"]
+      : isToolsPage
+      ? ["rgba(55, 65, 81, 0.9)", "rgba(55, 65, 81, 0.9)"]
       : ["rgba(55, 65, 81, 0.9)", "rgba(241, 245, 249, 1)"]
   );
 
@@ -108,6 +116,8 @@ const NavBar = () => {
       ? ["rgb(255, 255, 255)", "rgb(255, 255, 255)"]
       : isPresentPage
       ? ["rgb(255, 255, 255)", "rgb(255, 255, 255)"]
+      : isToolsPage
+      ? ["rgb(31, 41, 55)", "rgb(31, 41, 55)"]
       : ["rgb(31, 41, 55)", "rgb(255, 255, 255)"]
   );
 
@@ -123,6 +133,11 @@ const NavBar = () => {
       ? [
           "linear-gradient(to right, rgb(255, 255, 255), rgb(255, 255, 255))",
           "linear-gradient(to right, rgb(255, 255, 255), rgb(255, 255, 255))",
+        ]
+      : isToolsPage
+      ? [
+          "linear-gradient(to right, rgb(37, 99, 235), rgb(59, 130, 246))",
+          "linear-gradient(to right, rgb(37, 99, 235), rgb(59, 130, 246))",
         ]
       : [
           "linear-gradient(to right, rgb(37, 99, 235), rgb(59, 130, 246))",
@@ -144,10 +159,12 @@ const NavBar = () => {
     <motion.header
       style={{
         height: headerHeight,
-        backgroundColor,
-        backdropFilter: backdropBlur,
-        boxShadow,
-        borderBottom: `1px solid rgba(51, 65, 85, ${borderOpacity.get()})`,
+        backgroundColor: isToolsPage ? "rgb(249, 250, 251)" : backgroundColor,
+        backdropFilter: isToolsPage ? "blur(0px)" : backdropBlur,
+        boxShadow: isToolsPage ? "none" : boxShadow,
+        borderBottom: isToolsPage
+          ? "1px solid rgb(229, 231, 235)"
+          : `1px solid rgba(51, 65, 85, ${borderOpacity.get()})`,
       }}
       className="fixed top-0 left-0 right-0 z-50"
     >

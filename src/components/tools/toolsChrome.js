@@ -1,4 +1,7 @@
-/** Matches MainLayout `pt-16` / NavBar height on /tools* (scroll shrink locked). */
+/**
+ * Matches MainLayout `pt-16`. NavBar height is locked to 4rem on /tools*
+ * so sticky chrome at this offset stays flush (no 8px scroll gap).
+ */
 export const TOOLS_SITE_HEADER = "4rem";
 
 /** Solid tools chrome under the site header. */

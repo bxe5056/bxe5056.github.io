@@ -19,7 +19,7 @@ const ToolSideNav = ({
 
   if (variant === "select") {
     return (
-      <nav aria-label={label} className="max-w-sm">
+      <nav aria-label={label} className="w-full">
         <label htmlFor={selectId} className="sr-only">
           {label}
         </label>
@@ -48,18 +48,19 @@ const ToolSideNav = ({
         {tools.map((tool) => {
           const isActive = tool.id === activeId;
           const Icon = tool.icon;
-          const displayLabel = tool.label;
+          const displayLabel = tool.shortLabel || tool.label;
 
           return (
             <li key={tool.id}>
               <button
                 type="button"
                 aria-current={isActive ? "page" : undefined}
+                title={tool.label}
                 onClick={() => onChange(tool.id)}
                 className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 ${
                   isActive
                     ? "bg-primary-50 font-semibold text-primary-700 ring-1 ring-inset ring-primary-200"
-                    : "font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    : "font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-800"
                 }`}
               >
                 {Icon ? (
@@ -70,7 +71,9 @@ const ToolSideNav = ({
                     aria-hidden="true"
                   />
                 ) : null}
-                <span className="min-w-0 leading-snug">{displayLabel}</span>
+                <span className="min-w-0 truncate leading-snug">
+                  {displayLabel}
+                </span>
               </button>
             </li>
           );

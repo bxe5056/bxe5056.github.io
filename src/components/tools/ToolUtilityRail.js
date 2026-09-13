@@ -60,8 +60,8 @@ const RailLinkList = ({ title, icon, items, emptyLabel, onToggleFavorite }) => (
 );
 
 /**
- * Right utility rail: shared paste + recents/favorites.
- * Renders as an in-flow panel on desktop, or inside a drawer shell from parent.
+ * Shared paste + recents/favorites panel.
+ * Shown inside the on-demand utilities drawer / bottom sheet.
  */
 const ToolUtilityRail = ({ onClose, showClose = false }) => {
   const { recents, favorites } = useSyncExternalStore(

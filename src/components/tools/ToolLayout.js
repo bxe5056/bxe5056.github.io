@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaArrowLeft,
+  FaClipboardList,
   FaFont,
   FaPalette,
   FaImage,
@@ -46,6 +47,7 @@ const ToolLayout = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [utilitiesOpen, setUtilitiesOpen] = useState(false);
 
   const activeCategoryPath = useMemo(
     () =>
@@ -152,6 +154,16 @@ const ToolLayout = ({
                 ))}
               </select>
             </div>
+            <button
+              type="button"
+              onClick={() => setUtilitiesOpen(true)}
+              className="hidden lg:inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 shadow-sm hover:border-primary-200 hover:text-primary-700"
+              aria-label="Open paste and recents"
+              title="Paste & recents"
+            >
+              <FaClipboardList className="h-3 w-3 text-primary-600" aria-hidden />
+              <span className="hidden xl:inline">Paste & recents</span>
+            </button>
             <div className="border-l border-gray-200 pl-2">
               <BugReportToggle />
             </div>
@@ -165,6 +177,8 @@ const ToolLayout = ({
           activeToolId={activeToolId}
           onToolChange={onToolChange}
           toolNavLabel={toolNavLabel}
+          utilitiesOpen={utilitiesOpen}
+          onUtilitiesOpenChange={setUtilitiesOpen}
         >
           {children}
         </ToolWorkspaceShell>
