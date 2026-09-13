@@ -1,0 +1,89 @@
+/* Presentational layout only — no tool-specific rules. */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.header {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #111827;
+}
+
+.description {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #6b7280;
+}
+
+.section {
+  min-width: 0;
+}
+
+.sectionLabel {
+  margin-bottom: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.sectionBody {
+  min-width: 0;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+@media (max-width: 639px) {
+  .actionsSticky {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    margin-bottom: -0.75rem;
+    padding: 0.75rem;
+    border-top: 1px solid #e5e7eb;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(6px);
+  }
+}
+
+@media (min-width: 640px) {
+  .actionsSticky {
+    position: static;
+    margin: 0;
+    padding-top: 0.75rem;
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    border-top: 1px solid #e5e7eb;
+    background: transparent;
+    backdrop-filter: none;
+  }
+}
