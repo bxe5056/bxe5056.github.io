@@ -159,7 +159,7 @@ const ToolLayout = ({
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-[90rem] flex-1 flex-col px-3 py-3 sm:px-4 sm:py-4 pb-24 md:pb-4">
+      <div className="mx-auto flex w-full max-w-[90rem] flex-1 flex-col px-3 py-3 sm:px-4 sm:py-4 pb-24 lg:pb-4">
         <ToolWorkspaceShell
           tools={tools}
           activeToolId={activeToolId}

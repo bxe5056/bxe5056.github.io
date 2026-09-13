@@ -22,7 +22,7 @@ function readUtilityOpenDefault() {
 
 /**
  * Three-column tools workspace: side nav · content · utility rail.
- * Rails from md (768px); FAB / bottom sheet only below md.
+ * Rails from lg (1024px); tool select + FAB / bottom sheet below lg.
  * Column tops share one grid row — no sticky stair-step vs center.
  */
 const ToolWorkspaceShell = ({
@@ -64,18 +64,18 @@ const ToolWorkspaceShell = ({
 
   const gridCols = hasToolNav
     ? utilityOpen
-      ? "md:grid-cols-[13.75rem_minmax(0,1fr)_17.5rem]"
-      : "md:grid-cols-[13.75rem_minmax(0,1fr)_auto]"
+      ? "lg:grid-cols-[13.75rem_minmax(0,1fr)_17.5rem]"
+      : "lg:grid-cols-[13.75rem_minmax(0,1fr)_auto]"
     : utilityOpen
-      ? "md:grid-cols-[minmax(0,1fr)_17.5rem]"
-      : "md:grid-cols-[minmax(0,1fr)_auto]";
+      ? "lg:grid-cols-[minmax(0,1fr)_17.5rem]"
+      : "lg:grid-cols-[minmax(0,1fr)_auto]";
 
   const railMaxHeight = `calc(100vh - ${TOOLS_WORKSPACE_OFFSET} - 1.5rem)`;
 
   return (
     <div className="relative flex flex-1 flex-col">
       {hasToolNav && (
-        <div className="mb-3 md:hidden">
+        <div className="mb-3 lg:hidden">
           <ToolSideNav
             tools={tools}
             activeId={activeToolId}
@@ -92,7 +92,7 @@ const ToolWorkspaceShell = ({
       >
         {hasToolNav && (
           <aside
-            className="hidden md:block self-start"
+            className="hidden lg:block self-start"
             style={{
               position: "sticky",
               top: TOOLS_RAIL_STICKY_TOP,
@@ -111,12 +111,12 @@ const ToolWorkspaceShell = ({
           </aside>
         )}
 
-        <div className="min-w-0 self-start rounded-xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4 md:min-h-[inherit]">
+        <div className="min-w-0 self-start rounded-xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4 lg:min-h-[inherit]">
           {children}
         </div>
 
         <aside
-          className="hidden md:block self-start"
+          className="hidden lg:block self-start"
           style={{
             position: "sticky",
             top: TOOLS_RAIL_STICKY_TOP,
@@ -160,7 +160,7 @@ const ToolWorkspaceShell = ({
       <button
         type="button"
         onClick={() => setMobileUtilityOpen(true)}
-        className="md:hidden fixed bottom-5 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-lg hover:border-primary-200 hover:text-primary-700"
+        className="lg:hidden fixed bottom-5 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-lg hover:border-primary-200 hover:text-primary-700"
         aria-label="Open utilities"
       >
         <FaClipboardList className="h-4 w-4 text-primary-600" aria-hidden />
@@ -168,7 +168,7 @@ const ToolWorkspaceShell = ({
       </button>
 
       {mobileUtilityOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
           <button
             type="button"
             className="absolute inset-0 bg-slate-900/30"
