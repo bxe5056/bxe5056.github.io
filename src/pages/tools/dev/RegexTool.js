@@ -406,20 +406,44 @@ function extractSessionText(payload) {
   return null;
 }
 
+const TOOLTIP_VIEWPORT_MARGIN = 8;
+
 function FlagInfoButton({ flag, active }) {
   const tipId = useId();
   const btnRef = useRef(null);
+  const tipRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
 
   const updatePosition = useCallback(() => {
-    const el = btnRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    setCoords({
-      top: rect.top - 8,
-      left: rect.left + rect.width / 2,
-    });
+    const anchor = btnRef.current;
+    if (!anchor) return;
+
+    const rect = anchor.getBoundingClientRect();
+    const tip = tipRef.current;
+    const tipWidth = tip?.offsetWidth || 224;
+    const tipHeight = tip?.offsetHeight || 48;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const margin = TOOLTIP_VIEWPORT_MARGIN;
+
+    // Prefer above the anchor; flip below when there isn't room.
+    let top = rect.top - tipHeight - margin;
+    if (top < margin) {
+      top = rect.bottom + margin;
+    }
+    // Clamp vertically if still overflowing (short viewports).
+    top = Math.min(top, vh - tipHeight - margin);
+    top = Math.max(margin, top);
+
+    // Prefer centered on the anchor; shift horizontally to stay in view.
+    let left = rect.left + rect.width / 2 - tipWidth / 2;
+    if (left < margin) left = margin;
+    if (left + tipWidth > vw - margin) {
+      left = Math.max(margin, vw - tipWidth - margin);
+    }
+
+    setCoords({ top, left });
   }, []);
 
   useLayoutEffect(() => {
@@ -444,7 +468,6 @@ function FlagInfoButton({ flag, active }) {
   }, [open]);
 
   const show = () => {
-    updatePosition();
     setOpen(true);
   };
   const hide = () => setOpen(false);
@@ -481,9 +504,10 @@ function FlagInfoButton({ flag, active }) {
         typeof document !== "undefined" &&
         createPortal(
           <span
+            ref={tipRef}
             id={tipId}
             role="tooltip"
-            className="pointer-events-none fixed z-[100] w-max max-w-[14rem] -translate-x-1/2 -translate-y-full rounded border border-gray-200 bg-white px-2 py-1.5 text-left text-xs font-sans font-normal text-gray-700 shadow-md"
+            className="pointer-events-none fixed z-[9999] w-max max-w-[14rem] rounded border border-gray-200 bg-white px-2 py-1.5 text-left text-xs font-sans font-normal text-gray-700 shadow-md"
             style={{ top: coords.top, left: coords.left }}
           >
             <span className="font-medium text-gray-900">{flag.title}</span>
