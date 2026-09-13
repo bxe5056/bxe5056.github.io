@@ -61,9 +61,9 @@ const Tools = () => {
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Developer Tools & Utilities
         </h1>
-        <p className="text-xl text-gray-600">
-          A collection of useful tools for developers, designers, and content
-          creators
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          Browse {TOOL_CATEGORIES.length} categories — jump straight into a
+          tool or open a full suite from the cards below.
         </p>
       </div>
 
@@ -90,7 +90,7 @@ const Tools = () => {
                 <p className="text-gray-600 mb-4">{category.description}</p>
               </Link>
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-700">Features:</h4>
+                <h4 className="text-sm font-medium text-gray-700">Tools</h4>
                 <div className="flex flex-wrap gap-2">
                   {category.tools.map((tool) => (
                     <Link

@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaArrowLeft,
   FaFont,
@@ -12,23 +12,39 @@ import {
   FaFilePdf,
 } from "react-icons/fa";
 import BugReportToggle from "../BugReportToggle";
+import { TOOL_CATEGORIES } from "../../pages/tools/catalog";
 
-const categories = [
-  { path: "/tools/text", icon: FaFont, label: "Text" },
-  { path: "/tools/color", icon: FaPalette, label: "Color" },
-  { path: "/tools/image", icon: FaImage, label: "Image" },
-  { path: "/tools/svg", icon: FaVectorSquare, label: "SVG" },
-  { path: "/tools/pdf", icon: FaFilePdf, label: "PDF" },
-  { path: "/tools/data", icon: FaExchangeAlt, label: "Data" },
-  { path: "/tools/dev", icon: FaTools, label: "Dev" },
-];
+const categoryIcons = {
+  text: FaFont,
+  color: FaPalette,
+  image: FaImage,
+  svg: FaVectorSquare,
+  pdf: FaFilePdf,
+  data: FaExchangeAlt,
+  dev: FaTools,
+};
+
+const categories = TOOL_CATEGORIES.map((category) => ({
+  path: category.path,
+  icon: categoryIcons[category.id] || FaTools,
+  label: category.shortLabel || category.title,
+}));
 
 const ToolLayout = ({ title, description, children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { scrollY } = useScroll({
     offset: ["start start", "end start"],
     container: typeof window !== "undefined" ? window : undefined,
   });
+
+  const activeCategoryPath = useMemo(
+    () =>
+      categories.find((category) =>
+        location.pathname.startsWith(category.path)
+      )?.path || "",
+    [location.pathname]
+  );
 
   // Enhanced scroll animations for the tools navbar
   const toolbarHeight = useTransform(scrollY, [0, 50], ["3.5rem", "2.75rem"]);
@@ -67,6 +83,13 @@ const ToolLayout = ({ title, description, children }) => {
 
   const borderOpacity = useTransform(scrollY, [0, 50], ["0.05", "0.2"]);
 
+  const handleMobileCategoryChange = (event) => {
+    const nextPath = event.target.value;
+    if (nextPath) {
+      navigate(nextPath);
+    }
+  };
+
   return (
     <div
       className="min-h-screen bg-gray-50"
@@ -85,23 +108,42 @@ const ToolLayout = ({ title, description, children }) => {
         className="sticky z-40 transition-all duration-200"
       >
         <div className="container mx-auto px-4 h-full">
-          <div className="flex items-center justify-between h-full">
+          <div className="flex items-center justify-between h-full gap-3">
             <motion.div
               style={{ color: textColorInactive }}
-              className="flex items-center transition-colors duration-200"
+              className="flex items-center transition-colors duration-200 shrink-0"
             >
               <Link
                 to="/tools"
-                className="flex items-center"
+                className="flex items-center text-sm sm:text-base"
                 style={{ color: "inherit" }}
               >
                 <FaArrowLeft className="mr-2" />
-                Back to Tool Overview
+                <span className="hidden sm:inline">Back to Tool Overview</span>
+                <span className="sm:hidden">Tools</span>
               </Link>
             </motion.div>
-            {/* Mobile View */}
-            <div className="flex md:hidden items-center space-x-2">
-              <div className="border-l border-gray-200 ml-2 pl-2">
+            {/* Mobile View — category select */}
+            <div className="flex md:hidden items-center gap-2 min-w-0 flex-1 justify-end">
+              <label htmlFor="tool-category-select" className="sr-only">
+                Tool category
+              </label>
+              <select
+                id="tool-category-select"
+                value={activeCategoryPath}
+                onChange={handleMobileCategoryChange}
+                className="min-w-0 max-w-[10.5rem] truncate rounded-md border border-gray-300 bg-white/90 px-2 py-1.5 text-sm font-medium text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {!activeCategoryPath && (
+                  <option value="">Select category</option>
+                )}
+                {categories.map((category) => (
+                  <option key={category.path} value={category.path}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+              <div className="border-l border-gray-200 pl-2 shrink-0">
                 <BugReportToggle />
               </div>
             </div>
