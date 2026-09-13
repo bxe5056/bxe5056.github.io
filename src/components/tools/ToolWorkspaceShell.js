@@ -130,7 +130,7 @@ const ToolWorkspaceShell = ({
           >
             <div
               className={`flex h-full max-h-[inherit] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm ${
-                railCollapsed ? "p-1.5" : "p-2"
+                railCollapsed ? "p-1" : "p-1.5"
               }`}
             >
               <ToolSideNav

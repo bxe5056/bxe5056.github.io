@@ -153,8 +153,8 @@ const ToolSideNav = ({
   return (
     <nav aria-label={label} className="flex h-full flex-col">
       <div
-        className={`mb-1.5 flex items-center ${
-          collapsed ? "justify-center px-0" : "justify-between gap-1 px-1"
+        className={`mb-1 flex h-7 items-center ${
+          collapsed ? "justify-center px-0" : "justify-between gap-1 px-2"
         }`}
       >
         {!collapsed ? (
@@ -181,38 +181,42 @@ const ToolSideNav = ({
           </button>
         ) : null}
       </div>
-      <ul className="flex flex-1 flex-col gap-0.5 overflow-y-auto pr-0.5">
+      <ul className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
         {tools.map((tool) => {
           const isActive = tool.id === activeId;
           const Icon = TOOL_ICONS[tool.id] || tool.icon || FaWrench;
           const displayLabel = tool.shortLabel || tool.label;
 
           return (
-            <li key={tool.id}>
+            <li key={tool.id} className="w-full">
               <button
                 type="button"
                 aria-current={isActive ? "page" : undefined}
                 aria-label={tool.label}
                 title={tool.label}
                 onClick={() => onChange(tool.id)}
-                className={`flex w-full items-center rounded-lg text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 ${
+                className={`flex w-full items-center rounded-md text-left text-sm leading-none transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 ${
                   collapsed
-                    ? "justify-center px-1.5 py-2"
-                    : "gap-2 px-2.5 py-1.5"
+                    ? "justify-center px-0 py-2"
+                    : "gap-2.5 px-2 py-2"
                 } ${
                   isActive
-                    ? "bg-primary-50 font-semibold text-primary-700 ring-1 ring-inset ring-primary-200"
+                    ? "bg-primary-50 font-semibold text-primary-700 shadow-[inset_2px_0_0_0_theme(colors.primary.500)]"
                     : "font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-800"
                 }`}
               >
-                <Icon
-                  className={`h-3.5 w-3.5 shrink-0 ${
-                    isActive ? "text-primary-600" : "text-gray-400"
-                  }`}
+                <span
+                  className="inline-flex h-4 w-5 shrink-0 items-center justify-center"
                   aria-hidden="true"
-                />
+                >
+                  <Icon
+                    className={`h-4 w-4 ${
+                      isActive ? "text-primary-600" : "text-gray-400"
+                    }`}
+                  />
+                </span>
                 {!collapsed ? (
-                  <span className="min-w-0 truncate leading-snug">
+                  <span className="min-w-0 flex-1 truncate leading-none">
                     {displayLabel}
                   </span>
                 ) : null}
