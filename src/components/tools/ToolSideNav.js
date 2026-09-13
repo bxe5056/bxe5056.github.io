@@ -183,7 +183,7 @@ const ToolSideNav = ({
           aria-label={label}
           aria-orientation="horizontal"
           onKeyDown={handleChipKeyDown}
-          className="flex w-full min-w-0 gap-1.5 overflow-x-auto overflow-y-visible overscroll-x-contain py-1.5 [scrollbar-width:thin] [scrollbar-color:theme(colors.gray.300)_transparent] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300"
+          className="flex w-full min-w-0 gap-1.5 overflow-x-auto overflow-y-visible overscroll-x-contain px-1.5 py-1.5 [scrollbar-width:thin] [scrollbar-color:theme(colors.gray.300)_transparent] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300"
         >
           {tools.map((tool, index) => {
             const isActive = tool.id === activeId;
