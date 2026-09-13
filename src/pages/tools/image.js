@@ -14,7 +14,6 @@ import {
   FaTimes,
   FaExchangeAlt,
 } from "react-icons/fa";
-import imageCompression from "browser-image-compression";
 import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { downloadDataUrl } from "../../utils/tools/download";
 
@@ -247,6 +246,9 @@ const ImageTools = () => {
 
     setLoading(true);
     try {
+      const { default: imageCompression } = await import(
+        "browser-image-compression"
+      );
       const options = {
         maxSizeMB: 1,
         maxWidthOrHeight: 1920,

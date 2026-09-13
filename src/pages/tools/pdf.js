@@ -26,16 +26,42 @@ import {
   FaSync,
   FaSyncAlt,
 } from "react-icons/fa";
-import { PDFDocument, degrees } from "pdf-lib";
 import FileSaver from "file-saver";
-import JSZip from "jszip";
 import { useNavigate, useLocation } from "react-router-dom";
-import * as pdfjsLib from "pdfjs-dist";
 import { showErrorWithReporting } from "../../utils/analytics";
 
 // Initialize pdf.js worker (vendored for offline / GitHub Pages)
 const PDF_WORKER_URL = `${process.env.PUBLIC_URL}/pdf.worker.min.js`;
-pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
+
+/** Lazy-load pdfjs-dist and set worker once. */
+let pdfjsPromise;
+const loadPdfJs = () => {
+  if (!pdfjsPromise) {
+    pdfjsPromise = import("pdfjs-dist").then((pdfjsLib) => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
+      return pdfjsLib;
+    });
+  }
+  return pdfjsPromise;
+};
+
+/** Lazy-load pdf-lib (merge / rotate / images→PDF). */
+let pdfLibPromise;
+const loadPdfLib = () => {
+  if (!pdfLibPromise) {
+    pdfLibPromise = import("pdf-lib");
+  }
+  return pdfLibPromise;
+};
+
+/** Lazy-load JSZip (PDF→images zip). */
+let jszipPromise;
+const loadJSZip = () => {
+  if (!jszipPromise) {
+    jszipPromise = import("jszip").then((m) => m.default ?? m);
+  }
+  return jszipPromise;
+};
 
 const ErrorBanner = ({ error, onDismiss }) => {
   if (!error) return null;
@@ -190,6 +216,7 @@ const PDFTools = () => {
   const generatePDFPreview = async (file) => {
     try {
       setError(null);
+      const pdfjsLib = await loadPdfJs();
       const fileArrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument(fileArrayBuffer).promise;
       const page = await pdf.getPage(1);
@@ -216,6 +243,7 @@ const PDFTools = () => {
   // Update the extractPdfPages function to include more metadata
   const extractPdfPages = async (file) => {
     try {
+      const pdfjsLib = await loadPdfJs();
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
       const totalPages = pdf.numPages;
@@ -256,6 +284,7 @@ const PDFTools = () => {
   const reorderPages = async () => {
     try {
       setIsProcessing(true);
+      const { PDFDocument } = await loadPdfLib();
       const pdfDoc = await PDFDocument.create();
       const sourceDoc = await PDFDocument.load(
         await selectedFiles[0].file.arrayBuffer()
@@ -290,6 +319,7 @@ const PDFTools = () => {
   // Add thumbnail generation function
   const generatePDFThumbnail = async (file) => {
     try {
+      const pdfjsLib = await loadPdfJs();
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
       const page = await pdf.getPage(1);
@@ -420,6 +450,7 @@ const PDFTools = () => {
     try {
       setIsProcessing(true);
       setError(null);
+      const { PDFDocument } = await loadPdfLib();
       const mergedPdf = await PDFDocument.create();
 
       for (const fileObj of selectedFiles) {
@@ -449,6 +480,8 @@ const PDFTools = () => {
       const file = selectedFiles[0].file; // Get the actual File object
       if (!file) return;
 
+      const pdfjsLib = await loadPdfJs();
+      const JSZip = await loadJSZip();
       const fileArrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument(fileArrayBuffer).promise;
       const zip = new JSZip();
@@ -483,6 +516,7 @@ const PDFTools = () => {
     try {
       setIsProcessing(true);
       setError(null);
+      const { PDFDocument } = await loadPdfLib();
       const pdfDoc = await PDFDocument.create();
 
       for (const fileObj of selectedFiles) {
@@ -589,6 +623,7 @@ const PDFTools = () => {
         return;
       }
 
+      const { PDFDocument, degrees } = await loadPdfLib();
       const pdfDoc = await PDFDocument.load(
         await selectedFiles[0].file.arrayBuffer()
       );
@@ -628,6 +663,7 @@ const PDFTools = () => {
         return;
       }
 
+      const { PDFDocument, degrees } = await loadPdfLib();
       const pdfDoc = await PDFDocument.load(
         await selectedFiles[0].file.arrayBuffer()
       );

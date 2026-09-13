@@ -11,7 +11,6 @@ import {
   FaRuler,
   FaImage,
 } from "react-icons/fa";
-import { optimize } from "svgo/dist/svgo.browser";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 
 const SvgColorTool = lazy(() => import("./svg/SvgColorTool"));
@@ -139,11 +138,12 @@ const SvgTools = () => {
     maxFiles: 1,
   });
 
-  const optimizeSvg = useCallback(() => {
+  const optimizeSvg = useCallback(async () => {
     if (!svgContent) return;
 
     setLoading(true);
     try {
+      const { optimize } = await import("svgo/dist/svgo.browser");
       const result = optimize(svgContent, {
         multipass: true,
         plugins: [
@@ -194,10 +194,10 @@ const SvgTools = () => {
 
       // Add our metadata after optimization
       setProcessedSvg(addMetadata(result.data));
-      setLoading(false);
     } catch (error) {
       console.error("Error optimizing SVG:", error);
       alert("Error optimizing SVG");
+    } finally {
       setLoading(false);
     }
   }, [svgContent, addMetadata]);

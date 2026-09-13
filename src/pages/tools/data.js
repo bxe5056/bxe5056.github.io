@@ -11,14 +11,30 @@ import {
   FaFileCode,
 } from "react-icons/fa";
 import yaml from "js-yaml";
-import Papa from "papaparse";
-import * as XLSX from "xlsx";
 import JSON5 from "json5";
 import HtmlTableToJson from "html-table-to-json";
 import { markdownTable } from "markdown-table";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { copyText } from "../../utils/tools/clipboard";
 import { downloadText } from "../../utils/tools/download";
+
+/** Lazy-load papaparse only when CSV parse/unparse is needed. */
+let papaPromise;
+const loadPapa = () => {
+  if (!papaPromise) {
+    papaPromise = import("papaparse").then((m) => m.default ?? m);
+  }
+  return papaPromise;
+};
+
+/** Lazy-load SheetJS only when reading .xls/.xlsx uploads. */
+let xlsxPromise;
+const loadXlsx = () => {
+  if (!xlsxPromise) {
+    xlsxPromise = import("xlsx");
+  }
+  return xlsxPromise;
+};
 
 // Define supported formats and their metadata
 const SUPPORTED_FORMATS = {
@@ -279,7 +295,7 @@ const DataTools = () => {
 
   // Convert data function
   const convertData = useCallback(
-    (input = inputData) => {
+    async (input = inputData) => {
       if (!input) return;
 
       setLoading(true);
@@ -292,15 +308,21 @@ const DataTools = () => {
           delimiter: options.delimiter || ",",
         };
 
+        const Papa =
+          sourceFormat === "CSV" || targetFormat === "CSV"
+            ? await loadPapa()
+            : null;
+
         // Helper functions for conversions
         const parseToJson = (input, format) => {
           switch (format) {
-            case "CSV":
+            case "CSV": {
               const parsedCsv = Papa.parse(input, currentOptions);
               if (parsedCsv.errors.length > 0) {
                 throw new Error(parsedCsv.errors[0].message);
               }
               return parsedCsv.data;
+            }
             case "JSON":
               return JSON.parse(input);
             case "JSON5":
@@ -437,13 +459,14 @@ const DataTools = () => {
 
           // For Excel files, we need to process them differently
           if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
+            const XLSX = await loadXlsx();
             const workbook = XLSX.read(content, { type: "array" });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
             content = XLSX.utils.sheet_to_csv(firstSheet);
           }
 
           setInputData(content);
-          convertData(content);
+          await convertData(content);
         } catch (error) {
           setError("Error reading file: " + error.message);
         }
