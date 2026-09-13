@@ -19,7 +19,7 @@ const ToolSideNav = ({
 
   if (variant === "select") {
     return (
-      <nav aria-label={label}>
+      <nav aria-label={label} className="max-w-sm">
         <label htmlFor={selectId} className="sr-only">
           {label}
         </label>
@@ -27,7 +27,7 @@ const ToolSideNav = ({
           id={selectId}
           value={activeId}
           onChange={(event) => onChange(event.target.value)}
-          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-800 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         >
           {tools.map((tool) => (
             <option key={tool.id} value={tool.id}>

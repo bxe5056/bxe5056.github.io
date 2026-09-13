@@ -2,6 +2,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import { FaChevronLeft, FaChevronRight, FaClipboardList } from "react-icons/fa";
 import ToolSideNav from "./ToolSideNav";
 import ToolUtilityRail from "./ToolUtilityRail";
+import {
+  TOOLS_RAIL_STICKY_TOP,
+  TOOLS_WORKSPACE_OFFSET,
+} from "./toolsChrome";
 
 const UTILITY_OPEN_KEY = "tools.utilityRail.open";
 
@@ -18,7 +22,8 @@ function readUtilityOpenDefault() {
 
 /**
  * Three-column tools workspace: side nav · content · utility rail.
- * Utility rail collapses on desktop; drawer/bottom sheet on small screens.
+ * Rails from md (768px); FAB / bottom sheet only below md.
+ * Column tops share one grid row — no sticky stair-step vs center.
  */
 const ToolWorkspaceShell = ({
   tools = [],
@@ -57,11 +62,20 @@ const ToolWorkspaceShell = ({
     setUtilityOpen((open) => !open);
   }, []);
 
+  const gridCols = hasToolNav
+    ? utilityOpen
+      ? "md:grid-cols-[13.75rem_minmax(0,1fr)_17.5rem]"
+      : "md:grid-cols-[13.75rem_minmax(0,1fr)_auto]"
+    : utilityOpen
+      ? "md:grid-cols-[minmax(0,1fr)_17.5rem]"
+      : "md:grid-cols-[minmax(0,1fr)_auto]";
+
+  const railMaxHeight = `calc(100vh - ${TOOLS_WORKSPACE_OFFSET} - 1.5rem)`;
+
   return (
-    <div className="relative">
-      {/* Mobile tool picker */}
+    <div className="relative flex flex-1 flex-col">
       {hasToolNav && (
-        <div className="mb-4 lg:hidden">
+        <div className="mb-3 md:hidden">
           <ToolSideNav
             tools={tools}
             activeId={activeToolId}
@@ -73,20 +87,19 @@ const ToolWorkspaceShell = ({
       )}
 
       <div
-        className={`grid gap-4 items-start ${
-          hasToolNav
-            ? utilityOpen
-              ? "lg:grid-cols-[13.5rem_minmax(0,1fr)_17rem]"
-              : "lg:grid-cols-[13.5rem_minmax(0,1fr)_auto]"
-            : utilityOpen
-              ? "lg:grid-cols-[minmax(0,1fr)_17rem]"
-              : "lg:grid-cols-[minmax(0,1fr)_auto]"
-        }`}
+        className={`grid flex-1 items-start gap-3 ${gridCols}`}
+        style={{ minHeight: `min(32rem, calc(100vh - ${TOOLS_WORKSPACE_OFFSET} - 2rem))` }}
       >
-        {/* Left rail — desktop */}
         {hasToolNav && (
-          <aside className="hidden lg:block sticky top-[7.5rem] self-start">
-            <div className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm max-h-[calc(100vh-9rem)] overflow-hidden flex flex-col">
+          <aside
+            className="hidden md:block self-start"
+            style={{
+              position: "sticky",
+              top: TOOLS_RAIL_STICKY_TOP,
+              maxHeight: railMaxHeight,
+            }}
+          >
+            <div className="flex h-full max-h-[inherit] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm">
               <ToolSideNav
                 tools={tools}
                 activeId={activeToolId}
@@ -98,19 +111,24 @@ const ToolWorkspaceShell = ({
           </aside>
         )}
 
-        {/* Center workspace */}
-        <div className="min-w-0 rounded-xl border border-gray-100 bg-white p-5 sm:p-6 shadow-sm">
+        <div className="min-w-0 self-start rounded-xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4 md:min-h-[inherit]">
           {children}
         </div>
 
-        {/* Right rail — desktop */}
-        <aside className="hidden lg:block sticky top-[7.5rem] self-start">
+        <aside
+          className="hidden md:block self-start"
+          style={{
+            position: "sticky",
+            top: TOOLS_RAIL_STICKY_TOP,
+            maxHeight: railMaxHeight,
+          }}
+        >
           {utilityOpen ? (
-            <div className="relative rounded-xl border border-gray-100 bg-white p-3 shadow-sm max-h-[calc(100vh-9rem)] overflow-hidden flex flex-col w-[17rem]">
+            <div className="relative flex h-full max-h-[inherit] w-[17.5rem] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
               <button
                 type="button"
                 onClick={toggleUtility}
-                className="absolute -left-3 top-4 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-slate-500 shadow-sm hover:text-primary-600"
+                className="absolute -left-3 top-3 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-slate-500 shadow-sm hover:text-primary-600"
                 aria-label="Collapse utilities"
                 title="Collapse utilities"
               >
@@ -122,7 +140,7 @@ const ToolWorkspaceShell = ({
             <button
               type="button"
               onClick={toggleUtility}
-              className="flex flex-col items-center gap-2 rounded-xl border border-gray-100 bg-white px-2 py-4 text-slate-500 shadow-sm hover:border-primary-200 hover:text-primary-600"
+              className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white px-2 py-4 text-slate-500 shadow-sm hover:border-primary-200 hover:text-primary-600"
               aria-label="Expand utilities"
               title="Expand utilities"
             >
@@ -139,11 +157,10 @@ const ToolWorkspaceShell = ({
         </aside>
       </div>
 
-      {/* Mobile utility FAB + bottom sheet */}
       <button
         type="button"
         onClick={() => setMobileUtilityOpen(true)}
-        className="lg:hidden fixed bottom-5 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-lg hover:border-primary-200 hover:text-primary-700"
+        className="md:hidden fixed bottom-5 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-lg hover:border-primary-200 hover:text-primary-700"
         aria-label="Open utilities"
       >
         <FaClipboardList className="h-4 w-4 text-primary-600" aria-hidden />
@@ -151,7 +168,7 @@ const ToolWorkspaceShell = ({
       </button>
 
       {mobileUtilityOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
           <button
             type="button"
             className="absolute inset-0 bg-slate-900/30"
@@ -162,7 +179,7 @@ const ToolWorkspaceShell = ({
             role="dialog"
             aria-modal="true"
             aria-label="Utilities"
-            className="relative z-10 max-h-[75vh] overflow-y-auto rounded-t-2xl border border-gray-100 bg-white p-4 shadow-2xl"
+            className="relative z-10 max-h-[75vh] overflow-y-auto rounded-t-2xl border border-gray-200 bg-white p-4 shadow-2xl"
           >
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-200" />
             <ToolUtilityRail
