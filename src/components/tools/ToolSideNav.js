@@ -1,5 +1,113 @@
 import React, { useId } from "react";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import {
+  FaAdjust,
+  FaAlignLeft,
+  FaBalanceScale,
+  FaCalendarAlt,
+  FaChevronLeft,
+  FaChevronRight,
+  FaClock,
+  FaCode,
+  FaColumns,
+  FaCompress,
+  FaCrop,
+  FaCut,
+  FaExchangeAlt,
+  FaExpand,
+  FaEyeDropper,
+  FaFileAlt,
+  FaFileCode,
+  FaFileCsv,
+  FaFileImage,
+  FaFilePdf,
+  FaFillDrip,
+  FaFingerprint,
+  FaFont,
+  FaGlobe,
+  FaHashtag,
+  FaHtml5,
+  FaImage,
+  FaImages,
+  FaInfo,
+  FaLink,
+  FaLock,
+  FaLowVision,
+  FaMagic,
+  FaMarkdown,
+  FaObjectGroup,
+  FaPalette,
+  FaQrcode,
+  FaRedo,
+  FaRuler,
+  FaSort,
+  FaStar,
+  FaStream,
+  FaTable,
+  FaTh,
+  FaTint,
+  FaWrench,
+} from "react-icons/fa";
+import { MdGradient } from "react-icons/md";
+
+/**
+ * Icon per catalog tool id (unique across categories).
+ * Kept here so catalog.js stays data-only.
+ */
+export const TOOL_ICONS = {
+  // color
+  picker: FaEyeDropper,
+  palette: FaPalette,
+  gradient: MdGradient,
+  contrast: FaAdjust,
+  extract: FaTint,
+  blindness: FaLowVision,
+  // pdf
+  viewer: FaFilePdf,
+  merger: FaObjectGroup,
+  "to-images": FaImages,
+  "from-images": FaFileImage,
+  reorder: FaSort,
+  rotate: FaRedo,
+  split: FaCut,
+  // svg
+  optimize: FaMagic,
+  colors: FaFillDrip,
+  viewbox: FaExpand,
+  "image-to-svg": FaImage,
+  sprite: FaTh,
+  // image
+  resize: FaRuler,
+  compress: FaCompress,
+  crop: FaCrop,
+  convert: FaExchangeAlt,
+  metadata: FaInfo,
+  // dev
+  uuid: FaFingerprint,
+  hash: FaHashtag,
+  regex: FaCode,
+  cron: FaClock,
+  favicon: FaStar,
+  qr: FaQrcode,
+  timestamp: FaCalendarAlt,
+  units: FaBalanceScale,
+  // text
+  base64: FaFileCode,
+  url: FaLink,
+  jwt: FaLock,
+  case: FaFont,
+  markdown: FaMarkdown,
+  lorem: FaAlignLeft,
+  diff: FaColumns,
+  unicode: FaGlobe,
+  // data
+  editor: FaCode,
+  csvToJson: FaFileCsv,
+  jsonToCsv: FaFileCode,
+  yamlToJson: FaStream,
+  xmlToJson: FaFileAlt,
+  md_tableToJson: FaTable,
+  html_tableToJson: FaHtml5,
+};
 
 /**
  * Vertical tool list for the workspace left rail.
@@ -76,7 +184,7 @@ const ToolSideNav = ({
       <ul className="flex flex-1 flex-col gap-0.5 overflow-y-auto pr-0.5">
         {tools.map((tool) => {
           const isActive = tool.id === activeId;
-          const Icon = tool.icon;
+          const Icon = TOOL_ICONS[tool.id] || tool.icon || FaWrench;
           const displayLabel = tool.shortLabel || tool.label;
 
           return (
@@ -97,23 +205,12 @@ const ToolSideNav = ({
                     : "font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-800"
                 }`}
               >
-                {Icon ? (
-                  <Icon
-                    className={`h-3.5 w-3.5 shrink-0 ${
-                      isActive ? "text-primary-600" : "text-gray-400"
-                    }`}
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <span
-                    className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center text-[10px] font-bold ${
-                      isActive ? "text-primary-600" : "text-gray-400"
-                    }`}
-                    aria-hidden
-                  >
-                    {(displayLabel || "?").charAt(0)}
-                  </span>
-                )}
+                <Icon
+                  className={`h-3.5 w-3.5 shrink-0 ${
+                    isActive ? "text-primary-600" : "text-gray-400"
+                  }`}
+                  aria-hidden="true"
+                />
                 {!collapsed ? (
                   <span className="min-w-0 truncate leading-snug">
                     {displayLabel}
