@@ -16,9 +16,24 @@ import {
 } from "react-icons/fa";
 import imageCompression from "browser-image-compression";
 import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
+import { downloadDataUrl } from "../../utils/tools/download";
 
 const validTools = ["resize", "compress", "crop", "convert", "metadata"];
 const defaultTool = "resize";
+const MIN_CROP_SIZE = 2;
+
+const formatExtension = (mime) => {
+  if (mime === "image/jpeg") return "jpg";
+  return (mime || "image/png").split("/")[1] || "png";
+};
+
+const hasValidCrop = (start, end) => {
+  if (!start || !end) return false;
+  return (
+    Math.abs(end.x - start.x) >= MIN_CROP_SIZE &&
+    Math.abs(end.y - start.y) >= MIN_CROP_SIZE
+  );
+};
 
 const ImageTools = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -64,9 +79,8 @@ const ImageTools = () => {
 
   // Reset state when changing tabs
   useEffect(() => {
-    // Reset all states first
     setProcessedImage((prevImage) => {
-      if (prevImage) {
+      if (prevImage && prevImage.startsWith("blob:")) {
         URL.revokeObjectURL(prevImage);
       }
       return null;
@@ -85,22 +99,22 @@ const ImageTools = () => {
     setIsFullscreen(false);
   }, [activeTab]);
 
-  const drawCropOverlay = () => {
-    if (!cropStart || !cropEnd) return;
-
+  const redrawCropCanvas = (start = cropStart, end = cropEnd) => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
     const img = imageRef.current;
+    if (!canvas || !img) return;
 
-    // Clear and redraw the original image
+    const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    // Calculate crop rectangle coordinates
-    const startX = Math.min(cropStart.x, cropEnd.x);
-    const startY = Math.min(cropStart.y, cropEnd.y);
-    const width = Math.abs(cropEnd.x - cropStart.x);
-    const height = Math.abs(cropEnd.y - cropStart.y);
+    if (!start || !end) return;
+
+    // Calculate crop rectangle coordinates (use args — avoid stale state during drag)
+    const startX = Math.min(start.x, end.x);
+    const startY = Math.min(start.y, end.y);
+    const width = Math.abs(end.x - start.x);
+    const height = Math.abs(end.y - start.y);
 
     // Create clipping path for the crop area
     ctx.save();
@@ -263,10 +277,20 @@ const ImageTools = () => {
   }, [selectedFile, quality]);
 
   const handleCrop = useCallback(() => {
-    if (!selectedFile || !cropStart || !cropEnd) return;
+    if (!selectedFile || !hasValidCrop(cropStart, cropEnd)) {
+      setError("Drag on the image to select a crop area first.");
+      return;
+    }
 
     const canvas = canvasRef.current;
     const img = imageRef.current;
+    if (!canvas || !img) {
+      setError("Crop preview is not ready yet. Try reloading the image.");
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
 
     // Calculate the scale between displayed size and actual image size
     const scaleX = img.naturalWidth / canvas.width;
@@ -280,8 +304,8 @@ const ImageTools = () => {
     // Scale the crop dimensions to match the original image size
     const scaledStartX = startX * scaleX;
     const scaledStartY = startY * scaleY;
-    const scaledWidth = cropWidth * scaleX;
-    const scaledHeight = cropHeight * scaleY;
+    const scaledWidth = Math.max(1, Math.round(cropWidth * scaleX));
+    const scaledHeight = Math.max(1, Math.round(cropHeight * scaleY));
 
     const outputCanvas = document.createElement("canvas");
     outputCanvas.width = scaledWidth;
@@ -292,8 +316,8 @@ const ImageTools = () => {
       img,
       scaledStartX,
       scaledStartY,
-      scaledWidth,
-      scaledHeight,
+      cropWidth * scaleX,
+      cropHeight * scaleY,
       0,
       0,
       scaledWidth,
@@ -301,33 +325,39 @@ const ImageTools = () => {
     );
 
     outputCanvas.toBlob((blob) => {
-      // Create a new File object from the blob
+      if (!blob) {
+        setError("Failed to crop image. Please try again.");
+        setLoading(false);
+        return;
+      }
+
       const croppedFile = new File([blob], selectedFile.name, {
-        type: selectedFile.type,
-        lastModified: new Date().getTime(),
+        type: selectedFile.type || "image/png",
+        lastModified: Date.now(),
       });
 
-      // Update both the selected file and processed image
       setSelectedFile(croppedFile);
-      setProcessedImage(URL.createObjectURL(blob));
+      setProcessedImage((prev) => {
+        if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(blob);
+      });
 
-      // Update dimensions
       setDimensions({
         width: scaledWidth,
         height: scaledHeight,
       });
 
-      // Update metadata
       setMetadata((prev) => ({
         ...prev,
         size: (blob.size / 1024).toFixed(2) + " KB",
-        dimensions: `${scaledWidth.toFixed(2)}x${scaledHeight.toFixed(2)}`,
+        dimensions: `${scaledWidth}x${scaledHeight}`,
         lastModified: new Date().toLocaleString(),
       }));
 
       setCropStart(null);
       setCropEnd(null);
-    }, selectedFile.type);
+      setLoading(false);
+    }, selectedFile.type || "image/png");
   }, [selectedFile, cropStart, cropEnd]);
 
   const getScaledCoordinates = (e, canvas) => {
@@ -428,63 +458,79 @@ const ImageTools = () => {
           newEnd.y > cropStart.y
             ? cropStart.y + targetHeight
             : cropStart.y - targetHeight;
+        newEnd.y = Math.max(0, Math.min(canvas.height, newEnd.y));
       }
 
       setCropEnd(newEnd);
-      drawCropOverlay();
+      redrawCropCanvas(cropStart, newEnd);
       return;
     }
 
-    // Handle moving existing crop box
-    if (isMovingCrop && moveStart) {
+    // Handle moving existing crop box (preserve size; clamp within canvas)
+    if (isMovingCrop && moveStart && cropStart && cropEnd) {
       const dx = coords.x - moveStart.x;
       const dy = coords.y - moveStart.y;
+      const width = Math.abs(cropEnd.x - cropStart.x);
+      const height = Math.abs(cropEnd.y - cropStart.y);
+      const minX = Math.min(cropStart.x, cropEnd.x);
+      const minY = Math.min(cropStart.y, cropEnd.y);
+
+      const newMinX = Math.max(0, Math.min(canvas.width - width, minX + dx));
+      const newMinY = Math.max(0, Math.min(canvas.height - height, minY + dy));
+      const startIsLeft = cropStart.x <= cropEnd.x;
+      const startIsTop = cropStart.y <= cropEnd.y;
 
       const newStart = {
-        x: Math.max(0, Math.min(canvas.width, cropStart.x + dx)),
-        y: Math.max(0, Math.min(canvas.height, cropStart.y + dy)),
+        x: startIsLeft ? newMinX : newMinX + width,
+        y: startIsTop ? newMinY : newMinY + height,
       };
       const newEnd = {
-        x: Math.max(0, Math.min(canvas.width, cropEnd.x + dx)),
-        y: Math.max(0, Math.min(canvas.height, cropEnd.y + dy)),
+        x: startIsLeft ? newMinX + width : newMinX,
+        y: startIsTop ? newMinY + height : newMinY,
       };
 
       setCropStart(newStart);
       setCropEnd(newEnd);
       setMoveStart(coords);
-      drawCropOverlay();
+      redrawCropCanvas(newStart, newEnd);
       return;
     }
 
     // Handle resizing via handles
-    if (activeHandle) {
+    if (activeHandle && cropStart && cropEnd) {
+      let newStart = { ...cropStart };
       let newEnd = { ...cropEnd };
+      const clamped = {
+        x: Math.max(0, Math.min(canvas.width, coords.x)),
+        y: Math.max(0, Math.min(canvas.height, coords.y)),
+      };
+
       switch (activeHandle) {
         case "tl":
-          setCropStart(coords);
+          newStart = clamped;
           break;
         case "tr":
-          setCropStart({ ...cropStart, y: coords.y });
-          newEnd = { ...newEnd, x: coords.x };
+          newStart = { ...newStart, y: clamped.y };
+          newEnd = { ...newEnd, x: clamped.x };
           break;
         case "bl":
-          setCropStart({ ...cropStart, x: coords.x });
-          newEnd = { ...newEnd, y: coords.y };
+          newStart = { ...newStart, x: clamped.x };
+          newEnd = { ...newEnd, y: clamped.y };
           break;
         case "br":
-          newEnd = coords;
+          newEnd = clamped;
           break;
         case "t":
-          setCropStart({ ...cropStart, y: coords.y });
+          newStart = { ...newStart, y: clamped.y };
           break;
         case "b":
-          newEnd = { ...newEnd, y: coords.y };
+          newEnd = { ...newEnd, y: clamped.y };
           break;
         case "l":
-          setCropStart({ ...cropStart, x: coords.x });
+          newStart = { ...newStart, x: clamped.x };
           break;
         case "r":
-          newEnd = { ...newEnd, x: coords.x };
+          newEnd = { ...newEnd, x: clamped.x };
           break;
         default:
           break;
@@ -494,17 +540,19 @@ const ImageTools = () => {
         aspectRatio !== "free" &&
         ["tl", "tr", "bl", "br"].includes(activeHandle)
       ) {
-        const width = Math.abs(newEnd.x - cropStart.x);
+        const width = Math.abs(newEnd.x - newStart.x);
         const [ratioWidth, ratioHeight] = aspectRatio.split(":").map(Number);
         const targetHeight = (width * ratioHeight) / ratioWidth;
         newEnd.y =
-          newEnd.y > cropStart.y
-            ? cropStart.y + targetHeight
-            : cropStart.y - targetHeight;
+          newEnd.y > newStart.y
+            ? newStart.y + targetHeight
+            : newStart.y - targetHeight;
+        newEnd.y = Math.max(0, Math.min(canvas.height, newEnd.y));
       }
 
+      setCropStart(newStart);
       setCropEnd(newEnd);
-      drawCropOverlay();
+      redrawCropCanvas(newStart, newEnd);
     }
 
     // Update cursor based on handle
@@ -527,9 +575,11 @@ const ImageTools = () => {
     if (isDragging && cropStart && !cropEnd) {
       // If we're dragging but haven't set an end point, use current mouse position
       const canvas = canvasRef.current;
-      const coords = getScaledCoordinates(e, canvas);
-      setCropEnd(coords);
-      drawCropOverlay();
+      if (canvas) {
+        const coords = getScaledCoordinates(e, canvas);
+        setCropEnd(coords);
+        redrawCropCanvas(cropStart, coords);
+      }
     }
 
     setIsDragging(false);
@@ -546,27 +596,30 @@ const ImageTools = () => {
   const handleCancelCrop = () => {
     setCropStart(null);
     setCropEnd(null);
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    const img = imageRef.current;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    setError(null);
+    redrawCropCanvas(null, null);
   };
 
   const downloadImage = () => {
-    if (!processedImage) return;
+    if (!processedImage || !selectedFile) {
+      setError("Select or process an image before downloading.");
+      return;
+    }
 
-    const link = document.createElement("a");
-    link.href = processedImage;
-    link.download = `processed-${selectedFile.name}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const baseName = selectedFile.name.replace(/\.[^.]+$/, "") || "image";
+    const ext =
+      formatExtension(selectedFile.type) ||
+      selectedFile.name.split(".").pop() ||
+      "png";
+    downloadDataUrl(processedImage, `processed-${baseName}.${ext}`);
   };
 
   const handleClearImage = () => {
+    setProcessedImage((prev) => {
+      if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return null;
+    });
     setSelectedFile(null);
-    setProcessedImage(null);
     setMetadata(null);
     setDimensions({ width: 0, height: 0 });
     setCropStart(null);
@@ -603,17 +656,24 @@ const ImageTools = () => {
   );
 
   const handleConvert = useCallback(() => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      setError("Select an image before converting.");
+      return;
+    }
 
+    setError(null);
     setLoading(true);
     const img = new Image();
+    const objectUrl = URL.createObjectURL(selectedFile);
+
     img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
       const canvas = document.createElement("canvas");
       canvas.width = img.width;
       canvas.height = img.height;
       const ctx = canvas.getContext("2d");
 
-      // Draw with white background for PNG to JPEG conversion
+      // Opaque backdrop when converting to JPEG (no alpha)
       if (convertFormat === "image/jpeg") {
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -621,30 +681,36 @@ const ImageTools = () => {
 
       ctx.drawImage(img, 0, 0);
 
-      // Get file extension from MIME type
-      const ext = convertFormat.split("/")[1];
+      const ext = formatExtension(convertFormat);
+      const qualityArg =
+        convertFormat === "image/jpeg" || convertFormat === "image/webp"
+          ? convertQuality
+          : undefined;
 
       canvas.toBlob(
         (blob) => {
           if (!blob) {
-            setError("Failed to convert image. Please try a different format.");
+            setError(
+              "Failed to convert image. Try PNG, JPEG, or WebP instead."
+            );
             setLoading(false);
             return;
           }
 
           const convertedFile = new File([blob], `converted.${ext}`, {
             type: convertFormat,
-            lastModified: new Date().getTime(),
+            lastModified: Date.now(),
           });
 
-          const newUrl = URL.createObjectURL(blob);
           setSelectedFile(convertedFile);
-          setProcessedImage(newUrl);
+          setProcessedImage((prev) => {
+            if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+            return URL.createObjectURL(blob);
+          });
 
-          // Update metadata
           setMetadata((prev) => ({
             ...prev,
-            originalType: prev.type,
+            originalType: prev?.type || selectedFile.type,
             type: convertFormat,
             size: (blob.size / 1024).toFixed(2) + " KB",
             converted: true,
@@ -654,22 +720,17 @@ const ImageTools = () => {
           setLoading(false);
         },
         convertFormat,
-        convertFormat.includes("jpeg") || convertFormat.includes("webp")
-          ? convertQuality
-          : undefined
+        qualityArg
       );
     };
 
     img.onerror = () => {
-      setError("Failed to load image for conversion");
+      URL.revokeObjectURL(objectUrl);
+      setError("Failed to load image for conversion.");
       setLoading(false);
     };
 
-    const objectUrl = URL.createObjectURL(selectedFile);
     img.src = objectUrl;
-
-    // Clean up object URL after image loads or errors
-    return () => URL.revokeObjectURL(objectUrl);
   }, [selectedFile, convertFormat, convertQuality]);
 
   const renderTool = () => {
@@ -798,10 +859,15 @@ const ImageTools = () => {
           </div>
         );
 
-      case "crop":
+      case "crop": {
+        const cropReady = hasValidCrop(cropStart, cropEnd);
         return (
           <div className="space-y-6">
-            <div className="flex justify-between items-end">
+            <p className="text-sm text-gray-600">
+              Drag on the image to select a crop area. Drag handles to resize,
+              or drag inside the selection to move it.
+            </p>
+            <div className="flex flex-wrap justify-between items-end gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Aspect Ratio
@@ -810,15 +876,9 @@ const ImageTools = () => {
                   value={aspectRatio}
                   onChange={(e) => {
                     setAspectRatio(e.target.value);
-                    // Reset the crop box when aspect ratio changes
                     setCropStart(null);
                     setCropEnd(null);
-                    // Redraw the canvas to clear the overlay
-                    const canvas = canvasRef.current;
-                    const ctx = canvas.getContext("2d");
-                    const img = imageRef.current;
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0);
+                    redrawCropCanvas(null, null);
                   }}
                   className="px-4 py-2 border rounded"
                 >
@@ -828,8 +888,9 @@ const ImageTools = () => {
                   <option value="16:9">16:9</option>
                 </select>
               </div>
-              <div className="flex space-x-4">
+              <div className="flex flex-wrap gap-3">
                 <button
+                  type="button"
                   onClick={handleClearImage}
                   className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
                 >
@@ -837,6 +898,7 @@ const ImageTools = () => {
                 </button>
                 {processedImage && !cropStart && !cropEnd && (
                   <button
+                    type="button"
                     onClick={downloadImage}
                     className="w-10 h-10 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
                     title="Download Modified Image"
@@ -844,24 +906,36 @@ const ImageTools = () => {
                     <FaDownload />
                   </button>
                 )}
-                {cropStart && cropEnd && (
-                  <>
-                    <button
-                      onClick={handleCancelCrop}
-                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                    >
-                      Reset Crop
-                    </button>
-                    <button
-                      onClick={handleCrop}
-                      className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
-                    >
-                      Crop Image
-                    </button>
-                  </>
+                {(cropStart || cropEnd) && (
+                  <button
+                    type="button"
+                    onClick={handleCancelCrop}
+                    className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                  >
+                    Reset Crop
+                  </button>
                 )}
+                <button
+                  type="button"
+                  onClick={handleCrop}
+                  disabled={!cropReady || loading}
+                  className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  title={
+                    cropReady
+                      ? "Apply crop"
+                      : "Select a crop area on the image first"
+                  }
+                >
+                  {loading ? "Cropping..." : "Crop Image"}
+                </button>
               </div>
             </div>
+            {!cropReady && (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                No crop selected yet — drag across the preview to create a
+                selection.
+              </p>
+            )}
             <div className="relative">
               <canvas
                 ref={canvasRef}
@@ -892,15 +966,17 @@ const ImageTools = () => {
                 className="hidden"
                 onLoad={(e) => {
                   const canvas = canvasRef.current;
+                  if (!canvas) return;
                   const ctx = canvas.getContext("2d");
-                  canvas.width = e.target.width;
-                  canvas.height = e.target.height;
+                  canvas.width = e.target.naturalWidth || e.target.width;
+                  canvas.height = e.target.naturalHeight || e.target.height;
                   ctx.drawImage(e.target, 0, 0);
                 }}
               />
             </div>
           </div>
         );
+      }
 
       case "metadata":
         return (
@@ -946,7 +1022,8 @@ const ImageTools = () => {
                 <select
                   value={convertFormat}
                   onChange={(e) => setConvertFormat(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  disabled={!selectedFile || loading}
+                  className="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="image/png">PNG</option>
                   <option value="image/jpeg">JPEG</option>
@@ -962,19 +1039,21 @@ const ImageTools = () => {
                     </label>
                     <input
                       type="range"
-                      min="0"
+                      min="0.1"
                       max="1"
                       step="0.01"
                       value={convertQuality}
                       onChange={(e) =>
                         setConvertQuality(parseFloat(e.target.value))
                       }
-                      className="w-full"
+                      disabled={!selectedFile || loading}
+                      className="w-full disabled:opacity-50"
                     />
                   </div>
                 ) : null}
 
                 <button
+                  type="button"
                   onClick={handleConvert}
                   disabled={!selectedFile || loading}
                   className="w-full px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -992,8 +1071,10 @@ const ImageTools = () => {
                       New size: {metadata.size}
                     </div>
                     <button
+                      type="button"
                       onClick={downloadImage}
-                      className="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
+                      disabled={!processedImage || loading}
+                      className="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     >
                       <FaDownload className="mr-2" />
                       Download Converted Image
@@ -1014,7 +1095,9 @@ const ImageTools = () => {
                       className="max-w-full max-h-[300px] object-contain"
                     />
                   ) : (
-                    <div className="text-gray-400">No image selected</div>
+                    <div className="text-gray-400 text-center px-4">
+                      No image selected — drop a file to get started.
+                    </div>
                   )}
                 </div>
               </div>
@@ -1082,6 +1165,19 @@ const ImageTools = () => {
                 ? "Drop the image here"
                 : "Drag & drop an image here, or click to select"}
             </p>
+            <p className="text-sm text-gray-400 mt-2">
+              PNG, JPEG, WebP, and other raster formats. SVG is not supported
+              here.
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div
+            role="alert"
+            className="text-sm text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2"
+          >
+            {error}
           </div>
         )}
 
