@@ -1,8 +1,9 @@
 import React, { useId } from "react";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 /**
  * Vertical tool list for the workspace left rail.
- * Desktop: stacked buttons. Mobile: native select (via variant).
+ * Desktop: stacked buttons (optionally icon-only). Mobile: native select (via variant).
  */
 const ToolSideNav = ({
   tools = [],
@@ -10,6 +11,8 @@ const ToolSideNav = ({
   onChange,
   label = "Select tool",
   variant = "rail",
+  collapsed = false,
+  onToggleCollapsed,
 }) => {
   const selectId = useId();
 
@@ -41,9 +44,35 @@ const ToolSideNav = ({
 
   return (
     <nav aria-label={label} className="flex h-full flex-col">
-      <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-        Tools
-      </p>
+      <div
+        className={`mb-1.5 flex items-center ${
+          collapsed ? "justify-center px-0" : "justify-between gap-1 px-1"
+        }`}
+      >
+        {!collapsed ? (
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            Tools
+          </p>
+        ) : (
+          <span className="sr-only">Tools</span>
+        )}
+        {typeof onToggleCollapsed === "function" ? (
+          <button
+            type="button"
+            onClick={onToggleCollapsed}
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            aria-label={collapsed ? "Expand tools rail" : "Collapse tools rail"}
+            aria-pressed={collapsed}
+            title={collapsed ? "Expand rail" : "Collapse rail"}
+          >
+            {collapsed ? (
+              <FaChevronRight className="h-3 w-3" aria-hidden />
+            ) : (
+              <FaChevronLeft className="h-3 w-3" aria-hidden />
+            )}
+          </button>
+        ) : null}
+      </div>
       <ul className="flex flex-1 flex-col gap-0.5 overflow-y-auto pr-0.5">
         {tools.map((tool) => {
           const isActive = tool.id === activeId;
@@ -55,9 +84,14 @@ const ToolSideNav = ({
               <button
                 type="button"
                 aria-current={isActive ? "page" : undefined}
+                aria-label={tool.label}
                 title={tool.label}
                 onClick={() => onChange(tool.id)}
-                className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 ${
+                className={`flex w-full items-center rounded-lg text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 ${
+                  collapsed
+                    ? "justify-center px-1.5 py-2"
+                    : "gap-2 px-2.5 py-1.5"
+                } ${
                   isActive
                     ? "bg-primary-50 font-semibold text-primary-700 ring-1 ring-inset ring-primary-200"
                     : "font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-800"
@@ -70,10 +104,21 @@ const ToolSideNav = ({
                     }`}
                     aria-hidden="true"
                   />
+                ) : (
+                  <span
+                    className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center text-[10px] font-bold ${
+                      isActive ? "text-primary-600" : "text-gray-400"
+                    }`}
+                    aria-hidden
+                  >
+                    {(displayLabel || "?").charAt(0)}
+                  </span>
+                )}
+                {!collapsed ? (
+                  <span className="min-w-0 truncate leading-snug">
+                    {displayLabel}
+                  </span>
                 ) : null}
-                <span className="min-w-0 truncate leading-snug">
-                  {displayLabel}
-                </span>
               </button>
             </li>
           );

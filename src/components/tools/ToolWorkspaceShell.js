@@ -1,11 +1,22 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { FaClipboardList } from "react-icons/fa";
 import ToolSideNav from "./ToolSideNav";
 import ToolUtilityRail from "./ToolUtilityRail";
 import {
+  TOOLS_RAIL_COLLAPSED_KEY,
   TOOLS_RAIL_STICKY_TOP,
+  TOOLS_RAIL_WIDTH,
+  TOOLS_RAIL_WIDTH_COLLAPSED,
   TOOLS_WORKSPACE_OFFSET,
 } from "./toolsChrome";
+
+const readRailCollapsed = () => {
+  try {
+    return localStorage.getItem(TOOLS_RAIL_COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
 
 /**
  * Two-column tools workspace: side nav · content.
@@ -17,11 +28,14 @@ const ToolWorkspaceShell = ({
   activeToolId,
   onToolChange,
   toolNavLabel = "Select tool",
+  workspaceTitle,
   utilitiesOpen = false,
   onUtilitiesOpenChange,
   children,
 }) => {
   const hasToolNav = tools.length > 0 && typeof onToolChange === "function";
+  const [railCollapsed, setRailCollapsed] = useState(readRailCollapsed);
+
   const closeUtilities = () => {
     if (typeof onUtilitiesOpenChange === "function") {
       onUtilitiesOpenChange(false);
@@ -32,6 +46,18 @@ const ToolWorkspaceShell = ({
       onUtilitiesOpenChange(true);
     }
   };
+
+  const toggleRailCollapsed = useCallback(() => {
+    setRailCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(TOOLS_RAIL_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        /* ignore quota / private mode */
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (!utilitiesOpen) return undefined;
@@ -51,16 +77,16 @@ const ToolWorkspaceShell = ({
     };
   }, [utilitiesOpen, onUtilitiesOpenChange]);
 
-  const gridCols = hasToolNav
-    ? "lg:grid-cols-[13.75rem_minmax(0,1fr)]"
-    : "lg:grid-cols-[minmax(0,1fr)]";
+  const railWidth = railCollapsed
+    ? TOOLS_RAIL_WIDTH_COLLAPSED
+    : TOOLS_RAIL_WIDTH;
 
-  const railMaxHeight = `calc(100vh - ${TOOLS_WORKSPACE_OFFSET} - 1.5rem)`;
+  const railMaxHeight = `calc(100vh - ${TOOLS_WORKSPACE_OFFSET} - 1.25rem)`;
 
   return (
     <div className="relative flex flex-1 flex-col">
       {hasToolNav && (
-        <div className="mb-3 max-w-md lg:hidden">
+        <div className="mb-2 max-w-md lg:hidden">
           <ToolSideNav
             tools={tools}
             activeId={activeToolId}
@@ -71,10 +97,26 @@ const ToolWorkspaceShell = ({
         </div>
       )}
 
+      {/* Dynamic lg columns — Tailwind cannot see runtime width values */}
+      <style>{`
+        @media (min-width: 1024px) {
+          .tools-workspace-grid {
+            display: grid;
+            grid-template-columns: ${
+              hasToolNav
+                ? `${railWidth} minmax(0, 1fr)`
+                : "minmax(0, 1fr)"
+            };
+            gap: 0.625rem;
+            align-items: start;
+          }
+        }
+      `}</style>
+
       <div
-        className={`grid flex-1 items-start gap-3 ${gridCols}`}
+        className="tools-workspace-grid flex flex-1 flex-col gap-2.5"
         style={{
-          minHeight: `min(24rem, calc(100vh - ${TOOLS_WORKSPACE_OFFSET} - 2rem))`,
+          minHeight: `min(24rem, calc(100vh - ${TOOLS_WORKSPACE_OFFSET} - 1.5rem))`,
         }}
       >
         {hasToolNav && (
@@ -86,19 +128,30 @@ const ToolWorkspaceShell = ({
               maxHeight: railMaxHeight,
             }}
           >
-            <div className="flex h-full max-h-[inherit] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm">
+            <div
+              className={`flex h-full max-h-[inherit] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm ${
+                railCollapsed ? "p-1.5" : "p-2"
+              }`}
+            >
               <ToolSideNav
                 tools={tools}
                 activeId={activeToolId}
                 onChange={onToolChange}
                 label={toolNavLabel}
                 variant="rail"
+                collapsed={railCollapsed}
+                onToggleCollapsed={toggleRailCollapsed}
               />
             </div>
           </aside>
         )}
 
-        <div className="min-w-0 self-start rounded-xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4 lg:min-h-[inherit]">
+        <div className="min-w-0 self-start rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-3.5 lg:min-h-[inherit]">
+          {workspaceTitle ? (
+            <h2 className="mb-2.5 text-base font-semibold tracking-tight text-gray-900 sm:text-lg">
+              {workspaceTitle}
+            </h2>
+          ) : null}
           {children}
         </div>
       </div>
@@ -122,7 +175,6 @@ const ToolWorkspaceShell = ({
             aria-label="Dismiss utilities"
             onClick={closeUtilities}
           />
-          {/* Desktop: right slide-over · Mobile: bottom sheet */}
           <div
             role="dialog"
             aria-modal="true"
