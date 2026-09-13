@@ -6,6 +6,30 @@ import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 
 const validTools = ["base64", "url", "jwt", "case", "markdown", "lorem"];
 
+/** Unicode-safe Base64 encode (btoa alone fails on non-Latin1). */
+const encodeBase64 = (str) => {
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  bytes.forEach((b) => {
+    binary += String.fromCharCode(b);
+  });
+  return btoa(binary);
+};
+
+/** Unicode-safe Base64 decode. */
+const decodeBase64 = (str) => {
+  const binary = atob(str);
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+};
+
+/** Decode JWT segment: URL-safe Base64 with optional padding. */
+const decodeJwtSegment = (segment) => {
+  const base64 = segment.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+  return JSON.parse(decodeBase64(padded));
+};
+
 const TextTools = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(
@@ -90,9 +114,9 @@ const TextTools = () => {
   const handleBase64 = (action) => {
     try {
       if (action === "encode") {
-        setOutput(btoa(input));
+        setOutput(encodeBase64(input));
       } else {
-        setOutput(atob(input));
+        setOutput(decodeBase64(input));
       }
     } catch (error) {
       setOutput("Invalid input for Base64 " + action);
@@ -117,8 +141,8 @@ const TextTools = () => {
       if (parts.length !== 3) throw new Error("Invalid JWT format");
 
       const decoded = {
-        header: JSON.parse(atob(parts[0])),
-        payload: JSON.parse(atob(parts[1])),
+        header: decodeJwtSegment(parts[0]),
+        payload: decodeJwtSegment(parts[1]),
         signature: parts[2],
       };
 
