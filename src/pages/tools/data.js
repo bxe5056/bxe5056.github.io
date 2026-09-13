@@ -17,6 +17,8 @@ import JSON5 from "json5";
 import HtmlTableToJson from "html-table-to-json";
 import { markdownTable } from "markdown-table";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
+import { copyText } from "../../utils/tools/clipboard";
+import { downloadText } from "../../utils/tools/download";
 
 // Define supported formats and their metadata
 const SUPPORTED_FORMATS = {
@@ -78,6 +80,30 @@ const CONVERSION_MATRIX = {
 // Function to check if conversion is supported
 const isConversionSupported = (sourceFormat, targetFormat) => {
   return CONVERSION_MATRIX[sourceFormat]?.includes(targetFormat) || false;
+};
+
+// Catalog-aligned slugs: `{sourceLower}To{TargetPascal}` e.g. csvToJson, md_tableToJson
+const formatToSlugSource = (format) => String(format).toLowerCase();
+const formatToSlugTarget = (format) => {
+  const lower = String(format).toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+};
+const buildConversionSlug = (sourceFormat, targetFormat) =>
+  `${formatToSlugSource(sourceFormat)}To${formatToSlugTarget(targetFormat)}`;
+
+const parseConversionSlug = (slug) => {
+  if (!slug || typeof slug !== "string" || !slug.includes("To")) return null;
+  const [sourceRaw, targetRaw, ...rest] = slug.split("To");
+  if (!sourceRaw || !targetRaw || rest.length > 0) return null;
+  const source = sourceRaw.toUpperCase();
+  const target = targetRaw.toUpperCase();
+  if (!SUPPORTED_FORMATS[source] || !SUPPORTED_FORMATS[target]) return null;
+  if (!isConversionSupported(source, target)) return null;
+  return {
+    source,
+    target,
+    slug: buildConversionSlug(source, target),
+  };
 };
 
 // XML conversion helper functions
@@ -189,14 +215,9 @@ const jsonToXml = (obj, indent = "") => {
   return `<?xml version="1.0" encoding="UTF-8"?>\n${xml}`;
 };
 
-const validTools = [
-  "csvToJson",
-  "jsonToCsv",
-  "yamlToJson",
-  "jsonToYaml",
-  "xmlToJson",
-  "jsonToXml",
-];
+const validTools = Object.entries(CONVERSION_MATRIX).flatMap(([source, targets]) =>
+  targets.map((target) => buildConversionSlug(source, target))
+);
 const defaultTool = "csvToJson";
 
 const DataTools = () => {
@@ -204,16 +225,24 @@ const DataTools = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Add state for source and target formats
-  const [sourceFormat, setSourceFormat] = useState("CSV");
-  const [targetFormat, setTargetFormat] = useState("JSON");
-  const [activeTab, setActiveTab] = useState(() => {
+  const initialConversion = (() => {
     const pathParam = location.pathname.split("/").pop();
-    if (pathParam && pathParam.includes("To")) {
-      return pathParam;
-    }
-    return searchParams.get("tool") || "csvToJson";
-  });
+    return (
+      parseConversionSlug(pathParam) ||
+      parseConversionSlug(searchParams.get("tool"))
+    );
+  })();
+
+  // Add state for source and target formats
+  const [sourceFormat, setSourceFormat] = useState(
+    initialConversion?.source || "CSV"
+  );
+  const [targetFormat, setTargetFormat] = useState(
+    initialConversion?.target || "JSON"
+  );
+  const [activeTab, setActiveTab] = useState(
+    initialConversion?.slug || defaultTool
+  );
 
   const [inputData, setInputData] = useState("");
   const [outputData, setOutputData] = useState("");
@@ -359,12 +388,12 @@ const DataTools = () => {
     (type, format) => {
       if (type === "source") {
         setSourceFormat(format);
-        const newTab = `${format.toLowerCase()}To${targetFormat.toLowerCase()}`;
+        const newTab = buildConversionSlug(format, targetFormat);
         setActiveTab(newTab);
         navigate(`/tools/data/${newTab}`);
       } else {
         setTargetFormat(format);
-        const newTab = `${sourceFormat.toLowerCase()}To${format.toLowerCase()}`;
+        const newTab = buildConversionSlug(sourceFormat, format);
         setActiveTab(newTab);
         navigate(`/tools/data/${newTab}`);
       }
@@ -394,7 +423,7 @@ const DataTools = () => {
       const detectedFormat = detectFileFormat(file);
       if (detectedFormat) {
         setSourceFormat(detectedFormat);
-        const newTab = `${detectedFormat.toLowerCase()}To${targetFormat.toLowerCase()}`;
+        const newTab = buildConversionSlug(detectedFormat, targetFormat);
         setActiveTab(newTab);
         navigate(`/tools/data/${newTab}`);
       }
@@ -408,7 +437,7 @@ const DataTools = () => {
 
           // For Excel files, we need to process them differently
           if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
-            const workbook = XLSX.read(content, { type: "binary" });
+            const workbook = XLSX.read(content, { type: "array" });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
             content = XLSX.utils.sheet_to_csv(firstSheet);
           }
@@ -421,7 +450,7 @@ const DataTools = () => {
       };
 
       if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
-        reader.readAsBinaryString(file);
+        reader.readAsArrayBuffer(file);
       } else {
         reader.readAsText(file);
       }
@@ -429,19 +458,21 @@ const DataTools = () => {
     [targetFormat, detectFileFormat, navigate, convertData]
   );
 
-  // Handle initial URL params
+  // Handle initial URL params / hub deep-links (incl. md_table / html_table)
   useEffect(() => {
     const pathParam = location.pathname.split("/").pop();
-    if (pathParam && pathParam.includes("To")) {
-      const [source, target] = pathParam
-        .split("To")
-        .map((f) => f.toUpperCase());
-      if (SUPPORTED_FORMATS[source] && SUPPORTED_FORMATS[target]) {
-        setSourceFormat(source);
-        setTargetFormat(target);
+    const parsed =
+      parseConversionSlug(pathParam) ||
+      parseConversionSlug(searchParams.get("tool"));
+    if (parsed) {
+      setSourceFormat(parsed.source);
+      setTargetFormat(parsed.target);
+      setActiveTab(parsed.slug);
+      if (pathParam !== parsed.slug && validTools.includes(parsed.slug)) {
+        navigate(`/tools/data/${parsed.slug}`, { replace: true });
       }
     }
-  }, [location]);
+  }, [location, searchParams, navigate]);
 
   // Effect to convert data when input changes
   useEffect(() => {
@@ -466,10 +497,10 @@ const DataTools = () => {
   });
 
   const copyToClipboard = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text);
+    const ok = await copyText(text);
+    if (ok) {
       alert("Copied to clipboard!");
-    } catch (err) {
+    } else {
       alert("Failed to copy text");
     }
   };
@@ -477,43 +508,11 @@ const DataTools = () => {
   const downloadOutput = () => {
     if (!outputData) return;
 
-    let extension = ".txt";
-    let type = "text/plain";
+    const formatMeta = SUPPORTED_FORMATS[targetFormat];
+    const extension = formatMeta?.extensions?.[0] || ".txt";
+    const type = formatMeta?.mimeTypes?.[0] || "text/plain";
 
-    switch (activeTab) {
-      case "csvToJson":
-      case "yamlToJson":
-      case "xmlToJson":
-        extension = ".json";
-        type = "application/json";
-        break;
-      case "jsonToCsv":
-        extension = ".csv";
-        type = "text/csv";
-        break;
-      case "jsonToYaml":
-        extension = ".yaml";
-        type = "text/yaml";
-        break;
-      case "jsonToXml":
-        extension = ".xml";
-        type = "application/xml";
-        break;
-      default:
-        extension = ".txt";
-        type = "text/plain";
-        break;
-    }
-
-    const blob = new Blob([outputData], { type });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `converted${extension}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadText(outputData, `converted${extension}`, type);
   };
 
   const renderOptions = () => {
