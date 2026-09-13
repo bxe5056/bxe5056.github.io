@@ -45,37 +45,37 @@ const REGEX_CHEATSHEET = [
 const FLAG_OPTIONS = [
   {
     id: "g",
-    label: "g",
+    label: "Global (g)",
     title: "Global",
     description: "Find all matches, not just the first",
   },
   {
     id: "i",
-    label: "i",
+    label: "Ignore case (i)",
     title: "Ignore case",
     description: "Case-insensitive matching",
   },
   {
     id: "m",
-    label: "m",
+    label: "Multiline (m)",
     title: "Multiline",
     description: "^ and $ match line starts/ends",
   },
   {
     id: "s",
-    label: "s",
+    label: "DotAll (s)",
     title: "DotAll",
     description: ". matches newline characters",
   },
   {
     id: "u",
-    label: "u",
+    label: "Unicode (u)",
     title: "Unicode",
     description: "Pattern as Unicode code points",
   },
   {
     id: "y",
-    label: "y",
+    label: "Sticky (y)",
     title: "Sticky",
     description: "Match only from lastIndex",
   },
