@@ -42,6 +42,7 @@ export const TOOL_CATEGORIES = [
       { id: "from-images", label: "Images to PDF" },
       { id: "reorder", label: "Page Reorder" },
       { id: "rotate", label: "Rotate PDF" },
+      { id: "split", label: "Split / Extract" },
     ],
   },
   {
@@ -124,6 +125,7 @@ export const TOOL_CATEGORIES = [
       { id: "markdown", label: "Markdown Preview" },
       { id: "lorem", label: "Lorem Ipsum Generator" },
       { id: "diff", label: "Diff / Patch" },
+      { id: "unicode", label: "Unicode" },
     ],
   },
 ];

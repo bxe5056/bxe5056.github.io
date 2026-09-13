@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Worker, Viewer } from "@react-pdf-viewer/core";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
@@ -29,6 +29,8 @@ import {
 import FileSaver from "file-saver";
 import { useNavigate, useLocation } from "react-router-dom";
 import { showErrorWithReporting } from "../../utils/analytics";
+
+const PdfSplitTool = lazy(() => import("./pdf/PdfSplitTool"));
 
 // Initialize pdf.js worker (vendored for offline / GitHub Pages)
 const PDF_WORKER_URL = `${process.env.PUBLIC_URL}/pdf.worker.min.js`;
@@ -144,12 +146,17 @@ const PDFTools = () => {
         return "reorder";
       case "rotate":
         return "rotate";
+      case "split":
+        return "split";
       default:
         return "viewer";
     }
   };
 
   const [activeTab, setActiveTab] = useState(getActiveTabFromPath());
+  const [splitMounted, setSplitMounted] = useState(
+    () => getActiveTabFromPath() === "split"
+  );
 
   // Clean up object URLs when component unmounts or when files change
   useEffect(() => {
@@ -201,6 +208,9 @@ const PDFTools = () => {
       case "rotate":
         path = "rotate";
         break;
+      case "split":
+        path = "split";
+        break;
       default:
         path = "viewer";
     }
@@ -210,6 +220,9 @@ const PDFTools = () => {
   // Update effect to clear error on tab change
   useEffect(() => {
     setError(null);
+    if (activeTab === "split") {
+      setSplitMounted(true);
+    }
   }, [activeTab]);
 
   // Add a function to generate PDF preview
@@ -1276,6 +1289,8 @@ const PDFTools = () => {
             </div>
           </div>
         );
+      case "split":
+        return null;
       default:
         return null;
     }
@@ -1301,6 +1316,7 @@ const PDFTools = () => {
                 { id: "from-images", label: "Images to PDF" },
                 { id: "reorder", label: "Page Reorder" },
                 { id: "rotate", label: "Rotate PDF" },
+                { id: "split", label: "Split / Extract" },
               ].map((tool) => (
                 <option key={tool.id} value={tool.id}>
                   {tool.label}
@@ -1320,6 +1336,7 @@ const PDFTools = () => {
                   { id: "from-images", label: "Images to PDF" },
                   { id: "reorder", label: "Reorder Pages" },
                   { id: "rotate", label: "Rotate PDF" },
+                  { id: "split", label: "Split / Extract" },
                 ].map((tool) => (
                   <button
                     key={tool.id}
@@ -1337,7 +1354,22 @@ const PDFTools = () => {
             </div>
           </div>
         </div>
-        <div className="mt-6">{renderToolContent()}</div>
+        <div className="mt-6">
+          {splitMounted && (
+            <div className={activeTab === "split" ? "block" : "hidden"}>
+              <Suspense
+                fallback={
+                  <div className="text-center text-gray-500 py-8">
+                    Loading split tool…
+                  </div>
+                }
+              >
+                <PdfSplitTool />
+              </Suspense>
+            </div>
+          )}
+          {activeTab !== "split" && renderToolContent()}
+        </div>
       </>
     );
   };

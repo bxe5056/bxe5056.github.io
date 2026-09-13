@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 
 const DiffTool = lazy(() => import("./text/DiffTool"));
+const UnicodeTool = lazy(() => import("./text/UnicodeTool"));
 
 const validTools = [
   "base64",
@@ -14,6 +15,7 @@ const validTools = [
   "markdown",
   "lorem",
   "diff",
+  "unicode",
 ];
 
 const TEXT_TAB_ITEMS = [
@@ -24,6 +26,7 @@ const TEXT_TAB_ITEMS = [
   { id: "markdown", label: "Markdown Preview" },
   { id: "lorem", label: "Lorem Ipsum Generator" },
   { id: "diff", label: "Diff / Patch" },
+  { id: "unicode", label: "Unicode" },
 ];
 
 /** Unicode-safe Base64 encode (btoa alone fails on non-Latin1). */
@@ -68,6 +71,10 @@ const TextTools = () => {
   const [diffMounted, setDiffMounted] = useState(() => {
     const pathParam = location.pathname.split("/").pop();
     return pathParam === "diff" || searchParams.get("tool") === "diff";
+  });
+  const [unicodeMounted, setUnicodeMounted] = useState(() => {
+    const pathParam = location.pathname.split("/").pop();
+    return pathParam === "unicode" || searchParams.get("tool") === "unicode";
   });
 
   useEffect(() => {
@@ -120,6 +127,9 @@ const TextTools = () => {
     setLoremOutput("");
     if (activeTab === "diff") {
       setDiffMounted(true);
+    }
+    if (activeTab === "unicode") {
+      setUnicodeMounted(true);
     }
   }, [activeTab]);
 
@@ -468,6 +478,9 @@ const TextTools = () => {
       case "diff":
         return null;
 
+      case "unicode":
+        return null;
+
       default:
         return null;
     }
@@ -542,10 +555,26 @@ const TextTools = () => {
           </div>
         )}
 
+        {/* Unicode keep-alive (lazy) */}
+        {unicodeMounted && (
+          <div className={activeTab === "unicode" ? "block" : "hidden"}>
+            <Suspense
+              fallback={
+                <div className="text-center text-gray-500 py-8">
+                  Loading Unicode tool…
+                </div>
+              }
+            >
+              <UnicodeTool />
+            </Suspense>
+          </div>
+        )}
+
         {/* Input/Output Section */}
         {activeTab !== "markdown" &&
           activeTab !== "lorem" &&
-          activeTab !== "diff" && (
+          activeTab !== "diff" &&
+          activeTab !== "unicode" && (
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
