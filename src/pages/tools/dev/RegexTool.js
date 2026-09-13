@@ -1,4 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import {
   FaArrowDown,
   FaArrowUp,
@@ -50,7 +59,7 @@ const FLAG_OPTIONS = [
     id: "m",
     label: "m",
     title: "Multiline",
-    description: "^ and $ match line boundaries",
+    description: "^ and $ match line starts/ends",
   },
   {
     id: "s",
@@ -62,7 +71,7 @@ const FLAG_OPTIONS = [
     id: "u",
     label: "u",
     title: "Unicode",
-    description: "Treat pattern as Unicode code points",
+    description: "Pattern as Unicode code points",
   },
   {
     id: "y",
@@ -397,56 +406,135 @@ function extractSessionText(payload) {
   return null;
 }
 
+function FlagInfoButton({ flag, active }) {
+  const tipId = useId();
+  const btnRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+
+  const updatePosition = useCallback(() => {
+    const el = btnRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setCoords({
+      top: rect.top - 8,
+      left: rect.left + rect.width / 2,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return undefined;
+    updatePosition();
+    const onReposition = () => updatePosition();
+    window.addEventListener("scroll", onReposition, true);
+    window.addEventListener("resize", onReposition);
+    return () => {
+      window.removeEventListener("scroll", onReposition, true);
+      window.removeEventListener("resize", onReposition);
+    };
+  }, [open, updatePosition]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  const show = () => {
+    updatePosition();
+    setOpen(true);
+  };
+  const hide = () => setOpen(false);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        className={`inline-flex items-center justify-center w-4 h-4 rounded-full shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+          active
+            ? "text-white/85 hover:text-white focus-visible:ring-white/70 focus-visible:ring-offset-primary-600"
+            : "text-gray-400 hover:text-gray-600 focus-visible:ring-primary-500 focus-visible:ring-offset-white"
+        }`}
+        aria-label={`${flag.title}: ${flag.description}`}
+        aria-describedby={open ? tipId : undefined}
+        aria-expanded={open}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (open) hide();
+          else show();
+        }}
+        onMouseDown={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onBlur={hide}
+      >
+        <FaInfoCircle className="text-[10px]" aria-hidden />
+      </button>
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <span
+            id={tipId}
+            role="tooltip"
+            className="pointer-events-none fixed z-[100] w-max max-w-[14rem] -translate-x-1/2 -translate-y-full rounded border border-gray-200 bg-white px-2 py-1.5 text-left text-xs font-sans font-normal text-gray-700 shadow-md"
+            style={{ top: coords.top, left: coords.left }}
+          >
+            <span className="font-medium text-gray-900">{flag.title}</span>
+            <span className="block mt-0.5 leading-snug">{flag.description}</span>
+          </span>,
+          document.body
+        )}
+    </>
+  );
+}
+
 function FlagToggles({ flags, onChange }) {
   const set = new Set(flags.split("").filter(Boolean));
+
+  const toggleFlag = (flagId) => {
+    const next = new Set(set);
+    if (next.has(flagId)) next.delete(flagId);
+    else next.add(flagId);
+    onChange(
+      FLAG_OPTIONS.map((f) => f.id)
+        .filter((id) => next.has(id))
+        .join("")
+    );
+  };
+
   return (
-    <div className="flex flex-wrap items-center gap-x-1 gap-y-1.5">
+    <div className="flex flex-wrap items-center gap-1.5">
       {FLAG_OPTIONS.map((flag) => {
         const on = set.has(flag.id);
-        const tipId = `regex-flag-tip-${flag.id}`;
         return (
-          <div key={flag.id} className="inline-flex items-center gap-0.5">
-            <button
-              type="button"
-              aria-pressed={on}
-              aria-label={`${flag.title} flag`}
-              onClick={() => {
-                if (on) set.delete(flag.id);
-                else set.add(flag.id);
-                onChange(
-                  FLAG_OPTIONS.map((f) => f.id)
-                    .filter((id) => set.has(id))
-                    .join("")
-                );
-              }}
-              className={`px-2.5 py-1 text-sm font-mono rounded border ${
-                on
-                  ? "bg-primary-600 text-white border-primary-600"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              {flag.label}
-            </button>
-            <span className="relative inline-flex group">
-              <button
-                type="button"
-                className="inline-flex items-center justify-center w-5 h-5 rounded text-gray-400 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1"
-                aria-label={`${flag.title}: ${flag.description}`}
-                aria-describedby={tipId}
-              >
-                <FaInfoCircle className="text-[11px]" aria-hidden />
-              </button>
-              <span
-                id={tipId}
-                role="tooltip"
-                className="pointer-events-none absolute left-1/2 bottom-full z-20 mb-1.5 w-max max-w-[14rem] -translate-x-1/2 rounded border border-gray-200 bg-white px-2 py-1.5 text-left text-xs font-sans font-normal text-gray-700 shadow-sm opacity-0 invisible transition-opacity group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible"
-              >
-                <span className="font-medium text-gray-900">{flag.title}</span>
-                <span className="block mt-0.5 leading-snug">
-                  {flag.description}
-                </span>
-              </span>
-            </span>
+          <div
+            key={flag.id}
+            role="button"
+            tabIndex={0}
+            aria-pressed={on}
+            aria-label={`${flag.title} flag`}
+            onClick={() => toggleFlag(flag.id)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                toggleFlag(flag.id);
+              }
+            }}
+            className={`inline-flex items-center gap-1 rounded border pl-2.5 pr-1.5 py-1 cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 ${
+              on
+                ? "bg-primary-600 text-white border-primary-600"
+                : "border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+            }`}
+          >
+            <span className="text-sm font-mono leading-none">{flag.label}</span>
+            <FlagInfoButton flag={flag} active={on} />
           </div>
         );
       })}
