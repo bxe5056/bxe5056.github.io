@@ -33,8 +33,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import * as pdfjsLib from "pdfjs-dist";
 import { showErrorWithReporting } from "../../utils/analytics";
 
-// Initialize pdf.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
+// Initialize pdf.js worker (vendored for offline / GitHub Pages)
+const PDF_WORKER_URL = `${process.env.PUBLIC_URL}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
 
 const ErrorBanner = ({ error, onDismiss }) => {
   if (!error) return null;
@@ -680,7 +681,7 @@ const PDFTools = () => {
           <div className="w-full">
             {currentPdfUrl && selectedFiles.length > 0 ? (
               <div className="min-h-full">
-                <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+                <Worker workerUrl={PDF_WORKER_URL}>
                   <ErrorBoundary>
                     <Viewer
                       fileUrl={currentPdfUrl}
@@ -834,7 +835,7 @@ const PDFTools = () => {
             )}
             {selectedFiles.length > 0 ? (
               <div className="min-h-full">
-                <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+                <Worker workerUrl={PDF_WORKER_URL}>
                   <ErrorBoundary>
                     <Viewer
                       fileUrl={currentPdfUrl}
