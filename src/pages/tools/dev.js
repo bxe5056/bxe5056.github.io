@@ -26,6 +26,7 @@ import { v4 as uuidv4 } from "uuid";
 import CryptoJS from "crypto-js";
 import cronstrue from "cronstrue";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
+import { consumeSessionPayload } from "../../utils/tools/session";
 
 const QrTool = lazy(() => import("./dev/QrTool"));
 const TimestampTool = lazy(() => import("./dev/TimestampTool"));
@@ -53,6 +54,28 @@ const DEV_TAB_ITEMS = [
   { id: "qr", label: "QR Code", icon: FaQrcode },
   { id: "timestamp", label: "Timestamp", icon: FaClock },
   { id: "units", label: "Unit Converter", icon: FaExchangeAlt },
+];
+
+const REGEX_CHEATSHEET = [
+  { token: ".", desc: "Any character except newline" },
+  { token: "\\d", desc: "Digit (0–9)" },
+  { token: "\\w", desc: "Word character [A-Za-z0-9_]" },
+  { token: "\\s", desc: "Whitespace" },
+  { token: "\\D / \\W / \\S", desc: "Negated digit / word / space" },
+  { token: "^ / $", desc: "Start / end of string (or line with m)" },
+  { token: "*", desc: "0 or more" },
+  { token: "+", desc: "1 or more" },
+  { token: "?", desc: "0 or 1 (optional)" },
+  { token: "{n,m}", desc: "Between n and m times" },
+  { token: "a|b", desc: "Alternation (a or b)" },
+  { token: "[abc]", desc: "Character class" },
+  { token: "[^abc]", desc: "Negated class" },
+  { token: "(…)", desc: "Capturing group" },
+  { token: "(?:…)", desc: "Non-capturing group" },
+  { token: "(?<name>…)", desc: "Named capturing group" },
+  { token: "\\1 / $1", desc: "Backreference / replace group" },
+  { token: "(?=…) / (?!…)", desc: "Positive / negative lookahead" },
+  { token: "g i m s u y", desc: "Common flags" },
 ];
 
 const DevTools = () => {
@@ -104,6 +127,10 @@ const DevTools = () => {
   const [regexFlags, setRegexFlags] = useState("g");
   const [regexText, setRegexText] = useState("");
   const [regexMatches, setRegexMatches] = useState([]);
+  const [regexMode, setRegexMode] = useState("match");
+  const [regexReplacement, setRegexReplacement] = useState("");
+  const [regexReplacePreview, setRegexReplacePreview] = useState(null);
+  const [regexCheatOpen, setRegexCheatOpen] = useState(false);
   const [cronExpression, setCronExpression] = useState("* * * * *");
   const [cronDescription, setCronDescription] = useState("");
   const [faviconText, setFaviconText] = useState("");
@@ -197,6 +224,7 @@ const DevTools = () => {
   const testRegex = useCallback(() => {
     if (!regexPattern || !regexText) {
       setRegexMatches([]);
+      setRegexReplacePreview(null);
       return;
     }
 
@@ -210,15 +238,40 @@ const DevTools = () => {
           value: match[0],
           index: match.index,
           groups: match.slice(1),
+          namedGroups: match.groups || null,
         });
         if (!regex.global) break;
+        // Avoid infinite loops on zero-width matches
+        if (match[0] === "") {
+          regex.lastIndex++;
+        }
       }
 
       setRegexMatches(matches);
+
+      if (regexMode === "replace") {
+        const replaceRegex = new RegExp(regexPattern, regexFlags);
+        setRegexReplacePreview(
+          regexText.replace(replaceRegex, regexReplacement)
+        );
+      } else {
+        setRegexReplacePreview(null);
+      }
     } catch (error) {
       setRegexMatches([{ error: error.message }]);
+      setRegexReplacePreview(null);
     }
-  }, [regexPattern, regexFlags, regexText]);
+  }, [regexPattern, regexFlags, regexText, regexMode, regexReplacement]);
+
+  // Ingest shared session text payloads into the regex tester
+  useEffect(() => {
+    if (activeTab !== "regex") return;
+    const payload = consumeSessionPayload({ clear: false });
+    if (payload?.type === "text" && typeof payload.text === "string") {
+      setRegexText(payload.text);
+      consumeSessionPayload();
+    }
+  }, [activeTab]);
 
   // Cron Expression Generator
   const parseCronExpression = useCallback(() => {
@@ -445,67 +498,178 @@ const DevTools = () => {
             transition={{ duration: 0.3 }}
             className="space-y-6"
           >
-            <div className="space-y-4">
-              <div className="flex space-x-4">
-                <input
-                  type="text"
-                  value={regexPattern}
-                  onChange={(e) => setRegexPattern(e.target.value)}
-                  placeholder="Regular expression pattern"
-                  className="flex-1 px-4 py-2 border rounded regex-pattern"
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="flex-1 space-y-4 min-w-0">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRegexMode("match")}
+                    className={`px-3 py-1.5 text-sm rounded border ${
+                      regexMode === "match"
+                        ? "bg-primary-600 text-white border-primary-600"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    Match
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRegexMode("replace")}
+                    className={`px-3 py-1.5 text-sm rounded border ${
+                      regexMode === "replace"
+                        ? "bg-primary-600 text-white border-primary-600"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    Replace
+                  </button>
+                </div>
+                <div className="flex space-x-4">
+                  <input
+                    type="text"
+                    value={regexPattern}
+                    onChange={(e) => setRegexPattern(e.target.value)}
+                    placeholder="Regular expression pattern"
+                    className="flex-1 px-4 py-2 border rounded regex-pattern"
+                  />
+                  <input
+                    type="text"
+                    value={regexFlags}
+                    onChange={(e) => setRegexFlags(e.target.value)}
+                    placeholder="Flags"
+                    className="w-20 px-4 py-2 border rounded"
+                  />
+                  <button
+                    onClick={testRegex}
+                    className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
+                  >
+                    {regexMode === "replace" ? "Preview" : "Test"}
+                  </button>
+                </div>
+                {regexMode === "replace" && (
+                  <input
+                    type="text"
+                    value={regexReplacement}
+                    onChange={(e) => setRegexReplacement(e.target.value)}
+                    placeholder="Replacement (use $1, $<name>, etc.)"
+                    className="w-full px-4 py-2 border rounded font-mono text-sm"
+                  />
+                )}
+                <textarea
+                  value={regexText}
+                  onChange={(e) => setRegexText(e.target.value)}
+                  placeholder="Enter text to test..."
+                  className="w-full h-32 p-4 border rounded regex-test-input"
                 />
-                <input
-                  type="text"
-                  value={regexFlags}
-                  onChange={(e) => setRegexFlags(e.target.value)}
-                  placeholder="Flags"
-                  className="w-20 px-4 py-2 border rounded"
-                />
-                <button
-                  onClick={testRegex}
-                  className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
-                >
-                  Test
-                </button>
-              </div>
-              <textarea
-                value={regexText}
-                onChange={(e) => setRegexText(e.target.value)}
-                placeholder="Enter text to test..."
-                className="w-full h-32 p-4 border rounded regex-test-input"
-              />
-            </div>
-            {regexMatches.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-medium">Matches ({regexMatches.length})</h3>
-                {regexMatches.map((match, index) =>
-                  match.error ? (
-                    <div key={index} className="text-red-600">
-                      {match.error}
-                    </div>
-                  ) : (
-                    <div
-                      key={index}
-                      className="p-2 bg-gray-50 rounded space-y-1"
-                    >
-                      <div className="flex justify-between">
-                        <span className="font-mono text-sm">
-                          Match: {match.value}
-                        </span>
-                        <span className="text-gray-500">
-                          Index: {match.index}
-                        </span>
-                      </div>
-                      {match.groups.length > 0 && (
-                        <div className="text-sm text-gray-600">
-                          Groups: {match.groups.join(", ")}
+                {regexMatches.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="font-medium">
+                      Matches (
+                      {
+                        regexMatches.filter((match) => !match.error).length
+                      }
+                      )
+                    </h3>
+                    {regexMatches.map((match, index) =>
+                      match.error ? (
+                        <div key={index} className="text-red-600">
+                          {match.error}
                         </div>
-                      )}
+                      ) : (
+                        <div
+                          key={index}
+                          className="p-2 bg-gray-50 rounded space-y-1"
+                        >
+                          <div className="flex justify-between gap-2">
+                            <span className="font-mono text-sm break-all">
+                              Match: {match.value}
+                            </span>
+                            <span className="text-gray-500 shrink-0">
+                              Index: {match.index}
+                            </span>
+                          </div>
+                          {match.groups?.length > 0 && (
+                            <div className="text-sm text-gray-600">
+                              Groups:{" "}
+                              {match.groups
+                                .map((group, groupIndex) =>
+                                  group == null
+                                    ? `(${groupIndex + 1}: —)`
+                                    : `(${groupIndex + 1}: ${group})`
+                                )
+                                .join(", ")}
+                            </div>
+                          )}
+                          {match.namedGroups &&
+                            Object.keys(match.namedGroups).length > 0 && (
+                              <div className="text-sm text-gray-600">
+                                Named:{" "}
+                                {Object.entries(match.namedGroups)
+                                  .map(
+                                    ([name, value]) =>
+                                      `${name}=${value == null ? "—" : value}`
+                                  )
+                                  .join(", ")}
+                              </div>
+                            )}
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+                {regexMode === "replace" && regexReplacePreview != null && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium">Replace preview</h3>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(regexReplacePreview)}
+                        className="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-1"
+                        title="Copy result"
+                      >
+                        <FaCopy className="text-xs" />
+                        Copy
+                      </button>
                     </div>
-                  )
+                    <pre className="p-4 bg-gray-50 rounded text-sm font-mono whitespace-pre-wrap break-all">
+                      {regexReplacePreview}
+                    </pre>
+                  </div>
                 )}
               </div>
-            )}
+
+              <aside className="lg:w-64 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setRegexCheatOpen((open) => !open)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                >
+                  <span className="font-medium text-gray-800">
+                    Regex cheatsheet
+                  </span>
+                  <span className="text-gray-500">
+                    {regexCheatOpen ? "Hide" : "Show"}
+                  </span>
+                </button>
+                {regexCheatOpen && (
+                  <ul className="mt-2 border border-gray-200 rounded divide-y divide-gray-100 text-sm max-h-96 overflow-y-auto">
+                    {REGEX_CHEATSHEET.map((item) => (
+                      <li
+                        key={item.token}
+                        className="px-3 py-2 flex flex-col gap-0.5"
+                      >
+                        <code className="font-mono text-xs text-primary-700">
+                          {item.token}
+                        </code>
+                        <span className="text-gray-600 text-xs">
+                          {item.desc}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </aside>
+            </div>
           </motion.div>
         );
 
