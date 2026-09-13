@@ -29,9 +29,9 @@ import {
 import FileSaver from "file-saver";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getCategoryTools } from "./catalog";
+import { showErrorWithReporting } from "../../utils/analytics";
 
 const PDF_TAB_ITEMS = getCategoryTools("pdf");
-import { showErrorWithReporting } from "../../utils/analytics";
 
 const PdfSplitTool = lazy(() => import("./pdf/PdfSplitTool"));
 

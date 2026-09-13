@@ -226,7 +226,7 @@ const QrTool = () => {
       }
 
       await navigator.clipboard.write([
-        new ClipboardItem({ "image/png": blob }),
+        new window.ClipboardItem({ "image/png": blob }),
       ]);
       setStatus("QR image copied to clipboard");
       setCopiedKey("image");
