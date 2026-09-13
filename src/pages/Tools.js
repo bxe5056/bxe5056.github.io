@@ -63,57 +63,47 @@ const getColorClasses = (color) => {
   return colorMap[color] || colorMap.blue;
 };
 
-const ToolQuickList = ({ title, icon, items, onToggleFavorite, emptyLabel }) => {
-  if (!items.length) {
-    return (
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          {icon}
-          {title}
-        </h2>
-        <p className="text-sm text-gray-500">{emptyLabel}</p>
-      </section>
-    );
-  }
+/** Compact chip row; returns null when empty so it never eats the fold. */
+const HubStripRow = ({ title, icon, items, onToggleFavorite }) => {
+  if (!items.length) return null;
 
   return (
-    <section className="mb-10">
-      <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-gray-500 shrink-0">
         {icon}
         {title}
-      </h2>
-      <ul className="flex flex-wrap gap-2">
+      </span>
+      <ul className="flex flex-wrap gap-1.5 min-w-0">
         {items.map((item) => {
           const favorited = isFavorite(item.path);
           return (
             <li
               key={`${title}-${item.path}`}
-              className="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-100 pl-3 pr-1 py-1 text-sm text-gray-800"
+              className="inline-flex items-center gap-0.5 rounded-md bg-gray-50 border border-gray-100 pl-2 pr-0.5 py-0.5 text-sm text-gray-800"
             >
               <Link
                 to={item.path}
                 className="hover:text-primary-600 transition-colors"
               >
                 {item.label}
-                {item.category ? (
-                  <span className="ml-1.5 text-xs text-gray-400">
-                    {item.category}
-                  </span>
-                ) : null}
               </Link>
               <button
                 type="button"
                 aria-label={favorited ? "Remove favorite" : "Add favorite"}
                 onClick={() => onToggleFavorite(item)}
-                className="p-1.5 rounded-full text-amber-500 hover:bg-amber-50 transition-colors"
+                className="p-1 rounded text-amber-500 hover:bg-amber-50 transition-colors"
               >
-                {favorited ? <FaStar /> : <FaRegStar />}
+                {favorited ? (
+                  <FaStar className="text-xs" />
+                ) : (
+                  <FaRegStar className="text-xs" />
+                )}
               </button>
             </li>
           );
         })}
       </ul>
-    </section>
+    </div>
   );
 };
 
@@ -128,33 +118,39 @@ const Tools = () => {
     toggleFavorite(item);
   }, []);
 
+  const hasStrip = favorites.length > 0 || recents.length > 0;
+
   return (
     <PageContainer>
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold text-gray-900 mb-3">
           Developer Tools & Utilities
         </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-2">
           Browse {TOOL_CATEGORIES.length} categories — jump straight into a
           tool or open a full suite from the cards below.
         </p>
+        <p className="text-sm text-gray-500">
+          All processing stays in your browser
+        </p>
       </div>
 
-      <ToolQuickList
-        title="Favorites"
-        icon={<FaStar className="text-amber-500" />}
-        items={favorites}
-        onToggleFavorite={handleToggleFavorite}
-        emptyLabel="Star tools below or from Recents to pin them here."
-      />
-
-      <ToolQuickList
-        title="Recents"
-        icon={<FaClock className="text-gray-400" />}
-        items={recents}
-        onToggleFavorite={handleToggleFavorite}
-        emptyLabel="Tools you open will show up here."
-      />
+      {hasStrip ? (
+        <div className="mb-8 space-y-2.5 border-b border-gray-100 pb-5">
+          <HubStripRow
+            title="Favorites"
+            icon={<FaStar className="text-amber-500" />}
+            items={favorites}
+            onToggleFavorite={handleToggleFavorite}
+          />
+          <HubStripRow
+            title="Recents"
+            icon={<FaClock className="text-gray-400" />}
+            items={recents}
+            onToggleFavorite={handleToggleFavorite}
+          />
+        </div>
+      ) : null}
 
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
