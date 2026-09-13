@@ -3,6 +3,7 @@ import {
   FaArrowDown,
   FaArrowUp,
   FaCopy,
+  FaInfoCircle,
   FaPlus,
   FaTrash,
 } from "react-icons/fa";
@@ -33,12 +34,42 @@ const REGEX_CHEATSHEET = [
 ];
 
 const FLAG_OPTIONS = [
-  { id: "g", label: "g", title: "Global" },
-  { id: "i", label: "i", title: "Ignore case" },
-  { id: "m", label: "m", title: "Multiline" },
-  { id: "s", label: "s", title: "Dotall" },
-  { id: "u", label: "u", title: "Unicode" },
-  { id: "y", label: "y", title: "Sticky" },
+  {
+    id: "g",
+    label: "g",
+    title: "Global",
+    description: "Find all matches, not just the first",
+  },
+  {
+    id: "i",
+    label: "i",
+    title: "Ignore case",
+    description: "Case-insensitive matching",
+  },
+  {
+    id: "m",
+    label: "m",
+    title: "Multiline",
+    description: "^ and $ match line boundaries",
+  },
+  {
+    id: "s",
+    label: "s",
+    title: "DotAll",
+    description: ". matches newline characters",
+  },
+  {
+    id: "u",
+    label: "u",
+    title: "Unicode",
+    description: "Treat pattern as Unicode code points",
+  },
+  {
+    id: "y",
+    label: "y",
+    title: "Sticky",
+    description: "Match only from lastIndex",
+  },
 ];
 
 /** @typedef {"literal"|"any"|"digit"|"word"|"space"|"oneOrMore"|"optional"|"repeat"|"group"|"class"|"negClass"|"start"|"end"|"alt"} BlockType */
@@ -369,31 +400,54 @@ function extractSessionText(payload) {
 function FlagToggles({ flags, onChange }) {
   const set = new Set(flags.split("").filter(Boolean));
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap items-center gap-x-1 gap-y-1.5">
       {FLAG_OPTIONS.map((flag) => {
         const on = set.has(flag.id);
+        const tipId = `regex-flag-tip-${flag.id}`;
         return (
-          <button
-            key={flag.id}
-            type="button"
-            title={flag.title}
-            onClick={() => {
-              if (on) set.delete(flag.id);
-              else set.add(flag.id);
-              onChange(
-                FLAG_OPTIONS.map((f) => f.id)
-                  .filter((id) => set.has(id))
-                  .join("")
-              );
-            }}
-            className={`px-2.5 py-1 text-sm font-mono rounded border ${
-              on
-                ? "bg-primary-600 text-white border-primary-600"
-                : "border-gray-300 text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            {flag.label}
-          </button>
+          <div key={flag.id} className="inline-flex items-center gap-0.5">
+            <button
+              type="button"
+              aria-pressed={on}
+              aria-label={`${flag.title} flag`}
+              onClick={() => {
+                if (on) set.delete(flag.id);
+                else set.add(flag.id);
+                onChange(
+                  FLAG_OPTIONS.map((f) => f.id)
+                    .filter((id) => set.has(id))
+                    .join("")
+                );
+              }}
+              className={`px-2.5 py-1 text-sm font-mono rounded border ${
+                on
+                  ? "bg-primary-600 text-white border-primary-600"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              {flag.label}
+            </button>
+            <span className="relative inline-flex group">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center w-5 h-5 rounded text-gray-400 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1"
+                aria-label={`${flag.title}: ${flag.description}`}
+                aria-describedby={tipId}
+              >
+                <FaInfoCircle className="text-[11px]" aria-hidden />
+              </button>
+              <span
+                id={tipId}
+                role="tooltip"
+                className="pointer-events-none absolute left-1/2 bottom-full z-20 mb-1.5 w-max max-w-[14rem] -translate-x-1/2 rounded border border-gray-200 bg-white px-2 py-1.5 text-left text-xs font-sans font-normal text-gray-700 shadow-sm opacity-0 invisible transition-opacity group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible"
+              >
+                <span className="font-medium text-gray-900">{flag.title}</span>
+                <span className="block mt-0.5 leading-snug">
+                  {flag.description}
+                </span>
+              </span>
+            </span>
+          </div>
         );
       })}
     </div>
