@@ -180,10 +180,12 @@ const ToolWorkspaceShell = ({
             role="dialog"
             aria-modal="true"
             aria-label="Paste and recents"
-            className="relative z-10 flex w-full flex-col border-gray-200 bg-white shadow-2xl max-lg:mt-auto max-lg:max-h-[75vh] max-lg:overflow-y-auto max-lg:rounded-t-2xl max-lg:border max-lg:p-4 lg:h-full lg:w-[20rem] lg:border-l lg:p-4"
+            className="relative z-10 flex w-full flex-col overflow-y-auto overscroll-contain border-gray-200 bg-white shadow-2xl max-lg:mt-auto max-lg:max-h-[75vh] max-lg:rounded-t-2xl max-lg:border lg:h-full lg:w-[20rem] lg:border-l [scrollbar-width:thin]"
           >
-            <div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-gray-200 lg:hidden" />
-            <ToolUtilityRail showClose onClose={closeUtilities} />
+            <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-gray-200 lg:hidden" />
+            <div className="px-3.5 py-3 sm:px-4">
+              <ToolUtilityRail showClose onClose={closeUtilities} />
+            </div>
           </div>
         </div>
       )}

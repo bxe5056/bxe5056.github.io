@@ -262,6 +262,121 @@ const SharedPasteBar = ({ variant = "bar" }) => {
 
   const handoffs = handoffsForPayload(payload);
   const snippet = previewSnippet(payload);
+  const dropHint = dragging
+    ? "Drop to load"
+    : isRail
+      ? "or drop a file"
+      : "Drop a file anywhere on this bar";
+
+  if (isRail) {
+    return (
+      <div
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`shrink-0 rounded-md border px-2.5 py-2 transition-colors ${
+          dragging
+            ? "border-blue-400 bg-blue-50/80"
+            : "border-gray-200 bg-gray-50/60"
+        }`}
+      >
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            Shared
+          </p>
+          {payload ? (
+            <button
+              type="button"
+              onClick={handleClear}
+              disabled={busy}
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-60"
+              title="Clear shared session"
+            >
+              <FaTimes className="h-3 w-3" aria-hidden />
+              Clear
+            </button>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handlePasteClick}
+            disabled={busy}
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            <FaClipboard className="h-3 w-3 opacity-70" aria-hidden />
+            Paste
+          </button>
+          <label
+            htmlFor={fileInputId}
+            className={`inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 ${
+              busy ? "pointer-events-none opacity-60" : ""
+            }`}
+          >
+            <FaFileUpload className="h-3 w-3 opacity-70" aria-hidden />
+            File
+          </label>
+          <input
+            ref={fileInputRef}
+            id={fileInputId}
+            type="file"
+            className="sr-only"
+            onChange={handleFileChange}
+          />
+        </div>
+
+        {payload ? (
+          <div className="mt-2 space-y-1.5 border-t border-gray-200/70 pt-2">
+            <div className="min-w-0 text-xs leading-snug text-slate-600">
+              <span className="mr-1.5 inline-flex rounded bg-slate-200/70 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-slate-700">
+                {payload.type || "payload"}
+              </span>
+              <span className="break-all text-slate-500">
+                {snippet || "Ready to hand off"}
+              </span>
+            </div>
+            {handoffs.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-1">
+                <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                  Open in
+                </span>
+                {handoffs.map((target) => (
+                  <button
+                    key={`${target.category}-${target.toolId}`}
+                    type="button"
+                    onClick={() =>
+                      openToolWithPayload({
+                        category: target.category,
+                        toolId: target.toolId,
+                        payload,
+                        navigate,
+                      })
+                    }
+                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-1.5 py-0.5 text-[11px] font-medium text-blue-600 hover:border-blue-200 hover:bg-blue-50"
+                  >
+                    {target.label}
+                    <FaExternalLinkAlt className="text-[9px] opacity-60" aria-hidden />
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <p className="mt-1.5 text-[11px] leading-snug text-slate-400">
+            {dropHint}
+          </p>
+        )}
+
+        {error ? (
+          <p className="mt-1.5 text-[11px] text-red-600" role="status">
+            {error}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -269,21 +384,13 @@ const SharedPasteBar = ({ variant = "bar" }) => {
       onDragEnter={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`rounded-lg border px-3 py-2.5 transition-colors ${
-        isRail ? "mb-0" : "mb-4"
-      } ${
+      className={`mb-4 rounded-lg border px-3 py-2.5 transition-colors ${
         dragging
           ? "border-blue-400 bg-blue-50/80"
           : "border-gray-200 bg-gray-50/80"
       }`}
     >
-      <div
-        className={
-          isRail
-            ? "flex flex-col gap-2"
-            : "flex flex-wrap items-center gap-2"
-        }
-      >
+      <div className="flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
           <FaClipboard className="opacity-70" aria-hidden />
           Shared
@@ -328,25 +435,13 @@ const SharedPasteBar = ({ variant = "bar" }) => {
           )}
         </div>
 
-        <p
-          className={`text-[11px] text-slate-400 ${
-            isRail ? "" : "w-full sm:ml-auto sm:w-auto sm:text-right"
-          }`}
-        >
-          {dragging
-            ? "Drop to load into shared session"
-            : isRail
-              ? "Drop a file here"
-              : "Drop a file anywhere on this bar"}
+        <p className="w-full text-[11px] text-slate-400 sm:ml-auto sm:w-auto sm:text-right">
+          {dragging ? "Drop to load into shared session" : dropHint}
         </p>
       </div>
 
       {payload ? (
-        <div
-          className={`mt-2 flex flex-col gap-2 border-t border-gray-200/80 pt-2 ${
-            isRail ? "" : "sm:flex-row sm:items-center sm:justify-between"
-          }`}
-        >
+        <div className="mt-2 flex flex-col gap-2 border-t border-gray-200/80 pt-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 text-xs text-slate-600">
             <span className="mr-2 inline-flex rounded bg-slate-200/70 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-slate-700">
               {payload.type || "payload"}

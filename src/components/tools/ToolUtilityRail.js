@@ -1,11 +1,6 @@
 import React, { useCallback, useSyncExternalStore } from "react";
 import { Link } from "react-router-dom";
-import {
-  FaClock,
-  FaStar,
-  FaRegStar,
-  FaTimes,
-} from "react-icons/fa";
+import { FaStar, FaRegStar, FaTimes } from "react-icons/fa";
 import SharedPasteBar from "./SharedPasteBar";
 import {
   getRecentsSnapshot,
@@ -16,41 +11,39 @@ import {
 
 const MAX_VISIBLE = 8;
 
-const RailLinkList = ({ title, icon, items, emptyLabel, onToggleFavorite }) => (
+const RailLinkList = ({ title, items, emptyLabel, onToggleFavorite }) => (
   <section>
-    <h3 className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-      {icon}
+    <h3 className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
       {title}
     </h3>
     {!items.length ? (
-      <p className="text-xs text-slate-400">{emptyLabel}</p>
+      <p className="px-2 text-[11px] leading-snug text-slate-400">{emptyLabel}</p>
     ) : (
-      <ul className="space-y-1">
+      <ul className="flex flex-col gap-0.5">
         {items.slice(0, MAX_VISIBLE).map((item) => {
           const favorited = isFavorite(item.path);
           return (
-            <li
-              key={`${title}-${item.path}`}
-              className="group flex items-center gap-1 rounded-md border border-transparent px-1.5 py-1 hover:border-gray-100 hover:bg-gray-50"
-            >
-              <Link
-                to={item.path}
-                className="min-w-0 flex-1 truncate text-sm text-gray-700 hover:text-primary-600"
-              >
-                {item.label}
-              </Link>
-              <button
-                type="button"
-                aria-label={favorited ? "Remove favorite" : "Add favorite"}
-                onClick={() => onToggleFavorite(item)}
-                className="shrink-0 rounded p-1 text-amber-500 opacity-70 hover:bg-amber-50 hover:opacity-100"
-              >
-                {favorited ? (
-                  <FaStar className="h-3 w-3" />
-                ) : (
-                  <FaRegStar className="h-3 w-3" />
-                )}
-              </button>
+            <li key={`${title}-${item.path}`} className="w-full">
+              <div className="group flex w-full items-center rounded-md hover:bg-gray-50">
+                <Link
+                  to={item.path}
+                  className="min-w-0 flex-1 truncate px-2 py-2 text-sm font-medium leading-none text-gray-600 hover:text-primary-700"
+                >
+                  {item.label}
+                </Link>
+                <button
+                  type="button"
+                  aria-label={favorited ? "Remove favorite" : "Add favorite"}
+                  onClick={() => onToggleFavorite(item)}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-amber-500 opacity-80 hover:bg-amber-50 hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                >
+                  {favorited ? (
+                    <FaStar className="h-3.5 w-3.5" aria-hidden />
+                  ) : (
+                    <FaRegStar className="h-3.5 w-3.5" aria-hidden />
+                  )}
+                </button>
+              </div>
             </li>
           );
         })}
@@ -75,8 +68,8 @@ const ToolUtilityRail = ({ onClose, showClose = false }) => {
   }, []);
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
+    <div className="flex flex-col gap-3">
+      <div className="flex h-7 shrink-0 items-center justify-between gap-2 px-0.5">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
           Utilities
         </p>
@@ -84,27 +77,25 @@ const ToolUtilityRail = ({ onClose, showClose = false }) => {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-gray-100 hover:text-slate-600"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-gray-100 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
             aria-label="Close utilities"
           >
-            <FaTimes className="h-3.5 w-3.5" />
+            <FaTimes className="h-3.5 w-3.5" aria-hidden />
           </button>
         )}
       </div>
 
       <SharedPasteBar variant="rail" />
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto">
+      <div className="space-y-4 py-0.5">
         <RailLinkList
           title="Favorites"
-          icon={<FaStar className="text-amber-500" aria-hidden />}
           items={favorites}
           emptyLabel="Star a tool to pin it here."
           onToggleFavorite={handleToggleFavorite}
         />
         <RailLinkList
           title="Recents"
-          icon={<FaClock className="text-slate-400" aria-hidden />}
           items={recents}
           emptyLabel="Tools you open show up here."
           onToggleFavorite={handleToggleFavorite}
