@@ -20,7 +20,7 @@ const readRailCollapsed = () => {
 
 /**
  * Two-column tools workspace: side nav · content.
- * Rails from lg (1024px); tool select + FAB below lg.
+ * Rails from lg (1024px); chip tool switcher + FAB below lg.
  * Utilities open on demand via drawer (desktop) or bottom sheet (mobile).
  */
 const ToolWorkspaceShell = ({
@@ -86,13 +86,13 @@ const ToolWorkspaceShell = ({
   return (
     <div className="relative flex flex-1 flex-col">
       {hasToolNav && (
-        <div className="mb-2 w-full lg:hidden">
+        <div className="mb-2 w-full min-w-0 lg:hidden">
           <ToolSideNav
             tools={tools}
             activeId={activeToolId}
             onChange={onToolChange}
             label={toolNavLabel}
-            variant="select"
+            variant="chips"
           />
         </div>
       )}
@@ -147,7 +147,7 @@ const ToolWorkspaceShell = ({
         )}
 
         <div className="min-w-0 w-full rounded-lg border border-gray-200 bg-white p-3 pb-20 shadow-sm sm:p-3.5 max-lg:pb-24 lg:min-h-[inherit] lg:pb-3.5">
-          {/* Below lg the tool <select> is the title; only show H2 once the rail is visible. */}
+          {/* Below lg the active chip is the title; only show H2 once the rail is visible. */}
           {workspaceTitle ? (
             <h2 className="mb-2.5 hidden text-base font-semibold tracking-tight text-gray-900 sm:text-lg lg:block">
               {workspaceTitle}

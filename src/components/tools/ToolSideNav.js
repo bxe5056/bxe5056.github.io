@@ -1,4 +1,4 @@
-import React, { useId } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
   FaAdjust,
   FaAlignLeft,
@@ -111,7 +111,8 @@ export const TOOL_ICONS = {
 
 /**
  * Vertical tool list for the workspace left rail.
- * Desktop: stacked buttons (optionally icon-only). Mobile: native select (via variant).
+ * Desktop (rail): stacked buttons (optionally icon-only).
+ * Narrow (chips): horizontal labeled chip switcher.
  */
 const ToolSideNav = ({
   tools = [],
@@ -122,30 +123,104 @@ const ToolSideNav = ({
   collapsed = false,
   onToggleCollapsed,
 }) => {
-  const selectId = useId();
+  const tabRefs = useRef([]);
+  const activeIndex = tools.findIndex((tool) => tool.id === activeId);
+
+  const focusTabAt = useCallback((index) => {
+    const el = tabRefs.current[index];
+    if (el) {
+      el.focus();
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (variant !== "chips" || activeIndex < 0) return;
+    const el = tabRefs.current[activeIndex];
+    if (!el) return;
+    el.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [variant, activeIndex, activeId]);
 
   if (!tools.length || typeof onChange !== "function") {
     return null;
   }
 
-  if (variant === "select") {
+  if (variant === "chips" || variant === "select") {
+    const handleChipKeyDown = (event) => {
+      if (!tools.length) return;
+      const current =
+        activeIndex >= 0 ? activeIndex : Math.max(0, tools.length - 1);
+      let next = current;
+
+      if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+        event.preventDefault();
+        next = (current + 1) % tools.length;
+      } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+        event.preventDefault();
+        next = (current - 1 + tools.length) % tools.length;
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        next = 0;
+      } else if (event.key === "End") {
+        event.preventDefault();
+        next = tools.length - 1;
+      } else {
+        return;
+      }
+
+      onChange(tools[next].id);
+      requestAnimationFrame(() => focusTabAt(next));
+    };
+
     return (
-      <nav aria-label={label} className="w-full">
-        <label htmlFor={selectId} className="sr-only">
-          {label}
-        </label>
-        <select
-          id={selectId}
-          value={activeId}
-          onChange={(event) => onChange(event.target.value)}
-          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+      <nav aria-label={label} className="w-full min-w-0">
+        <div
+          role="tablist"
+          aria-label={label}
+          aria-orientation="horizontal"
+          onKeyDown={handleChipKeyDown}
+          className="flex w-full min-w-0 gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [scrollbar-width:thin] [scrollbar-color:theme(colors.gray.300)_transparent] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300"
         >
-          {tools.map((tool) => (
-            <option key={tool.id} value={tool.id}>
-              {tool.label}
-            </option>
-          ))}
-        </select>
+          {tools.map((tool, index) => {
+            const isActive = tool.id === activeId;
+            const Icon = TOOL_ICONS[tool.id] || tool.icon || FaWrench;
+            const displayLabel = tool.shortLabel || tool.label;
+
+            return (
+              <button
+                key={tool.id}
+                ref={(node) => {
+                  tabRefs.current[index] = node;
+                }}
+                type="button"
+                role="tab"
+                id={`tool-chip-${tool.id}`}
+                aria-selected={isActive}
+                aria-label={tool.label}
+                title={tool.label}
+                tabIndex={isActive || (activeIndex < 0 && index === 0) ? 0 : -1}
+                onClick={() => onChange(tool.id)}
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-medium leading-none transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 sm:text-sm ${
+                  isActive
+                    ? "border-primary-500 bg-primary-50 text-primary-700 ring-1 ring-primary-500"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
+                }`}
+              >
+                <Icon
+                  className={`h-3.5 w-3.5 shrink-0 ${
+                    isActive ? "text-primary-600" : "text-gray-400"
+                  }`}
+                  aria-hidden
+                />
+                <span className="whitespace-nowrap">{displayLabel}</span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
     );
   }

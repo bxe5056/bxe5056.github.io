@@ -8,7 +8,7 @@ import styles from "./ToolScaffold.module.css";
 const ToolScaffold = ({
   title,
   description,
-  /** Hide title when ToolLayout / tool select already shows the same label. */
+  /** Hide title when ToolLayout / chip switcher already shows the same label. */
   hideTitle = false,
   input,
   controls,
