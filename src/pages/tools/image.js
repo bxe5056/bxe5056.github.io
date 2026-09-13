@@ -7,19 +7,55 @@ import {
   FaCrop,
   FaCompress,
   FaRuler,
-  FaUndo,
-  FaRedo,
   FaInfo,
-  FaExpand,
   FaTimes,
   FaExchangeAlt,
+  FaEraser,
 } from "react-icons/fa";
 import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { downloadDataUrl } from "../../utils/tools/download";
+import { consumeSessionPayload } from "../../utils/tools/session";
 
 const validTools = ["resize", "compress", "crop", "convert", "metadata"];
 const defaultTool = "resize";
 const MIN_CROP_SIZE = 2;
+const STRIP_JPEG_QUALITY = 0.92;
+
+/** Preferred EXIF/IPTC/XMP keys shown first when present. */
+const EXIF_KEY_PRIORITY = [
+  "Make",
+  "Model",
+  "LensModel",
+  "Software",
+  "DateTimeOriginal",
+  "CreateDate",
+  "ModifyDate",
+  "Orientation",
+  "ImageWidth",
+  "ImageHeight",
+  "ExifImageWidth",
+  "ExifImageHeight",
+  "ExposureTime",
+  "FNumber",
+  "ISO",
+  "ISOSpeedRatings",
+  "FocalLength",
+  "Flash",
+  "WhiteBalance",
+  "MeteringMode",
+  "latitude",
+  "longitude",
+  "GPSLatitude",
+  "GPSLongitude",
+  "GPSAltitude",
+  "Artist",
+  "Copyright",
+  "ImageDescription",
+  "Caption",
+  "Keywords",
+  "Creator",
+  "Title",
+];
 
 const formatExtension = (mime) => {
   if (mime === "image/jpeg") return "jpg";
@@ -34,17 +70,104 @@ const hasValidCrop = (start, end) => {
   );
 };
 
+const formatExifLabel = (key) =>
+  String(key)
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/^./, (c) => c.toUpperCase());
+
+const formatExifValue = (value) => {
+  if (value == null) return "—";
+  if (value instanceof Date) return value.toLocaleString();
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return String(value);
+    if (Number.isInteger(value)) return String(value);
+    return Number(value.toFixed(6)).toString();
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => formatExifValue(item)).join(", ");
+  }
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+};
+
+const sortExifEntries = (exif) => {
+  if (!exif || typeof exif !== "object") return [];
+  const entries = Object.entries(exif).filter(
+    ([, value]) => value != null && value !== ""
+  );
+  const priority = new Map(EXIF_KEY_PRIORITY.map((key, i) => [key, i]));
+  return entries.sort(([a], [b]) => {
+    const ai = priority.has(a) ? priority.get(a) : EXIF_KEY_PRIORITY.length;
+    const bi = priority.has(b) ? priority.get(b) : EXIF_KEY_PRIORITY.length;
+    if (ai !== bi) return ai - bi;
+    return a.localeCompare(b);
+  });
+};
+
+const dataUrlToFile = async (dataUrl, fileName, mime) => {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  const type = mime || blob.type || "image/png";
+  const name =
+    fileName || `image.${formatExtension(type)}`;
+  return new File([blob], name, { type, lastModified: Date.now() });
+};
+
+let exifrModulePromise = null;
+const loadExifr = () => {
+  if (!exifrModulePromise) {
+    exifrModulePromise = import("exifr");
+  }
+  return exifrModulePromise;
+};
+
+const parseImageExif = async (source) => {
+  const exifr = await loadExifr();
+  const parsed = await exifr.parse(source, {
+    tiff: true,
+    ifd0: true,
+    exif: true,
+    gps: true,
+    iptc: true,
+    xmp: true,
+    icc: false,
+    jfif: true,
+    ihdr: true,
+    interop: true,
+    translateKeys: true,
+    translateValues: true,
+    reviveValues: true,
+    sanitize: true,
+    mergeOutput: true,
+  });
+  return parsed && typeof parsed === "object" ? parsed : null;
+};
+
 const ImageTools = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(
-    searchParams.get("tool") || defaultTool
-  );
+  const [activeTab, setActiveTab] = useState(() => {
+    const pathParam = location.pathname.split("/").pop();
+    if (validTools.includes(pathParam)) return pathParam;
+    const queryTool = searchParams.get("tool");
+    if (validTools.includes(queryTool)) return queryTool;
+    return defaultTool;
+  });
   const [selectedFile, setSelectedFile] = useState(null);
   const [processedImage, setProcessedImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [metadata, setMetadata] = useState(null);
+  const [exifData, setExifData] = useState(null);
+  const [exifLoading, setExifLoading] = useState(false);
+  const [stripQuality, setStripQuality] = useState(STRIP_JPEG_QUALITY);
   const [cropStart, setCropStart] = useState(null);
   const [cropEnd, setCropEnd] = useState(null);
   const [aspectRatio, setAspectRatio] = useState("free");
@@ -61,6 +184,8 @@ const ImageTools = () => {
   const [moveStart, setMoveStart] = useState(null);
   const [convertFormat, setConvertFormat] = useState("image/png");
   const [convertQuality, setConvertQuality] = useState(0.92);
+  const sessionLoadedRef = useRef(false);
+  const skipTabResetRef = useRef(true);
 
   // Handle initial URL params and direct navigation
   useEffect(() => {
@@ -76,8 +201,12 @@ const ImageTools = () => {
     navigate(`/tools/image/${tabId}`);
   };
 
-  // Reset state when changing tabs
+  // Reset state when changing tabs (skip initial mount so session handoff survives)
   useEffect(() => {
+    if (skipTabResetRef.current) {
+      skipTabResetRef.current = false;
+      return;
+    }
     setProcessedImage((prevImage) => {
       if (prevImage && prevImage.startsWith("blob:")) {
         URL.revokeObjectURL(prevImage);
@@ -87,6 +216,8 @@ const ImageTools = () => {
     setSelectedFile(null);
     setLoading(false);
     setMetadata(null);
+    setExifData(null);
+    setExifLoading(false);
     setDimensions({ width: 0, height: 0 });
     setCropStart(null);
     setCropEnd(null);
@@ -161,11 +292,9 @@ const ImageTools = () => {
     drawHandle(startX + width, startY + height / 2);
   };
 
-  const onDrop = useCallback(async (acceptedFiles) => {
-    const file = acceptedFiles[0];
+  const loadImageFile = useCallback(async (file) => {
     if (!file) return;
 
-    // Check if file is SVG
     if (file.type === "image/svg+xml") {
       setError(
         "SVG files are not supported. Please select a raster image (PNG, JPG, etc)."
@@ -174,34 +303,99 @@ const ImageTools = () => {
     }
 
     setError(null);
+    setExifData(null);
     setSelectedFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        setDimensions({ width: img.width, height: img.height });
-        setProcessedImage(img.src);
 
-        // Extract metadata
-        const metadata = {
-          name: file.name,
-          type: file.type,
-          size: (file.size / 1024).toFixed(2) + " KB",
-          dimensions: `${img.width.toFixed(2)}x${img.height.toFixed(2)}`,
-          lastModified: new Date(file.lastModified).toLocaleString(),
-        };
-        setMetadata(metadata);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+
+    try {
+      await new Promise((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Failed to load image"));
+        img.src = objectUrl;
+      });
+    } catch {
+      URL.revokeObjectURL(objectUrl);
+      setError("Failed to load image. Please try another file.");
+      setSelectedFile(null);
+      return;
+    }
+
+    setDimensions({ width: img.width, height: img.height });
+    setProcessedImage((prev) => {
+      if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return objectUrl;
+    });
+
+    setMetadata({
+      name: file.name,
+      type: file.type || "image/unknown",
+      size: (file.size / 1024).toFixed(2) + " KB",
+      dimensions: `${img.width}x${img.height}`,
+      lastModified: new Date(file.lastModified).toLocaleString(),
+    });
+
+    setExifLoading(true);
+    try {
+      const parsed = await parseImageExif(file);
+      setExifData(parsed);
+    } catch (err) {
+      console.error("EXIF parse error:", err);
+      setExifData(null);
+    } finally {
+      setExifLoading(false);
+    }
   }, []);
+
+  const onDrop = useCallback(
+    async (acceptedFiles) => {
+      const file = acceptedFiles[0];
+      if (!file) return;
+      await loadImageFile(file);
+    },
+    [loadImageFile]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "image/*": [] },
     maxFiles: 1,
   });
+
+  // Accept image handoffs from other tools (dataUrl)
+  useEffect(() => {
+    if (sessionLoadedRef.current) return;
+    sessionLoadedRef.current = true;
+
+    const payload = consumeSessionPayload({ clear: false });
+    if (!payload?.dataUrl) return;
+    if (payload.type && payload.type !== "image" && payload.type !== "file") {
+      return;
+    }
+    consumeSessionPayload({ clear: true });
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const file = await dataUrlToFile(
+          payload.dataUrl,
+          payload.fileName,
+          payload.mime
+        );
+        if (!cancelled) await loadImageFile(file);
+      } catch (err) {
+        console.error("Session image load failed:", err);
+        if (!cancelled) {
+          setError("Could not load the handed-off image.");
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadImageFile]);
 
   const handleResize = useCallback(() => {
     if (!selectedFile || !dimensions.width || !dimensions.height) return;
@@ -623,11 +817,110 @@ const ImageTools = () => {
     });
     setSelectedFile(null);
     setMetadata(null);
+    setExifData(null);
+    setExifLoading(false);
     setDimensions({ width: 0, height: 0 });
     setCropStart(null);
     setCropEnd(null);
     setError(null);
   };
+
+  const handleStripExif = useCallback(() => {
+    if (!selectedFile || !processedImage) {
+      setError("Select an image before stripping metadata.");
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+
+    const img = new Image();
+    const sourceUrl = processedImage;
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      const ctx = canvas.getContext("2d");
+
+      const outputType =
+        selectedFile.type === "image/jpeg" ||
+        selectedFile.type === "image/webp" ||
+        selectedFile.type === "image/png"
+          ? selectedFile.type
+          : "image/png";
+
+      if (outputType === "image/jpeg") {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      ctx.drawImage(img, 0, 0);
+
+      const qualityArg =
+        outputType === "image/jpeg" || outputType === "image/webp"
+          ? stripQuality
+          : undefined;
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            setError("Failed to strip metadata. Please try again.");
+            setLoading(false);
+            return;
+          }
+
+          const ext = formatExtension(outputType);
+          const baseName =
+            selectedFile.name.replace(/\.[^.]+$/, "") || "image";
+          const strippedName = `${baseName}-no-exif.${ext}`;
+          const strippedFile = new File([blob], strippedName, {
+            type: outputType,
+            lastModified: Date.now(),
+          });
+
+          setSelectedFile(strippedFile);
+          setProcessedImage((prev) => {
+            if (prev && prev.startsWith("blob:") && prev !== sourceUrl) {
+              URL.revokeObjectURL(prev);
+            }
+            return URL.createObjectURL(blob);
+          });
+
+          setMetadata({
+            name: strippedName,
+            type: outputType,
+            size: (blob.size / 1024).toFixed(2) + " KB",
+            dimensions: `${canvas.width}x${canvas.height}`,
+            lastModified: new Date().toLocaleString(),
+            stripped: true,
+          });
+          setExifData(null);
+          setDimensions({ width: canvas.width, height: canvas.height });
+
+          const reader = new FileReader();
+          reader.onload = () => {
+            downloadDataUrl(reader.result, strippedName);
+            setLoading(false);
+          };
+          reader.onerror = () => {
+            setError("Stripped image created, but download failed.");
+            setLoading(false);
+          };
+          reader.readAsDataURL(blob);
+        },
+        outputType,
+        qualityArg
+      );
+    };
+
+    img.onerror = () => {
+      setError("Failed to load image for metadata stripping.");
+      setLoading(false);
+    };
+
+    img.src = sourceUrl;
+  }, [selectedFile, processedImage, stripQuality]);
 
   const FullscreenModal = ({ image, onClose }) => (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
@@ -980,7 +1273,20 @@ const ImageTools = () => {
         );
       }
 
-      case "metadata":
+      case "metadata": {
+        const exifEntries = sortExifEntries(exifData);
+        const basicEntries = metadata
+          ? Object.entries(metadata).filter(
+              ([key]) =>
+                !["compressed", "resized", "converted", "stripped"].includes(
+                  key
+                )
+            )
+          : [];
+        const isLossy =
+          selectedFile?.type === "image/jpeg" ||
+          selectedFile?.type === "image/webp";
+
         return (
           <div className="space-y-6">
             <div className="border rounded-lg p-4 bg-gray-50">
@@ -990,28 +1296,119 @@ const ImageTools = () => {
                 className="max-h-64 mx-auto object-contain"
               />
             </div>
-            <div className="flex-grow">
-              {metadata ? (
-                <div className="grid grid-cols-2 gap-4">
-                  {Object.entries(metadata)
-                    .filter(([key]) => !["compressed", "resized"].includes(key))
-                    .map(([key, value]) => (
-                      <div key={key} className="border rounded p-4">
-                        <div className="text-sm font-medium text-gray-500">
-                          {key.charAt(0).toUpperCase() + key.slice(1)}
-                        </div>
-                        <div className="mt-1">{value}</div>
-                      </div>
-                    ))}
-                </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleClearImage}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                Select New Image
+              </button>
+              <button
+                type="button"
+                onClick={handleStripExif}
+                disabled={!selectedFile || loading}
+                className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
+              >
+                <FaEraser className="mr-2" />
+                {loading ? "Stripping…" : "Strip EXIF & Download"}
+              </button>
+            </div>
+
+            {isLossy && (
+              <div className="space-y-2 rounded border border-amber-200 bg-amber-50 px-3 py-3">
+                <p className="text-sm text-amber-900">
+                  Stripping re-encodes the image via canvas, which removes
+                  EXIF/IPTC/XMP but can reduce quality for JPEG/WebP. Prefer PNG
+                  when lossless output matters.
+                </p>
+                <label className="block text-sm font-medium text-amber-900">
+                  Re-encode quality ({Math.round(stripQuality * 100)}%)
+                </label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="1"
+                  step="0.01"
+                  value={stripQuality}
+                  onChange={(e) => setStripQuality(parseFloat(e.target.value))}
+                  disabled={loading}
+                  className="w-full disabled:opacity-50"
+                />
+              </div>
+            )}
+
+            {!isLossy && (
+              <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2">
+                Stripping redraws the image to a new file without embedded
+                metadata. Processing stays in your browser.
+              </p>
+            )}
+
+            {metadata?.stripped && (
+              <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded px-3 py-2">
+                Metadata stripped. A clean copy was downloaded; EXIF readout
+                below is empty for the new file.
+              </p>
+            )}
+
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 mb-3">
+                File info
+              </h3>
+              {basicEntries.length > 0 ? (
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {basicEntries.map(([key, value]) => (
+                    <div
+                      key={key}
+                      className="border rounded px-3 py-2 bg-white"
+                    >
+                      <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        {formatExifLabel(key)}
+                      </dt>
+                      <dd className="mt-1 text-sm text-gray-900 break-all">
+                        {String(value)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
               ) : (
-                <p className="text-center text-gray-500">
-                  Select an image to view its metadata
+                <p className="text-sm text-gray-500">No file loaded.</p>
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 mb-3">
+                EXIF / IPTC / XMP
+              </h3>
+              {exifLoading ? (
+                <p className="text-sm text-gray-500">Reading metadata…</p>
+              ) : exifEntries.length > 0 ? (
+                <dl className="divide-y divide-gray-100 border rounded bg-white">
+                  {exifEntries.map(([key, value]) => (
+                    <div
+                      key={key}
+                      className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 px-3 py-2"
+                    >
+                      <dt className="sm:w-48 shrink-0 text-sm font-medium text-gray-600">
+                        {formatExifLabel(key)}
+                      </dt>
+                      <dd className="text-sm text-gray-900 break-all">
+                        {formatExifValue(value)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <p className="text-sm text-gray-500 border rounded px-3 py-4 bg-gray-50">
+                  No embedded EXIF, IPTC, or XMP tags found in this image.
                 </p>
               )}
             </div>
           </div>
         );
+      }
 
       case "convert":
         return (
