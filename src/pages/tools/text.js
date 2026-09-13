@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 
 const DiffTool = lazy(() => import("./text/DiffTool"));
+const JwtTool = lazy(() => import("./text/JwtTool"));
 const UnicodeTool = lazy(() => import("./text/UnicodeTool"));
 
 const validTools = [
@@ -21,7 +22,7 @@ const validTools = [
 const TEXT_TAB_ITEMS = [
   { id: "base64", label: "Base64" },
   { id: "url", label: "URL Encode/Decode" },
-  { id: "jwt", label: "JWT Decoder" },
+  { id: "jwt", label: "JWT Decode / Sign" },
   { id: "case", label: "Case Converter" },
   { id: "markdown", label: "Markdown Preview" },
   { id: "lorem", label: "Lorem Ipsum Generator" },
@@ -46,13 +47,6 @@ const decodeBase64 = (str) => {
   return new TextDecoder().decode(bytes);
 };
 
-/** Decode JWT segment: URL-safe Base64 with optional padding. */
-const decodeJwtSegment = (segment) => {
-  const base64 = segment.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
-  return JSON.parse(decodeBase64(padded));
-};
-
 const TextTools = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(
@@ -71,6 +65,10 @@ const TextTools = () => {
   const [diffMounted, setDiffMounted] = useState(() => {
     const pathParam = location.pathname.split("/").pop();
     return pathParam === "diff" || searchParams.get("tool") === "diff";
+  });
+  const [jwtMounted, setJwtMounted] = useState(() => {
+    const pathParam = location.pathname.split("/").pop();
+    return pathParam === "jwt" || searchParams.get("tool") === "jwt";
   });
   const [unicodeMounted, setUnicodeMounted] = useState(() => {
     const pathParam = location.pathname.split("/").pop();
@@ -128,6 +126,9 @@ const TextTools = () => {
     if (activeTab === "diff") {
       setDiffMounted(true);
     }
+    if (activeTab === "jwt") {
+      setJwtMounted(true);
+    }
     if (activeTab === "unicode") {
       setUnicodeMounted(true);
     }
@@ -169,23 +170,6 @@ const TextTools = () => {
       }
     } catch (error) {
       setOutput("Invalid input for URL " + action);
-    }
-  };
-
-  const handleJwtDecode = () => {
-    try {
-      const parts = input.split(".");
-      if (parts.length !== 3) throw new Error("Invalid JWT format");
-
-      const decoded = {
-        header: decodeJwtSegment(parts[0]),
-        payload: decodeJwtSegment(parts[1]),
-        signature: parts[2],
-      };
-
-      setOutput(JSON.stringify(decoded, null, 2));
-    } catch (error) {
-      setOutput("Invalid JWT token");
     }
   };
 
@@ -368,16 +352,7 @@ const TextTools = () => {
         );
 
       case "jwt":
-        return (
-          <div>
-            <button
-              onClick={handleJwtDecode}
-              className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 mb-4"
-            >
-              Decode JWT
-            </button>
-          </div>
-        );
+        return null;
 
       case "case":
         return (
@@ -555,6 +530,21 @@ const TextTools = () => {
           </div>
         )}
 
+        {/* JWT keep-alive (lazy) */}
+        {jwtMounted && (
+          <div className={activeTab === "jwt" ? "block" : "hidden"}>
+            <Suspense
+              fallback={
+                <div className="text-center text-gray-500 py-8">
+                  Loading JWT tool…
+                </div>
+              }
+            >
+              <JwtTool />
+            </Suspense>
+          </div>
+        )}
+
         {/* Unicode keep-alive (lazy) */}
         {unicodeMounted && (
           <div className={activeTab === "unicode" ? "block" : "hidden"}>
@@ -574,6 +564,7 @@ const TextTools = () => {
         {activeTab !== "markdown" &&
           activeTab !== "lorem" &&
           activeTab !== "diff" &&
+          activeTab !== "jwt" &&
           activeTab !== "unicode" && (
           <div className="space-y-4">
             <div>

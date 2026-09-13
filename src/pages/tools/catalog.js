@@ -120,7 +120,7 @@ export const TOOL_CATEGORIES = [
     tools: [
       { id: "base64", label: "Base64" },
       { id: "url", label: "URL Encode/Decode" },
-      { id: "jwt", label: "JWT Decoder" },
+      { id: "jwt", label: "JWT Decode / Sign" },
       { id: "case", label: "Case Converter" },
       { id: "markdown", label: "Markdown Preview" },
       { id: "lorem", label: "Lorem Ipsum Generator" },
