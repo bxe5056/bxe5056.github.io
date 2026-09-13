@@ -1303,15 +1303,15 @@ const ColorTools = () => {
                 >
                   Save Color
                 </button>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                   <button
                     onClick={() => {
                       setColor(color);
                       handleTabChange("palette");
                     }}
-                    className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center justify-center gap-1 whitespace-nowrap text-sm"
+                    className="w-full sm:w-auto sm:flex-1 px-3 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center justify-center gap-1 text-sm"
                   >
-                    <FaPalette className="text-xs" />
+                    <FaPalette className="text-xs shrink-0" />
                     Generate Palette
                   </button>
                   <button
@@ -1319,9 +1319,9 @@ const ColorTools = () => {
                       setColor(color);
                       handleTabChange("gradient");
                     }}
-                    className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center justify-center gap-1 whitespace-nowrap text-sm"
+                    className="w-full sm:w-auto sm:flex-1 px-3 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center justify-center gap-1 text-sm"
                   >
-                    <FaImage className="text-xs" />
+                    <FaImage className="text-xs shrink-0" />
                     Create Gradient
                   </button>
                   <button
@@ -1329,9 +1329,9 @@ const ColorTools = () => {
                       setColor(color);
                       handleTabChange("contrast");
                     }}
-                    className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center justify-center gap-1 whitespace-nowrap text-sm"
+                    className="w-full sm:w-auto sm:flex-1 px-3 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center justify-center gap-1 text-sm"
                   >
-                    <FaCheck className="text-xs" />
+                    <FaCheck className="text-xs shrink-0" />
                     Test Contrast
                   </button>
                 </div>
