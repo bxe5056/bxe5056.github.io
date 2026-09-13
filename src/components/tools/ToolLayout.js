@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useSyncExternalStore } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -10,9 +10,15 @@ import {
   FaExchangeAlt,
   FaTools,
   FaFilePdf,
+  FaClipboard,
 } from "react-icons/fa";
 import BugReportToggle from "../BugReportToggle";
-import { TOOL_CATEGORIES } from "../../pages/tools/catalog";
+import { TOOL_CATEGORIES, getAllTools } from "../../pages/tools/catalog";
+import { recordRecent } from "../../utils/tools/recents";
+import {
+  subscribeSession,
+  getSessionSnapshot,
+} from "../../utils/tools/session";
 
 const categoryIcons = {
   text: FaFont,
@@ -45,6 +51,24 @@ const ToolLayout = ({ title, description, children }) => {
       )?.path || "",
     [location.pathname]
   );
+
+  const sessionPayload = useSyncExternalStore(
+    subscribeSession,
+    getSessionSnapshot,
+    () => null
+  );
+  const sessionHasPayload = sessionPayload != null;
+
+  // Record hub recents when the active tool slug changes
+  useEffect(() => {
+    const match = getAllTools().find((tool) => tool.path === location.pathname);
+    if (!match) return;
+    recordRecent({
+      path: match.path,
+      label: match.label,
+      category: match.categoryId,
+    });
+  }, [location.pathname]);
 
   // Enhanced scroll animations for the tools navbar
   const toolbarHeight = useTransform(scrollY, [0, 50], ["3.5rem", "2.75rem"]);
@@ -125,6 +149,15 @@ const ToolLayout = ({ title, description, children }) => {
             </motion.div>
             {/* Mobile View — category select */}
             <div className="flex md:hidden items-center gap-2 min-w-0 flex-1 justify-end">
+              {sessionHasPayload && (
+                <span
+                  className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500 bg-slate-100/80"
+                  title="Shared clipboard has a payload"
+                >
+                  <FaClipboard className="opacity-70" />
+                  Shared
+                </span>
+              )}
               <label htmlFor="tool-category-select" className="sr-only">
                 Tool category
               </label>
@@ -149,6 +182,15 @@ const ToolLayout = ({ title, description, children }) => {
             </div>
             {/* Desktop View */}
             <div className="hidden md:flex items-center space-x-2">
+              {sessionHasPayload && (
+                <span
+                  className="inline-flex items-center gap-1.5 mr-1 rounded px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-500 bg-slate-100/80"
+                  title="Shared clipboard has a payload for tool handoffs"
+                >
+                  <FaClipboard className="opacity-70" />
+                  Shared clipboard
+                </span>
+              )}
               {categories.map((category) => (
                 <div key={category.path} className="relative">
                   <Link

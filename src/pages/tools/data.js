@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import ToolLayout from "../../components/tools/ToolLayout";
 import { useDropzone } from "react-dropzone";
 import {
@@ -17,6 +17,9 @@ import { markdownTable } from "markdown-table";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { copyText } from "../../utils/tools/clipboard";
 import { downloadText } from "../../utils/tools/download";
+
+const StructuredEditorTool = lazy(() => import("./data/StructuredEditorTool"));
+const EDITOR_TOOL_ID = "editor";
 
 /** Lazy-load papaparse only when CSV parse/unparse is needed. */
 let papaPromise;
@@ -231,9 +234,11 @@ const jsonToXml = (obj, indent = "") => {
   return `<?xml version="1.0" encoding="UTF-8"?>\n${xml}`;
 };
 
-const validTools = Object.entries(CONVERSION_MATRIX).flatMap(([source, targets]) =>
-  targets.map((target) => buildConversionSlug(source, target))
+const conversionTools = Object.entries(CONVERSION_MATRIX).flatMap(
+  ([source, targets]) =>
+    targets.map((target) => buildConversionSlug(source, target))
 );
+const validTools = [...conversionTools, EDITOR_TOOL_ID];
 const defaultTool = "csvToJson";
 
 const DataTools = () => {
@@ -243,6 +248,7 @@ const DataTools = () => {
 
   const initialConversion = (() => {
     const pathParam = location.pathname.split("/").pop();
+    if (pathParam === EDITOR_TOOL_ID) return null;
     return (
       parseConversionSlug(pathParam) ||
       parseConversionSlug(searchParams.get("tool"))
@@ -256,8 +262,13 @@ const DataTools = () => {
   const [targetFormat, setTargetFormat] = useState(
     initialConversion?.target || "JSON"
   );
-  const [activeTab, setActiveTab] = useState(
-    initialConversion?.slug || defaultTool
+  const [activeTab, setActiveTab] = useState(() => {
+    const pathParam = location.pathname.split("/").pop();
+    if (pathParam === EDITOR_TOOL_ID) return EDITOR_TOOL_ID;
+    return initialConversion?.slug || defaultTool;
+  });
+  const [editorMounted, setEditorMounted] = useState(
+    () => activeTab === EDITOR_TOOL_ID
   );
 
   const [inputData, setInputData] = useState("");
@@ -481,9 +492,17 @@ const DataTools = () => {
     [targetFormat, detectFileFormat, navigate, convertData]
   );
 
-  // Handle initial URL params / hub deep-links (incl. md_table / html_table)
+  // Handle initial URL params / hub deep-links (incl. md_table / html_table / editor)
   useEffect(() => {
     const pathParam = location.pathname.split("/").pop();
+    if (pathParam === EDITOR_TOOL_ID || searchParams.get("tool") === EDITOR_TOOL_ID) {
+      setActiveTab(EDITOR_TOOL_ID);
+      setEditorMounted(true);
+      if (pathParam !== EDITOR_TOOL_ID) {
+        navigate(`/tools/data/${EDITOR_TOOL_ID}`, { replace: true });
+      }
+      return;
+    }
     const parsed =
       parseConversionSlug(pathParam) ||
       parseConversionSlug(searchParams.get("tool"));
@@ -496,6 +515,23 @@ const DataTools = () => {
       }
     }
   }, [location, searchParams, navigate]);
+
+  useEffect(() => {
+    if (activeTab === EDITOR_TOOL_ID) {
+      setEditorMounted(true);
+    }
+  }, [activeTab]);
+
+  const handleModeChange = (mode) => {
+    if (mode === EDITOR_TOOL_ID) {
+      setActiveTab(EDITOR_TOOL_ID);
+      navigate(`/tools/data/${EDITOR_TOOL_ID}`);
+      return;
+    }
+    const slug = buildConversionSlug(sourceFormat, targetFormat);
+    setActiveTab(slug);
+    navigate(`/tools/data/${slug}`);
+  };
 
   // Effect to convert data when input changes
   useEffect(() => {
@@ -738,6 +774,47 @@ const DataTools = () => {
       description="Convert between different data formats"
     >
       <div className="space-y-6" data-tool="data">
+        <div className="flex space-x-2 border-b border-gray-200">
+          <button
+            type="button"
+            onClick={() => handleModeChange("convert")}
+            className={`px-4 py-2 -mb-px ${
+              activeTab !== EDITOR_TOOL_ID
+                ? "border-b-2 border-primary-600 text-primary-600"
+                : "text-gray-500"
+            }`}
+          >
+            Convert
+          </button>
+          <button
+            type="button"
+            onClick={() => handleModeChange(EDITOR_TOOL_ID)}
+            className={`px-4 py-2 -mb-px ${
+              activeTab === EDITOR_TOOL_ID
+                ? "border-b-2 border-primary-600 text-primary-600"
+                : "text-gray-500"
+            }`}
+          >
+            JSON / YAML / TOML
+          </button>
+        </div>
+
+        {editorMounted && (
+          <div className={activeTab === EDITOR_TOOL_ID ? "block" : "hidden"}>
+            <Suspense
+              fallback={
+                <div className="text-center text-gray-500 py-8">
+                  Loading editor…
+                </div>
+              }
+            >
+              <StructuredEditorTool />
+            </Suspense>
+          </div>
+        )}
+
+        {activeTab !== EDITOR_TOOL_ID && (
+          <>
         {/* Tool Selection */}
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <h2 className="text-base font-medium text-gray-900 mb-4 text-center">
@@ -840,6 +917,8 @@ const DataTools = () => {
             )}
           </div>
         </div>
+          </>
+        )}
       </div>
     </ToolLayout>
   );

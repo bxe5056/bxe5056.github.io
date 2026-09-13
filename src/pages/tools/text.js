@@ -1,10 +1,30 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, lazy, Suspense } from "react";
 import ToolLayout from "../../components/tools/ToolLayout";
 import { FaCopy } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 
-const validTools = ["base64", "url", "jwt", "case", "markdown", "lorem"];
+const DiffTool = lazy(() => import("./text/DiffTool"));
+
+const validTools = [
+  "base64",
+  "url",
+  "jwt",
+  "case",
+  "markdown",
+  "lorem",
+  "diff",
+];
+
+const TEXT_TAB_ITEMS = [
+  { id: "base64", label: "Base64" },
+  { id: "url", label: "URL Encode/Decode" },
+  { id: "jwt", label: "JWT Decoder" },
+  { id: "case", label: "Case Converter" },
+  { id: "markdown", label: "Markdown Preview" },
+  { id: "lorem", label: "Lorem Ipsum Generator" },
+  { id: "diff", label: "Diff / Patch" },
+];
 
 /** Unicode-safe Base64 encode (btoa alone fails on non-Latin1). */
 const encodeBase64 = (str) => {
@@ -45,6 +65,10 @@ const TextTools = () => {
   const [loremOutput, setLoremOutput] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+  const [diffMounted, setDiffMounted] = useState(() => {
+    const pathParam = location.pathname.split("/").pop();
+    return pathParam === "diff" || searchParams.get("tool") === "diff";
+  });
 
   useEffect(() => {
     if (activeTab === "markdown") {
@@ -94,6 +118,9 @@ const TextTools = () => {
     setInput("");
     setOutput("");
     setLoremOutput("");
+    if (activeTab === "diff") {
+      setDiffMounted(true);
+    }
   }, [activeTab]);
 
   // Handle initial URL params
@@ -438,6 +465,9 @@ const TextTools = () => {
           </div>
         );
 
+      case "diff":
+        return null;
+
       default:
         return null;
     }
@@ -466,12 +496,7 @@ const TextTools = () => {
               className="w-full px-4 py-2 text-lg font-medium bg-white border-b border-gray-200 focus:outline-none focus:ring-0 focus:border-gray-200"
             >
               {[
-                { id: "base64", label: "Base64" },
-                { id: "url", label: "URL Encode/Decode" },
-                { id: "jwt", label: "JWT Decoder" },
-                { id: "case", label: "Case Converter" },
-                { id: "markdown", label: "Markdown Preview" },
-                { id: "lorem", label: "Lorem Ipsum Generator" },
+                ...TEXT_TAB_ITEMS,
               ].map((tool) => (
                 <option key={tool.id} value={tool.id}>
                   {tool.label}
@@ -484,14 +509,7 @@ const TextTools = () => {
           <div className="hidden sm:block">
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               <div className="flex space-x-2 border-b border-gray-200 min-w-max px-4 sm:px-0">
-                {[
-                  { id: "base64", label: "Base64" },
-                  { id: "url", label: "URL Encode/Decode" },
-                  { id: "jwt", label: "JWT Decoder" },
-                  { id: "case", label: "Case Converter" },
-                  { id: "markdown", label: "Markdown Preview" },
-                  { id: "lorem", label: "Lorem Ipsum Generator" },
-                ].map((tool) => (
+                {TEXT_TAB_ITEMS.map((tool) => (
                   <button
                     key={tool.id}
                     onClick={() => handleTabChange(tool.id)}
@@ -509,8 +527,25 @@ const TextTools = () => {
           </div>
         </div>
 
+        {/* Diff keep-alive (lazy) */}
+        {diffMounted && (
+          <div className={activeTab === "diff" ? "block" : "hidden"}>
+            <Suspense
+              fallback={
+                <div className="text-center text-gray-500 py-8">
+                  Loading diff tool…
+                </div>
+              }
+            >
+              <DiffTool />
+            </Suspense>
+          </div>
+        )}
+
         {/* Input/Output Section */}
-        {activeTab !== "markdown" && activeTab !== "lorem" && (
+        {activeTab !== "markdown" &&
+          activeTab !== "lorem" &&
+          activeTab !== "diff" && (
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

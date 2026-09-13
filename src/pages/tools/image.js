@@ -1132,7 +1132,7 @@ const ImageTools = () => {
               { id: "compress", label: "Compress", icon: FaCompress },
               { id: "crop", label: "Crop", icon: FaCrop },
               { id: "convert", label: "Convert", icon: FaExchangeAlt },
-              { id: "metadata", label: "Metadata", icon: FaInfo },
+              { id: "metadata", label: "EXIF / Metadata", icon: FaInfo },
             ].map((tool) => (
               <button
                 key={tool.id}

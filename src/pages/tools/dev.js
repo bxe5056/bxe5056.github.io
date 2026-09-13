@@ -1,4 +1,11 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  lazy,
+  Suspense,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ToolLayout from "../../components/tools/ToolLayout";
 import {
@@ -12,14 +19,41 @@ import {
   FaDownload,
   FaPlay,
   FaCheck,
+  FaQrcode,
+  FaExchangeAlt,
 } from "react-icons/fa";
 import { v4 as uuidv4 } from "uuid";
 import CryptoJS from "crypto-js";
 import cronstrue from "cronstrue";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 
-const validTools = ["uuid", "hash", "regex", "cron", "favicon"];
+const QrTool = lazy(() => import("./dev/QrTool"));
+const TimestampTool = lazy(() => import("./dev/TimestampTool"));
+const UnitsTool = lazy(() => import("./dev/UnitsTool"));
+
+const validTools = [
+  "uuid",
+  "hash",
+  "regex",
+  "cron",
+  "favicon",
+  "qr",
+  "timestamp",
+  "units",
+];
 const defaultTool = "uuid";
+const LAZY_DEV_TOOLS = ["qr", "timestamp", "units"];
+
+const DEV_TAB_ITEMS = [
+  { id: "uuid", label: "UUID Generator", icon: FaRandom },
+  { id: "hash", label: "Hash Generator", icon: FaKey },
+  { id: "regex", label: "Regex Tester", icon: FaCode },
+  { id: "cron", label: "Cron Parser", icon: FaClock },
+  { id: "favicon", label: "Favicon Generator", icon: FaImage },
+  { id: "qr", label: "QR Code", icon: FaQrcode },
+  { id: "timestamp", label: "Timestamp", icon: FaClock },
+  { id: "units", label: "Unit Converter", icon: FaExchangeAlt },
+];
 
 const DevTools = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,6 +62,13 @@ const DevTools = () => {
   const [activeTab, setActiveTab] = useState(
     searchParams.get("tool") || defaultTool
   );
+  const [lazyMounted, setLazyMounted] = useState(() => {
+    const pathParam = location.pathname.split("/").pop();
+    const initial = LAZY_DEV_TOOLS.includes(pathParam)
+      ? pathParam
+      : searchParams.get("tool");
+    return new Set(LAZY_DEV_TOOLS.includes(initial) ? [initial] : []);
+  });
 
   // Handle initial URL params and direct navigation
   useEffect(() => {
@@ -36,6 +77,17 @@ const DevTools = () => {
       setActiveTab(pathParam);
     }
   }, [location]);
+
+  useEffect(() => {
+    if (LAZY_DEV_TOOLS.includes(activeTab)) {
+      setLazyMounted((prev) => {
+        if (prev.has(activeTab)) return prev;
+        const next = new Set(prev);
+        next.add(activeTab);
+        return next;
+      });
+    }
+  }, [activeTab]);
 
   // Update URL when tab changes
   const handleTabChange = (tabId) => {
@@ -583,6 +635,11 @@ const DevTools = () => {
           </motion.div>
         );
 
+      case "qr":
+      case "timestamp":
+      case "units":
+        return null;
+
       default:
         return null;
     }
@@ -607,13 +664,7 @@ const DevTools = () => {
               onChange={(e) => handleTabChange(e.target.value)}
               className="w-full border-gray-300 rounded-md focus:border-primary-500 focus:ring-primary-500"
             >
-              {[
-                { id: "uuid", label: "UUID Generator", icon: FaRandom },
-                { id: "hash", label: "Hash Generator", icon: FaKey },
-                { id: "regex", label: "Regex Tester", icon: FaCode },
-                { id: "cron", label: "Cron Parser", icon: FaClock },
-                { id: "favicon", label: "Favicon Generator", icon: FaImage },
-              ].map((tool) => (
+              {DEV_TAB_ITEMS.map((tool) => (
                 <option key={tool.id} value={tool.id}>
                   {tool.label}
                 </option>
@@ -628,13 +679,7 @@ const DevTools = () => {
             className="hidden sm:block"
           >
             <nav className="flex flex-wrap border-b-2 border-gray-200 relative">
-              {[
-                { id: "uuid", label: "UUID Generator", icon: FaRandom },
-                { id: "hash", label: "Hash Generator", icon: FaKey },
-                { id: "regex", label: "Regex Tester", icon: FaCode },
-                { id: "cron", label: "Cron Parser", icon: FaClock },
-                { id: "favicon", label: "Favicon Generator", icon: FaImage },
-              ].map((tool) => (
+              {DEV_TAB_ITEMS.map((tool) => (
                 <motion.button
                   key={tool.id}
                   whileHover={{ scale: 1.05 }}
@@ -668,8 +713,51 @@ const DevTools = () => {
           </motion.div>
         </div>
 
+        {/* Lazy placeholders keep-alive */}
+        {lazyMounted.has("qr") && (
+          <div className={activeTab === "qr" ? "block" : "hidden"}>
+            <Suspense
+              fallback={
+                <div className="text-center text-gray-500 py-8">
+                  Loading QR tool…
+                </div>
+              }
+            >
+              <QrTool />
+            </Suspense>
+          </div>
+        )}
+        {lazyMounted.has("timestamp") && (
+          <div className={activeTab === "timestamp" ? "block" : "hidden"}>
+            <Suspense
+              fallback={
+                <div className="text-center text-gray-500 py-8">
+                  Loading timestamp tool…
+                </div>
+              }
+            >
+              <TimestampTool />
+            </Suspense>
+          </div>
+        )}
+        {lazyMounted.has("units") && (
+          <div className={activeTab === "units" ? "block" : "hidden"}>
+            <Suspense
+              fallback={
+                <div className="text-center text-gray-500 py-8">
+                  Loading units tool…
+                </div>
+              }
+            >
+              <UnitsTool />
+            </Suspense>
+          </div>
+        )}
+
         {/* Tool Interface */}
-        <AnimatePresence mode="wait">{renderTool()}</AnimatePresence>
+        {!LAZY_DEV_TOOLS.includes(activeTab) && (
+          <AnimatePresence mode="wait">{renderTool()}</AnimatePresence>
+        )}
       </div>
     </ToolLayout>
   );

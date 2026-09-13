@@ -15,9 +15,18 @@ import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 
 const SvgColorTool = lazy(() => import("./svg/SvgColorTool"));
 const SvgPhotoTool = lazy(() => import("./svg/SvgPhotoTool"));
+const SpriteTool = lazy(() => import("./svg/SpriteTool"));
 
-const validTools = ["optimize", "colors", "viewbox", "image-to-svg"];
+const validTools = ["optimize", "colors", "viewbox", "image-to-svg", "sprite"];
 const defaultTool = "optimize";
+
+const SVG_TAB_ITEMS = [
+  { id: "optimize", label: "Optimize", icon: FaCompress },
+  { id: "colors", label: "Color Swap", icon: FaPalette },
+  { id: "viewbox", label: "ViewBox", icon: FaRuler },
+  { id: "image-to-svg", label: "Photo ↔ SVG", icon: FaImage },
+  { id: "sprite", label: "Sprite / Favicon Pack", icon: FaCode },
+];
 
 const SvgTools = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -50,6 +59,11 @@ const SvgTools = () => {
     const pathParam = location.pathname.split("/").pop();
     if (pathParam === "image-to-svg") return true;
     return (searchParams.get("tool") || defaultTool) === "image-to-svg";
+  });
+  const [spriteToolMounted, setSpriteToolMounted] = useState(() => {
+    const pathParam = location.pathname.split("/").pop();
+    if (pathParam === "sprite") return true;
+    return (searchParams.get("tool") || defaultTool) === "sprite";
   });
 
   const addMetadata = useCallback((svgString) => {
@@ -392,6 +406,9 @@ const SvgTools = () => {
         // Rendered via keep-alive below so upload / trace state survives tab switches
         return null;
 
+      case "sprite":
+        return null;
+
       default:
         return null;
     }
@@ -421,6 +438,9 @@ const SvgTools = () => {
     if (activeTab === "image-to-svg") {
       setPhotoToolMounted(true);
     }
+    if (activeTab === "sprite") {
+      setSpriteToolMounted(true);
+    }
   }, [activeTab]);
 
   return (
@@ -438,12 +458,7 @@ const SvgTools = () => {
               onChange={(e) => handleTabChange(e.target.value)}
               className="w-full px-4 py-2 text-lg font-medium bg-white border-b border-gray-200 focus:outline-none focus:ring-0 focus:border-gray-200"
             >
-              {[
-                { id: "optimize", label: "Optimize", icon: FaCompress },
-                { id: "colors", label: "Color Swap", icon: FaPalette },
-                { id: "viewbox", label: "ViewBox", icon: FaRuler },
-                { id: "image-to-svg", label: "Photo ↔ SVG", icon: FaImage },
-              ].map((tool) => (
+              {SVG_TAB_ITEMS.map((tool) => (
                 <option key={tool.id} value={tool.id}>
                   {tool.label}
                 </option>
@@ -455,12 +470,7 @@ const SvgTools = () => {
           <div className="hidden sm:block">
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               <div className="flex space-x-2 border-b border-gray-200 min-w-max px-4 sm:px-0">
-                {[
-                  { id: "optimize", label: "Optimize", icon: FaCompress },
-                  { id: "colors", label: "Color Swap", icon: FaPalette },
-                  { id: "viewbox", label: "ViewBox", icon: FaRuler },
-                  { id: "image-to-svg", label: "Photo ↔ SVG", icon: FaImage },
-                ].map((tool) => (
+                {SVG_TAB_ITEMS.map((tool) => (
                   <button
                     key={tool.id}
                     onClick={() => handleTabChange(tool.id)}
@@ -479,9 +489,10 @@ const SvgTools = () => {
           </div>
         </div>
 
-        {/* File Selector — Color Swap / Photo tool use their own dropzones */}
+        {/* File Selector — Color Swap / Photo / Sprite tools use their own dropzones */}
         {activeTab !== "colors" &&
           activeTab !== "image-to-svg" &&
+          activeTab !== "sprite" &&
           !svgContent && (
           <div
             {...getRootProps()}
@@ -531,15 +542,32 @@ const SvgTools = () => {
           </div>
         )}
 
+        {/* Sprite / Favicon Pack keep-alive (lazy) */}
+        {spriteToolMounted && (
+          <div className={activeTab === "sprite" ? "block" : "hidden"}>
+            <Suspense
+              fallback={
+                <div className="text-center text-gray-500 py-8">
+                  Loading sprite tool…
+                </div>
+              }
+            >
+              <SpriteTool />
+            </Suspense>
+          </div>
+        )}
+
         {/* Tool Interface */}
         {activeTab !== "colors" &&
           activeTab !== "image-to-svg" &&
+          activeTab !== "sprite" &&
           svgContent &&
           renderTool()}
 
         {/* Preview and Actions — Color Swap renders its own preview */}
         {activeTab !== "colors" &&
           activeTab !== "image-to-svg" &&
+          activeTab !== "sprite" &&
           processedSvg && (
           <div className="space-y-4">
             <div className="mt-6">

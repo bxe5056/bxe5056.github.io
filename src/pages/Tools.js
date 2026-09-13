@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import {
   FaImage,
@@ -8,10 +8,19 @@ import {
   FaTable,
   FaVectorSquare,
   FaFilePdf,
+  FaStar,
+  FaRegStar,
+  FaClock,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import PageContainer from "../components/common/PageContainer";
 import { TOOL_CATEGORIES, getToolPath } from "./tools/catalog";
+import {
+  getRecentsSnapshot,
+  subscribeRecents,
+  toggleFavorite,
+  isFavorite,
+} from "../utils/tools/recents";
 
 const categoryIcons = {
   data: <FaTable className="text-2xl" />,
@@ -54,7 +63,71 @@ const getColorClasses = (color) => {
   return colorMap[color] || colorMap.blue;
 };
 
+const ToolQuickList = ({ title, icon, items, onToggleFavorite, emptyLabel }) => {
+  if (!items.length) {
+    return (
+      <section className="mb-10">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          {icon}
+          {title}
+        </h2>
+        <p className="text-sm text-gray-500">{emptyLabel}</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="mb-10">
+      <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        {icon}
+        {title}
+      </h2>
+      <ul className="flex flex-wrap gap-2">
+        {items.map((item) => {
+          const favorited = isFavorite(item.path);
+          return (
+            <li
+              key={`${title}-${item.path}`}
+              className="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-100 pl-3 pr-1 py-1 text-sm text-gray-800"
+            >
+              <Link
+                to={item.path}
+                className="hover:text-primary-600 transition-colors"
+              >
+                {item.label}
+                {item.category ? (
+                  <span className="ml-1.5 text-xs text-gray-400">
+                    {item.category}
+                  </span>
+                ) : null}
+              </Link>
+              <button
+                type="button"
+                aria-label={favorited ? "Remove favorite" : "Add favorite"}
+                onClick={() => onToggleFavorite(item)}
+                className="p-1.5 rounded-full text-amber-500 hover:bg-amber-50 transition-colors"
+              >
+                {favorited ? <FaStar /> : <FaRegStar />}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+};
+
 const Tools = () => {
+  const { recents, favorites } = useSyncExternalStore(
+    subscribeRecents,
+    getRecentsSnapshot,
+    () => ({ recents: [], favorites: [] })
+  );
+
+  const handleToggleFavorite = useCallback((item) => {
+    toggleFavorite(item);
+  }, []);
+
   return (
     <PageContainer>
       <div className="text-center mb-12">
@@ -66,6 +139,22 @@ const Tools = () => {
           tool or open a full suite from the cards below.
         </p>
       </div>
+
+      <ToolQuickList
+        title="Favorites"
+        icon={<FaStar className="text-amber-500" />}
+        items={favorites}
+        onToggleFavorite={handleToggleFavorite}
+        emptyLabel="Star tools below or from Recents to pin them here."
+      />
+
+      <ToolQuickList
+        title="Recents"
+        icon={<FaClock className="text-gray-400" />}
+        items={recents}
+        onToggleFavorite={handleToggleFavorite}
+        emptyLabel="Tools you open will show up here."
+      />
 
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
@@ -92,17 +181,43 @@ const Tools = () => {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-gray-700">Tools</h4>
                 <div className="flex flex-wrap gap-2">
-                  {category.tools.map((tool) => (
-                    <Link
-                      key={tool.id}
-                      to={getToolPath(category.path, tool.id)}
-                      className={`px-3 py-1 rounded-full text-sm transition-colors ${getColorClasses(
-                        category.color
-                      )}`}
-                    >
-                      {tool.label}
-                    </Link>
-                  ))}
+                  {category.tools.map((tool) => {
+                    const path = getToolPath(category.path, tool.id);
+                    const favorited = isFavorite(path);
+                    return (
+                      <span
+                        key={tool.id}
+                        className={`inline-flex items-center gap-1 rounded-full text-sm transition-colors ${getColorClasses(
+                          category.color
+                        )}`}
+                      >
+                        <Link
+                          to={path}
+                          className="pl-3 py-1 pr-1 hover:underline"
+                        >
+                          {tool.label}
+                        </Link>
+                        <button
+                          type="button"
+                          aria-label={
+                            favorited
+                              ? `Unfavorite ${tool.label}`
+                              : `Favorite ${tool.label}`
+                          }
+                          onClick={() =>
+                            handleToggleFavorite({
+                              path,
+                              label: tool.label,
+                              category: category.id,
+                            })
+                          }
+                          className="pr-2 py-1 text-current opacity-70 hover:opacity-100"
+                        >
+                          {favorited ? <FaStar /> : <FaRegStar />}
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             </div>

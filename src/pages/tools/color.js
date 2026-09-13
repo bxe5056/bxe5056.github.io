@@ -1,4 +1,11 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  lazy,
+  Suspense,
+} from "react";
 import ToolLayout from "../../components/tools/ToolLayout";
 import { HexColorPicker, HexColorInput } from "react-colorful";
 import {
@@ -24,8 +31,26 @@ import {
 import { copyText } from "../../utils/tools/clipboard";
 import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
 
-const validTools = ["picker", "palette", "gradient", "contrast", "extract"];
+const BlindnessTool = lazy(() => import("./color/BlindnessTool"));
+
+const validTools = [
+  "picker",
+  "palette",
+  "gradient",
+  "contrast",
+  "extract",
+  "blindness",
+];
 const defaultTool = "picker";
+
+const COLOR_TAB_ITEMS = [
+  { id: "picker", label: "Color Picker" },
+  { id: "palette", label: "Palette Generator" },
+  { id: "gradient", label: "Gradient Generator" },
+  { id: "contrast", label: "Contrast Checker" },
+  { id: "extract", label: "Extract Colors" },
+  { id: "blindness", label: "Color Blindness" },
+];
 /** Cap longest edge so color sampling stays responsive on large images */
 const MAX_EXTRACT_DIMENSION = 200;
 
@@ -333,6 +358,12 @@ const ColorTools = () => {
   const [activeTab, setActiveTab] = useState(
     searchParams.get("tool") || defaultTool
   );
+  const [blindnessMounted, setBlindnessMounted] = useState(() => {
+    const pathParam = location.pathname.split("/").pop();
+    return (
+      pathParam === "blindness" || searchParams.get("tool") === "blindness"
+    );
+  });
   const [color, setColor] = useState("#536dfe");
   const [gradientStops, setGradientStops] = useState([
     { color: "#536dfe", position: 0 },
@@ -435,6 +466,9 @@ const ColorTools = () => {
     setCssError(false);
     if (cssUpdateTimeout.current) {
       clearTimeout(cssUpdateTimeout.current);
+    }
+    if (activeTab === "blindness") {
+      setBlindnessMounted(true);
     }
   }, [activeTab]);
 
@@ -1684,6 +1718,9 @@ const ColorTools = () => {
           </div>
         );
 
+      case "blindness":
+        return null;
+
       default:
         return null;
     }
@@ -1704,13 +1741,7 @@ const ColorTools = () => {
               onChange={(e) => handleTabChange(e.target.value)}
               className="w-full px-4 py-2 text-lg font-medium bg-white border-b border-gray-200 focus:outline-none focus:ring-0 focus:border-gray-200"
             >
-              {[
-                { id: "picker", label: "Color Picker" },
-                { id: "palette", label: "Palette Generator" },
-                { id: "gradient", label: "Gradient Generator" },
-                { id: "contrast", label: "Contrast Checker" },
-                { id: "extract", label: "Extract Colors" },
-              ].map((tool) => (
+              {COLOR_TAB_ITEMS.map((tool) => (
                 <option key={tool.id} value={tool.id}>
                   {tool.label}
                 </option>
@@ -1722,13 +1753,7 @@ const ColorTools = () => {
           <div className="hidden sm:block">
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               <div className="flex space-x-2 border-b border-gray-200 min-w-max px-4 sm:px-0">
-                {[
-                  { id: "picker", label: "Color Picker" },
-                  { id: "palette", label: "Palette Generator" },
-                  { id: "gradient", label: "Gradient Generator" },
-                  { id: "contrast", label: "Contrast Checker" },
-                  { id: "extract", label: "Extract Colors" },
-                ].map((tool) => (
+                {COLOR_TAB_ITEMS.map((tool) => (
                   <button
                     key={tool.id}
                     onClick={() => handleTabChange(tool.id)}
@@ -1746,7 +1771,21 @@ const ColorTools = () => {
           </div>
         </div>
 
-        {renderTool()}
+        {blindnessMounted && (
+          <div className={activeTab === "blindness" ? "block" : "hidden"}>
+            <Suspense
+              fallback={
+                <div className="text-center text-gray-500 py-8">
+                  Loading color blindness tool…
+                </div>
+              }
+            >
+              <BlindnessTool />
+            </Suspense>
+          </div>
+        )}
+
+        {activeTab !== "blindness" && renderTool()}
       </div>
     </ToolLayout>
   );

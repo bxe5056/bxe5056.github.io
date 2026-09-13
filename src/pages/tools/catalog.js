@@ -19,6 +19,7 @@ export const TOOL_CATEGORIES = [
     description: "Convert between multiple data formats",
     color: "purple",
     tools: [
+      { id: "editor", label: "JSON / YAML / TOML" },
       { id: "csvToJson", label: "CSV" },
       { id: "jsonToCsv", label: "JSON" },
       { id: "yamlToJson", label: "YAML" },
@@ -56,6 +57,8 @@ export const TOOL_CATEGORIES = [
       { id: "gradient", label: "Gradient Generator" },
       { id: "contrast", label: "Contrast Checker" },
       { id: "extract", label: "Extract Colors" },
+      { id: "blindness", label: "Color Blindness" },
+      // Palette export (CSS/SVG/ASE helpers) lives on extract/picker via paletteExport.js
     ],
   },
   {
@@ -70,6 +73,7 @@ export const TOOL_CATEGORIES = [
       { id: "colors", label: "Color Swap" },
       { id: "viewbox", label: "ViewBox" },
       { id: "image-to-svg", label: "Photo ↔ SVG" },
+      { id: "sprite", label: "Sprite / Favicon Pack" },
     ],
   },
   {
@@ -84,7 +88,7 @@ export const TOOL_CATEGORIES = [
       { id: "compress", label: "Compress" },
       { id: "crop", label: "Crop" },
       { id: "convert", label: "Convert" },
-      { id: "metadata", label: "Metadata" },
+      { id: "metadata", label: "EXIF / Metadata" },
     ],
   },
   {
@@ -100,6 +104,9 @@ export const TOOL_CATEGORIES = [
       { id: "regex", label: "Regex Tester" },
       { id: "cron", label: "Cron Parser" },
       { id: "favicon", label: "Favicon Generator" },
+      { id: "qr", label: "QR Code" },
+      { id: "timestamp", label: "Timestamp" },
+      { id: "units", label: "Unit Converter" },
     ],
   },
   {
@@ -116,6 +123,7 @@ export const TOOL_CATEGORIES = [
       { id: "case", label: "Case Converter" },
       { id: "markdown", label: "Markdown Preview" },
       { id: "lorem", label: "Lorem Ipsum Generator" },
+      { id: "diff", label: "Diff / Patch" },
     ],
   },
 ];
