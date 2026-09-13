@@ -36,13 +36,13 @@ export const TOOL_CATEGORIES = [
     description: "View, modify, and merge PDF files",
     color: "red",
     tools: [
-      { id: "viewer", label: "PDF Viewer" },
-      { id: "merger", label: "PDF Merger" },
-      { id: "to-images", label: "PDF to Images" },
-      { id: "from-images", label: "Images to PDF" },
-      { id: "reorder", label: "Page Reorder" },
-      { id: "rotate", label: "Rotate PDF" },
-      { id: "split", label: "Split / Extract" },
+      { id: "viewer", label: "PDF Viewer", shortLabel: "Viewer" },
+      { id: "merger", label: "PDF Merger", shortLabel: "Merger" },
+      { id: "to-images", label: "PDF to Images", shortLabel: "To Images" },
+      { id: "from-images", label: "Images to PDF", shortLabel: "From Images" },
+      { id: "reorder", label: "Page Reorder", shortLabel: "Reorder" },
+      { id: "rotate", label: "Rotate PDF", shortLabel: "Rotate" },
+      { id: "split", label: "Split / Extract", shortLabel: "Split" },
     ],
   },
   {
@@ -53,12 +53,12 @@ export const TOOL_CATEGORIES = [
     description: "Color picker, palette generator, and gradient creator",
     color: "pink",
     tools: [
-      { id: "picker", label: "Color Picker" },
-      { id: "palette", label: "Palette Generator" },
-      { id: "gradient", label: "Gradient Generator" },
-      { id: "contrast", label: "Contrast Checker" },
-      { id: "extract", label: "Extract Colors" },
-      { id: "blindness", label: "Color Blindness" },
+      { id: "picker", label: "Color Picker", shortLabel: "Picker" },
+      { id: "palette", label: "Palette Generator", shortLabel: "Palette" },
+      { id: "gradient", label: "Gradient Generator", shortLabel: "Gradient" },
+      { id: "contrast", label: "Contrast Checker", shortLabel: "Contrast" },
+      { id: "extract", label: "Extract Colors", shortLabel: "Extract" },
+      { id: "blindness", label: "Color Blindness", shortLabel: "Blindness" },
       // Palette export (CSS/SVG/ASE helpers) lives on extract/picker via paletteExport.js
     ],
   },
@@ -70,11 +70,11 @@ export const TOOL_CATEGORIES = [
     description: "SVG optimization, color swap, and Photo ↔ SVG conversion",
     color: "blue",
     tools: [
-      { id: "optimize", label: "Optimize" },
-      { id: "colors", label: "Color Swap" },
-      { id: "viewbox", label: "ViewBox" },
-      { id: "image-to-svg", label: "Photo ↔ SVG" },
-      { id: "sprite", label: "Sprite / Favicon Pack" },
+      { id: "optimize", label: "Optimize", shortLabel: "Optimize" },
+      { id: "colors", label: "Color Swap", shortLabel: "Colors" },
+      { id: "viewbox", label: "ViewBox", shortLabel: "ViewBox" },
+      { id: "image-to-svg", label: "Photo ↔ SVG", shortLabel: "Photo ↔ SVG" },
+      { id: "sprite", label: "Sprite / Favicon Pack", shortLabel: "Sprite" },
     ],
   },
   {
@@ -85,11 +85,11 @@ export const TOOL_CATEGORIES = [
     description: "Resize, crop, compress, and convert images",
     color: "green",
     tools: [
-      { id: "resize", label: "Resize" },
-      { id: "compress", label: "Compress" },
-      { id: "crop", label: "Crop" },
-      { id: "convert", label: "Convert" },
-      { id: "metadata", label: "EXIF / Metadata" },
+      { id: "resize", label: "Resize", shortLabel: "Resize" },
+      { id: "compress", label: "Compress", shortLabel: "Compress" },
+      { id: "crop", label: "Crop", shortLabel: "Crop" },
+      { id: "convert", label: "Convert", shortLabel: "Convert" },
+      { id: "metadata", label: "EXIF / Metadata", shortLabel: "EXIF" },
     ],
   },
   {
@@ -100,14 +100,14 @@ export const TOOL_CATEGORIES = [
     description: "UUID, hash generator, regex tester, and more",
     color: "orange",
     tools: [
-      { id: "uuid", label: "UUID Generator" },
-      { id: "hash", label: "Hash Generator" },
-      { id: "regex", label: "Regex Tester" },
-      { id: "cron", label: "Cron Parser" },
-      { id: "favicon", label: "Favicon Generator" },
-      { id: "qr", label: "QR Code" },
-      { id: "timestamp", label: "Timestamp" },
-      { id: "units", label: "Unit Converter" },
+      { id: "uuid", label: "UUID Generator", shortLabel: "UUID" },
+      { id: "hash", label: "Hash Generator", shortLabel: "Hash" },
+      { id: "regex", label: "Regex Tester", shortLabel: "Regex" },
+      { id: "cron", label: "Cron Parser", shortLabel: "Cron" },
+      { id: "favicon", label: "Favicon Generator", shortLabel: "Favicon" },
+      { id: "qr", label: "QR Code", shortLabel: "QR" },
+      { id: "timestamp", label: "Timestamp", shortLabel: "Timestamp" },
+      { id: "units", label: "Unit Converter", shortLabel: "Units" },
     ],
   },
   {
@@ -118,14 +118,14 @@ export const TOOL_CATEGORIES = [
     description: "Text processing and conversion utilities",
     color: "teal",
     tools: [
-      { id: "base64", label: "Base64" },
-      { id: "url", label: "URL Encode/Decode" },
-      { id: "jwt", label: "JWT Decode / Sign" },
-      { id: "case", label: "Case Converter" },
-      { id: "markdown", label: "Markdown Preview" },
-      { id: "lorem", label: "Lorem Ipsum Generator" },
-      { id: "diff", label: "Diff / Patch" },
-      { id: "unicode", label: "Unicode" },
+      { id: "base64", label: "Base64", shortLabel: "Base64" },
+      { id: "url", label: "URL Encode/Decode", shortLabel: "URL" },
+      { id: "jwt", label: "JWT Decode / Sign", shortLabel: "JWT" },
+      { id: "case", label: "Case Converter", shortLabel: "Case" },
+      { id: "markdown", label: "Markdown Preview", shortLabel: "Markdown" },
+      { id: "lorem", label: "Lorem Ipsum Generator", shortLabel: "Lorem" },
+      { id: "diff", label: "Diff / Patch", shortLabel: "Diff" },
+      { id: "unicode", label: "Unicode", shortLabel: "Unicode" },
     ],
   },
 ];
@@ -133,6 +133,16 @@ export const TOOL_CATEGORIES = [
 /** Build a deep-link path for a tool within a category. */
 export function getToolPath(categoryPath, toolId) {
   return `${categoryPath}/${toolId}`;
+}
+
+/** Look up a category by id (e.g. "pdf", "dev"). */
+export function getCategory(categoryId) {
+  return TOOL_CATEGORIES.find((category) => category.id === categoryId);
+}
+
+/** Tools list for a category (empty array if unknown). */
+export function getCategoryTools(categoryId) {
+  return getCategory(categoryId)?.tools ?? [];
 }
 
 /** Flat list of all tools with category context (handy for later ToolLayout). */

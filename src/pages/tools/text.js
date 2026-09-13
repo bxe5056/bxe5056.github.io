@@ -3,6 +3,7 @@ import ToolLayout from "../../components/tools/ToolLayout";
 import { FaCopy } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
+import { getCategoryTools } from "./catalog";
 
 const DiffTool = lazy(() => import("./text/DiffTool"));
 const JwtTool = lazy(() => import("./text/JwtTool"));
@@ -19,16 +20,7 @@ const validTools = [
   "unicode",
 ];
 
-const TEXT_TAB_ITEMS = [
-  { id: "base64", label: "Base64" },
-  { id: "url", label: "URL Encode/Decode" },
-  { id: "jwt", label: "JWT Decode / Sign" },
-  { id: "case", label: "Case Converter" },
-  { id: "markdown", label: "Markdown Preview" },
-  { id: "lorem", label: "Lorem Ipsum Generator" },
-  { id: "diff", label: "Diff / Patch" },
-  { id: "unicode", label: "Unicode" },
-];
+const TEXT_TAB_ITEMS = getCategoryTools("text");
 
 /** Unicode-safe Base64 encode (btoa alone fails on non-Latin1). */
 const encodeBase64 = (str) => {
@@ -472,49 +464,12 @@ const TextTools = () => {
     <ToolLayout
       title="Text Tools"
       description="A collection of text processing and conversion tools"
+      tools={TEXT_TAB_ITEMS}
+      activeToolId={activeTab}
+      onToolChange={handleTabChange}
+      toolNavLabel="Text tool"
     >
       <div className="space-y-6" data-tool="text">
-        {/* Tool Selection */}
-        <div>
-          {/* Mobile Dropdown */}
-          <div className="sm:hidden">
-            <select
-              value={activeTab}
-              onChange={(e) => handleTabChange(e.target.value)}
-              className="w-full px-4 py-2 text-lg font-medium bg-white border-b border-gray-200 focus:outline-none focus:ring-0 focus:border-gray-200"
-            >
-              {[
-                ...TEXT_TAB_ITEMS,
-              ].map((tool) => (
-                <option key={tool.id} value={tool.id}>
-                  {tool.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Desktop Tabs */}
-          <div className="hidden sm:block">
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <div className="flex space-x-2 border-b border-gray-200 min-w-max px-4 sm:px-0">
-                {TEXT_TAB_ITEMS.map((tool) => (
-                  <button
-                    key={tool.id}
-                    onClick={() => handleTabChange(tool.id)}
-                    className={`px-4 py-2 -mb-px whitespace-nowrap ${
-                      activeTab === tool.id
-                        ? "border-b-2 border-primary-600 text-primary-600"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    {tool.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Diff keep-alive (lazy) */}
         {diffMounted && (
           <div className={activeTab === "diff" ? "block" : "hidden"}>

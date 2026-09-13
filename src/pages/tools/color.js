@@ -39,6 +39,7 @@ import {
   paletteToSvgSwatches,
 } from "../../utils/tools/paletteExport";
 import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
+import { getCategoryTools } from "./catalog";
 
 const BlindnessTool = lazy(() => import("./color/BlindnessTool"));
 
@@ -52,14 +53,7 @@ const validTools = [
 ];
 const defaultTool = "picker";
 
-const COLOR_TAB_ITEMS = [
-  { id: "picker", label: "Color Picker" },
-  { id: "palette", label: "Palette Generator" },
-  { id: "gradient", label: "Gradient Generator" },
-  { id: "contrast", label: "Contrast Checker" },
-  { id: "extract", label: "Extract Colors" },
-  { id: "blindness", label: "Color Blindness" },
-];
+const COLOR_TAB_ITEMS = getCategoryTools("color");
 /** Cap longest edge so color sampling stays responsive on large images */
 const MAX_EXTRACT_DIMENSION = 200;
 
@@ -1834,47 +1828,12 @@ const ColorTools = () => {
     <ToolLayout
       title="Color Tools"
       description="A collection of color manipulation and generation tools"
+      tools={COLOR_TAB_ITEMS}
+      activeToolId={activeTab}
+      onToolChange={handleTabChange}
+      toolNavLabel="Color tool"
     >
       <div className="space-y-6">
-        {/* Tool Selection */}
-        <div>
-          {/* Mobile Dropdown */}
-          <div className="sm:hidden">
-            <select
-              value={activeTab}
-              onChange={(e) => handleTabChange(e.target.value)}
-              className="w-full px-4 py-2 text-lg font-medium bg-white border-b border-gray-200 focus:outline-none focus:ring-0 focus:border-gray-200"
-            >
-              {COLOR_TAB_ITEMS.map((tool) => (
-                <option key={tool.id} value={tool.id}>
-                  {tool.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Desktop Tabs */}
-          <div className="hidden sm:block">
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <div className="flex space-x-2 border-b border-gray-200 min-w-max px-4 sm:px-0">
-                {COLOR_TAB_ITEMS.map((tool) => (
-                  <button
-                    key={tool.id}
-                    onClick={() => handleTabChange(tool.id)}
-                    className={`px-4 py-2 -mb-px whitespace-nowrap ${
-                      activeTab === tool.id
-                        ? "border-b-2 border-primary-600 text-primary-600"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    {tool.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
         {blindnessMounted && (
           <div className={activeTab === "blindness" ? "block" : "hidden"}>
             <Suspense

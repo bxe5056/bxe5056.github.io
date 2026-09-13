@@ -15,11 +15,25 @@ import {
 import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { downloadDataUrl } from "../../utils/tools/download";
 import { consumeSessionPayload } from "../../utils/tools/session";
+import { getCategoryTools } from "./catalog";
 
 const validTools = ["resize", "compress", "crop", "convert", "metadata"];
 const defaultTool = "resize";
 const MIN_CROP_SIZE = 2;
 const STRIP_JPEG_QUALITY = 0.92;
+
+const IMAGE_ICONS = {
+  resize: FaRuler,
+  compress: FaCompress,
+  crop: FaCrop,
+  convert: FaExchangeAlt,
+  metadata: FaInfo,
+};
+
+const IMAGE_TAB_ITEMS = getCategoryTools("image").map((tool) => ({
+  ...tool,
+  icon: IMAGE_ICONS[tool.id],
+}));
 
 /** Preferred EXIF/IPTC/XMP keys shown first when present. */
 const EXIF_KEY_PRIORITY = [
@@ -1513,6 +1527,10 @@ const ImageTools = () => {
     <ToolLayout
       title="Image Tools"
       description="A collection of image manipulation and conversion tools"
+      tools={IMAGE_TAB_ITEMS}
+      activeToolId={activeTab}
+      onToolChange={handleTabChange}
+      toolNavLabel="Image tool"
     >
       <div className="space-y-6" data-tool="image">
         {isFullscreen && (
@@ -1521,31 +1539,6 @@ const ImageTools = () => {
             onClose={() => setIsFullscreen(false)}
           />
         )}
-        {/* Tool Selection */}
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-          <div className="flex space-x-2 border-b border-gray-200 min-w-max px-4 sm:px-0">
-            {[
-              { id: "resize", label: "Resize", icon: FaRuler },
-              { id: "compress", label: "Compress", icon: FaCompress },
-              { id: "crop", label: "Crop", icon: FaCrop },
-              { id: "convert", label: "Convert", icon: FaExchangeAlt },
-              { id: "metadata", label: "EXIF / Metadata", icon: FaInfo },
-            ].map((tool) => (
-              <button
-                key={tool.id}
-                onClick={() => handleTabChange(tool.id)}
-                className={`px-4 py-2 -mb-px flex items-center whitespace-nowrap ${
-                  activeTab === tool.id
-                    ? "border-b-2 border-primary-600 text-primary-600"
-                    : "text-gray-500"
-                }`}
-              >
-                <tool.icon className="mr-2" />
-                {tool.label}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* File Selector */}
         {!selectedFile && (

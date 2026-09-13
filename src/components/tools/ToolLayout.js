@@ -13,8 +13,11 @@ import {
 } from "react-icons/fa";
 import BugReportToggle from "../BugReportToggle";
 import SharedPasteBar from "./SharedPasteBar";
+import ToolSubNav from "./ToolSubNav";
 import { TOOL_CATEGORIES, getAllTools } from "../../pages/tools/catalog";
 import { recordRecent } from "../../utils/tools/recents";
+
+export { ToolSubNav };
 
 const categoryIcons = {
   text: FaFont,
@@ -32,7 +35,15 @@ const categories = TOOL_CATEGORIES.map((category) => ({
   label: category.shortLabel || category.title,
 }));
 
-const ToolLayout = ({ title, description, children }) => {
+const ToolLayout = ({
+  title,
+  description,
+  children,
+  tools,
+  activeToolId,
+  onToolChange,
+  toolNavLabel = "Select tool",
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { scrollY } = useScroll({
@@ -220,7 +231,15 @@ const ToolLayout = ({ title, description, children }) => {
 
           <SharedPasteBar />
 
-          <div className="bg-white rounded-xl shadow-lg p-6">{children}</div>
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <ToolSubNav
+              tools={tools}
+              activeId={activeToolId}
+              onChange={onToolChange}
+              label={toolNavLabel}
+            />
+            {children}
+          </div>
         </motion.div>
       </div>
     </div>

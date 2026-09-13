@@ -28,6 +28,9 @@ import {
 } from "react-icons/fa";
 import FileSaver from "file-saver";
 import { useNavigate, useLocation } from "react-router-dom";
+import { getCategoryTools } from "./catalog";
+
+const PDF_TAB_ITEMS = getCategoryTools("pdf");
 import { showErrorWithReporting } from "../../utils/analytics";
 
 const PdfSplitTool = lazy(() => import("./pdf/PdfSplitTool"));
@@ -1300,61 +1303,7 @@ const PDFTools = () => {
     return (
       <>
         <ErrorBanner error={error} onDismiss={clearError} />
-        {/* Tool Selection */}
         <div>
-          {/* Mobile Dropdown */}
-          <div className="sm:hidden">
-            <select
-              value={activeTab}
-              onChange={(e) => setActiveTab(e.target.value)}
-              className="w-full px-4 py-2 text-lg font-medium bg-white border-b border-gray-200 focus:outline-none focus:ring-0 focus:border-gray-200"
-            >
-              {[
-                { id: "viewer", label: "PDF Viewer" },
-                { id: "merger", label: "PDF Merger" },
-                { id: "to-images", label: "PDF to Images" },
-                { id: "from-images", label: "Images to PDF" },
-                { id: "reorder", label: "Page Reorder" },
-                { id: "rotate", label: "Rotate PDF" },
-                { id: "split", label: "Split / Extract" },
-              ].map((tool) => (
-                <option key={tool.id} value={tool.id}>
-                  {tool.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Desktop Tabs */}
-          <div className="hidden sm:block">
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <div className="flex space-x-2 border-b border-gray-200 min-w-max px-4 sm:px-0">
-                {[
-                  { id: "viewer", label: "PDF Viewer" },
-                  { id: "merger", label: "PDF Merger" },
-                  { id: "to-images", label: "PDF to Images" },
-                  { id: "from-images", label: "Images to PDF" },
-                  { id: "reorder", label: "Reorder Pages" },
-                  { id: "rotate", label: "Rotate PDF" },
-                  { id: "split", label: "Split / Extract" },
-                ].map((tool) => (
-                  <button
-                    key={tool.id}
-                    onClick={() => handleTabClick(tool.id)}
-                    className={`px-4 py-2 -mb-px whitespace-nowrap ${
-                      activeTab === tool.id
-                        ? "border-b-2 border-primary-600 text-primary-600"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    {tool.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="mt-6">
           {splitMounted && (
             <div className={activeTab === "split" ? "block" : "hidden"}>
               <Suspense
@@ -1378,6 +1327,10 @@ const PDFTools = () => {
     <ToolLayout
       title="PDF Tools"
       description="A collection of PDF manipulation and conversion tools"
+      tools={PDF_TAB_ITEMS}
+      activeToolId={activeTab}
+      onToolChange={handleTabClick}
+      toolNavLabel="PDF tool"
     >
       <div>{renderContent()}</div>
     </ToolLayout>

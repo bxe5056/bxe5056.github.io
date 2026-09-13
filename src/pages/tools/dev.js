@@ -27,6 +27,7 @@ import CryptoJS from "crypto-js";
 import cronstrue from "cronstrue";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { consumeSessionPayload } from "../../utils/tools/session";
+import { getCategoryTools } from "./catalog";
 
 const QrTool = lazy(() => import("./dev/QrTool"));
 const TimestampTool = lazy(() => import("./dev/TimestampTool"));
@@ -45,16 +46,21 @@ const validTools = [
 const defaultTool = "uuid";
 const LAZY_DEV_TOOLS = ["qr", "timestamp", "units"];
 
-const DEV_TAB_ITEMS = [
-  { id: "uuid", label: "UUID Generator", icon: FaRandom },
-  { id: "hash", label: "Hash Generator", icon: FaKey },
-  { id: "regex", label: "Regex Tester", icon: FaCode },
-  { id: "cron", label: "Cron Parser", icon: FaClock },
-  { id: "favicon", label: "Favicon Generator", icon: FaImage },
-  { id: "qr", label: "QR Code", icon: FaQrcode },
-  { id: "timestamp", label: "Timestamp", icon: FaClock },
-  { id: "units", label: "Unit Converter", icon: FaExchangeAlt },
-];
+const DEV_ICONS = {
+  uuid: FaRandom,
+  hash: FaKey,
+  regex: FaCode,
+  cron: FaClock,
+  favicon: FaImage,
+  qr: FaQrcode,
+  timestamp: FaClock,
+  units: FaExchangeAlt,
+};
+
+const DEV_TAB_ITEMS = getCategoryTools("dev").map((tool) => ({
+  ...tool,
+  icon: DEV_ICONS[tool.id],
+}));
 
 const REGEX_CHEATSHEET = [
   { token: ".", desc: "Any character except newline" },
@@ -813,70 +819,12 @@ const DevTools = () => {
     <ToolLayout
       title="Developer Utilities"
       description="A collection of useful tools for developers"
+      tools={DEV_TAB_ITEMS}
+      activeToolId={activeTab}
+      onToolChange={handleTabChange}
+      toolNavLabel="Developer tool"
     >
       <div className="space-y-6" data-tool="dev">
-        {/* Tool Selection */}
-        <div className="mb-6">
-          {/* Mobile Dropdown */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="sm:hidden mb-4"
-          >
-            <select
-              value={activeTab}
-              onChange={(e) => handleTabChange(e.target.value)}
-              className="w-full border-gray-300 rounded-md focus:border-primary-500 focus:ring-primary-500"
-            >
-              {DEV_TAB_ITEMS.map((tool) => (
-                <option key={tool.id} value={tool.id}>
-                  {tool.label}
-                </option>
-              ))}
-            </select>
-          </motion.div>
-
-          {/* Desktop Tabs */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="hidden sm:block"
-          >
-            <nav className="flex flex-wrap border-b-2 border-gray-200 relative">
-              {DEV_TAB_ITEMS.map((tool) => (
-                <motion.button
-                  key={tool.id}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleTabChange(tool.id)}
-                  className={`
-                    relative px-4 py-2 flex items-center ${
-                      activeTab === tool.id
-                        ? "text-primary-500"
-                        : "text-gray-500 hover:text-gray-900"
-                    }
-                  `}
-                >
-                  <tool.icon className="h-4 w-4 mr-2" />
-                  {tool.label}
-                  {activeTab === tool.id && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute bottom-[-2px] left-0 right-0 h-0.5 bg-primary-500"
-                      initial={false}
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 30,
-                      }}
-                    />
-                  )}
-                </motion.button>
-              ))}
-            </nav>
-          </motion.div>
-        </div>
-
         {/* Lazy placeholders keep-alive */}
         {lazyMounted.has("qr") && (
           <div className={activeTab === "qr" ? "block" : "hidden"}>
