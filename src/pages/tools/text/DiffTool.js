@@ -441,7 +441,7 @@ const DiffTool = () => {
         <div className="text-sm text-gray-600 bg-gray-50 border rounded px-3 py-2">
           {prepared.bothJson ? (
             <span>
-              Both sides are valid JSON — comparing pretty-printed forms.
+              Both sides are valid JSON - comparing pretty-printed forms.
             </span>
           ) : (
             <span>
@@ -580,7 +580,7 @@ const DiffTool = () => {
 
         {showPatch ? (
           <pre className="p-3 font-mono text-xs sm:text-sm overflow-x-auto whitespace-pre max-h-[28rem] overflow-y-auto text-gray-800 bg-gray-50">
-            {hasContent ? patch : "—"}
+            {hasContent ? patch : "-"}
           </pre>
         ) : (
           <div className="font-mono text-xs sm:text-sm max-h-[28rem] overflow-auto">

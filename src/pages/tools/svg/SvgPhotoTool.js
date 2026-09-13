@@ -307,7 +307,7 @@ const SvgPhotoTool = () => {
         <div className="space-y-6">
           <p className="text-sm text-gray-500">
             Trace a photo into real SVG paths (color posterize). Runs fully in
-            your browser — large images are downsampled before tracing.
+            your browser - large images are downsampled before tracing.
           </p>
 
           {!sourceBlob ? (
@@ -324,7 +324,7 @@ const SvgPhotoTool = () => {
               <p className="text-gray-600">
                 {rasterDropzone.isDragActive
                   ? "Drop the image here"
-                  : "Drag & drop a PNG, JPEG, WebP, or GIF — or click to select"}
+                  : "Drag & drop a PNG, JPEG, WebP, or GIF - or click to select"}
               </p>
             </div>
           ) : (

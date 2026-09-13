@@ -75,7 +75,7 @@ async function signHs256(header, payload, secret) {
 
   const alg = header?.alg;
   if (alg != null && String(alg).toUpperCase() !== "HS256") {
-    throw new Error("Only HS256 is supported — other algorithms are disabled");
+    throw new Error("Only HS256 is supported - other algorithms are disabled");
   }
 
   const normalizedHeader = { ...header, alg: "HS256", typ: header?.typ || "JWT" };
@@ -147,7 +147,7 @@ export default function JwtTool() {
       const alg = parsed?.alg;
       if (alg == null) return null;
       if (String(alg).toUpperCase() !== "HS256") {
-        return `Header alg is "${alg}" — only HS256 can be signed here`;
+        return `Header alg is "${alg}" - only HS256 can be signed here`;
       }
       return null;
     } catch {
@@ -212,7 +212,7 @@ export default function JwtTool() {
     }
 
     if (header?.alg != null && String(header.alg).toUpperCase() !== "HS256") {
-      setError("Only HS256 is supported — change header.alg or use Decode mode");
+      setError("Only HS256 is supported - change header.alg or use Decode mode");
       return;
     }
 
@@ -278,7 +278,7 @@ export default function JwtTool() {
 
       <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
         Secrets and tokens are processed entirely in your browser and never
-        sent to a server. Signing supports <strong>HS256 only</strong> — other
+        sent to a server. Signing supports <strong>HS256 only</strong> - other
         algorithms are rejected.
       </p>
 

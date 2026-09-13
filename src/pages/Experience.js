@@ -417,8 +417,8 @@ const Experience = () => {
         "Worked year-round in farm operations, assisting with planting, trimming, fertilizing, and maintaining Christmas trees to ensure high-quality growth.",
         "Helped onboard and train new employees, teaching best practices for tree care, customer interactions, and sales processes.",
         "Played a key role in seasonal sales operations, assisting with inventory management, customer service, and winter retail logistics.",
-        "Identified inefficiencies in the business's payment system and implemented a custom-built point-to-point wireless network, allowing the company to adopt Square for credit card processing—saving thousands annually in transaction fees.",
-        "Designed and deployed an outdoor wireless network, extending connectivity to remote retail areas despite infrastructure limitations—an implementation that remains in use over a decade later.",
+        "Identified inefficiencies in the business's payment system and implemented a custom-built point-to-point wireless network, allowing the company to adopt Square for credit card processing, saving thousands annually in transaction fees.",
+        "Designed and deployed an outdoor wireless network, extending connectivity to remote retail areas despite infrastructure limitations, an implementation that remains in use over a decade later.",
       ],
     },
   ];

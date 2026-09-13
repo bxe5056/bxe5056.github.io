@@ -276,7 +276,7 @@ const SvgColorTool = () => {
               : "Drag & drop an SVG file here, or click to select"}
           </p>
           <p className="text-sm text-gray-400 mt-2">
-            Extract fills, strokes, gradients stops, and style colors — then swap them locally in your browser.
+            Extract fills, strokes, gradients stops, and style colors - then swap them locally in your browser.
           </p>
         </div>
         {error && (
@@ -406,7 +406,7 @@ const SvgColorTool = () => {
                         }
                         title={
                           currentIsTransparent
-                            ? "Transparent (none) — click to pick a solid color"
+                            ? "Transparent (none) - click to pick a solid color"
                             : "Pick a solid color"
                         }
                       />

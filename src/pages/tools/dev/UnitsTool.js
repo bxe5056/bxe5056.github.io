@@ -60,7 +60,7 @@ function unitsForCategory(category, rootFontSize) {
  * @returns {string}
  */
 function formatNumber(value) {
-  if (!Number.isFinite(value)) return "—";
+  if (!Number.isFinite(value)) return "-";
   if (value === 0) return "0";
 
   const abs = Math.abs(value);

@@ -65,7 +65,7 @@ function parsePageRanges(input, maxPages) {
         return {
           error: `Page ${n} is out of range. This PDF has ${maxPages} page${
             maxPages === 1 ? "" : "s"
-          } (use 1–${maxPages}).`,
+          } (use 1-${maxPages}).`,
         };
       }
       pageSet.add(n);
@@ -85,7 +85,7 @@ function parsePageRanges(input, maxPages) {
         return {
           error: `Range ${part} is out of range. This PDF has ${maxPages} page${
             maxPages === 1 ? "" : "s"
-          } (use 1–${maxPages}).`,
+          } (use 1-${maxPages}).`,
         };
       }
       for (let i = start; i <= end; i += 1) {
@@ -208,7 +208,7 @@ export default function PdfSplitTool() {
         throw new Error("This PDF has no pages.");
       }
 
-      // Keep an independent copy — loaders may detach the original buffer.
+      // Keep an independent copy - loaders may detach the original buffer.
       bytesRef.current = bytes.slice(0);
       setFile(nextFile);
       setPageCount(count);
@@ -456,7 +456,7 @@ export default function PdfSplitTool() {
                 : "Drag & drop a PDF file here, or click to select one"}
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            Runs entirely in your browser — files never leave this device.
+            Runs entirely in your browser - files never leave this device.
           </p>
         </div>
       ) : (
@@ -650,7 +650,7 @@ export default function PdfSplitTool() {
             className="border border-dashed border-gray-300 rounded p-4 text-center text-sm text-gray-500 cursor-pointer hover:border-blue-400"
           >
             <input {...getInputProps()} />
-            Replace PDF — drop another file or click to choose
+            Replace PDF - drop another file or click to choose
           </div>
         </>
       )}

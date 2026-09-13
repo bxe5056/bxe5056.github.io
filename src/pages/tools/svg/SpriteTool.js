@@ -496,7 +496,7 @@ const SpriteTool = () => {
             : "Drag & drop SVGs and/or one image, or click to select"}
         </p>
         <p className="text-sm text-gray-400 mt-2">
-          Multiple SVGs → symbol sprite · One PNG/JPEG → favicon sizes (16–512)
+          Multiple SVGs → symbol sprite · One PNG/JPEG → favicon sizes (16-512)
         </p>
       </div>
 

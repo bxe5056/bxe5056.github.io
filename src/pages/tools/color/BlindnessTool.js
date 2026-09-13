@@ -13,7 +13,7 @@ import { consumeSessionPayload } from "../../../utils/tools/session";
 import { openToolWithPayload } from "../../../utils/tools/handoff";
 
 /**
- * CVD simulation matrices (linear RGB) — common Viénot / Machado-style sets
+ * CVD simulation matrices (linear RGB) - common Viénot / Machado-style sets
  * used by many client-side simulators.
  */
 const CVD_TYPES = [
@@ -231,7 +231,7 @@ const BlindnessTool = () => {
   useEffect(() => {
     if (!sourcePreviewUrl) return;
     runImageSimulation(sourcePreviewUrl, imageName, cvdType);
-    // Only when type changes with an existing image — not on every sourcePreviewUrl update
+    // Only when type changes with an existing image - not on every sourcePreviewUrl update
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cvdType]);
 
@@ -533,7 +533,7 @@ const BlindnessTool = () => {
               : "Drag & drop an image, or click to select"}
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            PNG, JPEG, WebP, GIF — pixels transformed with the selected matrix
+            PNG, JPEG, WebP, GIF - pixels transformed with the selected matrix
           </p>
         </div>
 

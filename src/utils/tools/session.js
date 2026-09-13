@@ -48,7 +48,7 @@ function writeRaw(payload) {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     }
   } catch {
-    // Quota / private mode — still notify in-memory subscribers via getSessionPayload cache
+    // Quota / private mode - still notify in-memory subscribers via getSessionPayload cache
   }
 }
 

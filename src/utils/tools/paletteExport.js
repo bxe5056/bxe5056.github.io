@@ -3,7 +3,7 @@
  * Feature agents (Color extract/picker, SVG Color Swap) should import these.
  *
  * TODO(ASE): Adobe Swatch Exchange (.ase) is a binary RIFF-like format.
- * Add a pure-JS encoder here later if needed — prefer CSS + SVG for now.
+ * Add a pure-JS encoder here later if needed - prefer CSS + SVG for now.
  */
 
 /**

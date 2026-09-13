@@ -214,7 +214,7 @@ const SharedPasteBar = ({ variant = "bar" }) => {
       const text = await navigator.clipboard.readText();
       ingestText(text);
     } catch {
-      setError("Clipboard access blocked — drop a file instead");
+      setError("Clipboard access blocked - drop a file instead");
     }
   }, [ingestText]);
 

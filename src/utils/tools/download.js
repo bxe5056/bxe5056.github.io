@@ -35,7 +35,7 @@ export function downloadText(text, filename, mime = "text/plain") {
 
 /**
  * Download from a data URL or existing object URL (e.g. canvas.toDataURL / image preview).
- * Does not revoke the given URL — caller owns its lifetime.
+ * Does not revoke the given URL - caller owns its lifetime.
  *
  * @param {string} dataUrl
  * @param {string} filename

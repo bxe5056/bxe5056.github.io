@@ -548,7 +548,7 @@ function FieldBuilder({ def, field, onChange }) {
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <h3 className="text-sm font-medium text-gray-800">{def.label}</h3>
         <span className="text-xs text-gray-500 font-mono">
-          {def.min}–{def.max}
+          {def.min}-{def.max}
         </span>
       </div>
 
@@ -776,7 +776,7 @@ export default function CronTool() {
   const applyRawToBuilders = useCallback(() => {
     const parsed = parseExpressionToFields(rawText);
     if (!parsed) {
-      setStatus("Could not sync builders — expression is not a simple 5-field cron");
+      setStatus("Could not sync builders - expression is not a simple 5-field cron");
       return;
     }
     setFields(parsed);
@@ -872,7 +872,7 @@ export default function CronTool() {
           <div className="w-full space-y-3">
             {visibleFieldKeys.length === 0 ? (
               <p className="text-sm text-gray-600 px-1 py-2">
-                Uses fixed schedule — switch to Custom to edit fields
+                Uses fixed schedule - switch to Custom to edit fields
               </p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 w-full">

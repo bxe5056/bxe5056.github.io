@@ -128,7 +128,7 @@ const Tools = () => {
           Developer Tools & Utilities
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-2">
-          Browse {TOOL_CATEGORIES.length} categories — jump straight into a
+          Browse {TOOL_CATEGORIES.length} categories - jump straight into a
           tool or open a full suite from the cards below.
         </p>
         <p className="text-sm text-gray-500">

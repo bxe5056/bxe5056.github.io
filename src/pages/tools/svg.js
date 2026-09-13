@@ -536,10 +536,10 @@ const SvgTools = () => {
       <div className="space-y-6">
         {activeTab === "optimize" && renderOptimizeTool()}
 
-        {/* File Selector — ViewBox only (Optimize uses ToolScaffold input) */}
+        {/* File Selector - ViewBox only (Optimize uses ToolScaffold input) */}
         {activeTab === "viewbox" && !svgContent && svgDropzone}
 
-        {/* Color Swap keep-alive (lazy) — prefer editing ./svg/* over this shell */}
+        {/* Color Swap keep-alive (lazy) - prefer editing ./svg/* over this shell */}
         {colorToolMounted && (
           <div className={activeTab === "colors" ? "block" : "hidden"}>
             <Suspense
@@ -584,10 +584,10 @@ const SvgTools = () => {
           </div>
         )}
 
-        {/* Tool Interface — ViewBox (and any non-scaffold tabs) */}
+        {/* Tool Interface - ViewBox (and any non-scaffold tabs) */}
         {activeTab === "viewbox" && svgContent && renderTool()}
 
-        {/* Preview and Actions — ViewBox only (Optimize uses ToolScaffold) */}
+        {/* Preview and Actions - ViewBox only (Optimize uses ToolScaffold) */}
         {activeTab === "viewbox" && processedSvg && (
           <div className="space-y-4">
             <div className="mt-6">

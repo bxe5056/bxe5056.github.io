@@ -174,7 +174,7 @@ function trimToken(token) {
 }
 
 /**
- * True for none, currentColor, and url(...) paint servers — not solid RGB paints.
+ * True for none, currentColor, and url(...) paint servers - not solid RGB paints.
  *
  * @param {unknown} token
  * @returns {boolean}
@@ -183,7 +183,7 @@ export function isPaintServerOrSpecial(token) {
   const t = trimToken(token).toLowerCase();
   if (!t) return false;
   if (t === "none" || t === "currentcolor") return true;
-  // url(#grad) / url("...") — gradients & patterns
+  // url(#grad) / url("...") - gradients & patterns
   if (/^url\s*\(/i.test(t)) return true;
   return false;
 }
@@ -208,7 +208,7 @@ function rgbToCanonicalHex(r, g, b) {
 }
 
 /**
- * Parse a single rgb()/rgba() channel (0–255 number or 0%–100%).
+ * Parse a single rgb()/rgba() channel (0-255 number or 0%-100%).
  * @param {string} part
  * @returns {number | null}
  */
@@ -233,7 +233,7 @@ function normalizeHex(raw) {
   if (!/^[0-9a-f]+$/i.test(hex)) return null;
 
   if (hex.length === 3 || hex.length === 4) {
-    // #rgb / #rgba — expand; ignore alpha nibble for opaque RGB canonical form
+    // #rgb / #rgba - expand; ignore alpha nibble for opaque RGB canonical form
     if (hex.length === 4) {
       const a = parseInt(hex[3] + hex[3], 16);
       if (a === 0) return null;
@@ -245,7 +245,7 @@ function normalizeHex(raw) {
   }
 
   if (hex.length === 6 || hex.length === 8) {
-    // #rrggbb / #rrggbbaa — drop alpha; treat alpha 0 as non-solid
+    // #rrggbb / #rrggbbaa - drop alpha; treat alpha 0 as non-solid
     if (hex.length === 8) {
       const a = parseInt(hex.slice(6, 8), 16);
       if (a === 0) return null;

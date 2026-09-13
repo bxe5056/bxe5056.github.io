@@ -16,10 +16,10 @@ const MODE_GENERATE = "generate";
 const MODE_SCAN = "scan";
 
 const ERROR_LEVELS = [
-  { value: "L", label: "L — ~7% recovery" },
-  { value: "M", label: "M — ~15% recovery" },
-  { value: "Q", label: "Q — ~25% recovery" },
-  { value: "H", label: "H — ~30% recovery" },
+  { value: "L", label: "L - ~7% recovery" },
+  { value: "M", label: "M - ~15% recovery" },
+  { value: "Q", label: "Q - ~25% recovery" },
+  { value: "H", label: "H - ~30% recovery" },
 ];
 
 const QR_SIZE = 280;
@@ -490,7 +490,7 @@ const QrTool = () => {
         <div className="space-y-6">
           <p className="text-sm text-gray-500">
             Decode a QR code from an image file or your camera. Processing stays
-            local — nothing is uploaded.
+            local - nothing is uploaded.
           </p>
 
           <div className="flex flex-wrap gap-2">

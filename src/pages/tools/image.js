@@ -90,7 +90,7 @@ const formatExifLabel = (key) =>
     .replace(/^./, (c) => c.toUpperCase());
 
 const formatExifValue = (value) => {
-  if (value == null) return "—";
+  if (value == null) return "-";
   if (value instanceof Date) return value.toLocaleString();
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "number") {
@@ -254,7 +254,7 @@ const ImageTools = () => {
 
     if (!start || !end) return;
 
-    // Calculate crop rectangle coordinates (use args — avoid stale state during drag)
+    // Calculate crop rectangle coordinates (use args - avoid stale state during drag)
     const startX = Math.min(start.x, end.x);
     const startY = Math.min(start.y, end.y);
     const width = Math.abs(end.x - start.x);
@@ -1241,7 +1241,7 @@ const ImageTools = () => {
             </div>
             {!cropReady && (
               <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-                No crop selected yet — drag across the preview to create a
+                No crop selected yet - drag across the preview to create a
                 selection.
               </p>
             )}
@@ -1509,7 +1509,7 @@ const ImageTools = () => {
                     />
                   ) : (
                     <div className="text-gray-400 text-center px-4">
-                      No image selected — drop a file to get started.
+                      No image selected - drop a file to get started.
                     </div>
                   )}
                 </div>

@@ -3,7 +3,7 @@ import styles from "./ToolScaffold.module.css";
 
 /**
  * Standard tool body layout: Input → Controls → Preview → Output actions.
- * Presentational only — callers own all business logic and slot contents.
+ * Presentational only - callers own all business logic and slot contents.
  */
 const ToolScaffold = ({
   title,

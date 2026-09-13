@@ -48,7 +48,7 @@ const App = () => {
         <Route path="/experience" element={<Experience />} />
         <Route path="/present" element={<Present />} />
 
-        {/* Tools Routes — lazy-loaded; one Suspense boundary via layout route */}
+        {/* Tools Routes - lazy-loaded; one Suspense boundary via layout route */}
         <Route element={<ToolsSuspenseLayout />}>
           <Route path="/tools" element={<Tools />} />
           <Route path="/tools/text" element={<TextTools />} />

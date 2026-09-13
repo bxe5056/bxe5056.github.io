@@ -22,7 +22,7 @@ import { consumeSessionPayload } from "../../../utils/tools/session";
 
 const REGEX_CHEATSHEET = [
   { token: ".", desc: "Any character except newline" },
-  { token: "\\d", desc: "Digit (0–9)" },
+  { token: "\\d", desc: "Digit (0-9)" },
   { token: "\\w", desc: "Word character [A-Za-z0-9_]" },
   { token: "\\s", desc: "Whitespace" },
   { token: "\\D / \\W / \\S", desc: "Negated digit / word / space" },
@@ -628,7 +628,7 @@ function BlockEditor({ block, onChange }) {
   }
   return (
     <span className="text-xs text-gray-500 font-mono">
-      {blockToPattern(block) || "—"}
+      {blockToPattern(block) || "-"}
     </span>
   );
 }
@@ -723,21 +723,21 @@ export default function RegexTool() {
     setPattern(builtPattern);
     setBuilderDirty(false);
     setUiMode("advanced");
-    setStatus("Switched to Advanced — pattern preserved");
+    setStatus("Switched to Advanced - pattern preserved");
   };
 
   const switchToBuilder = () => {
     const parsed = patternToBlocks(pattern);
     if (parsed == null) {
       setStatus(
-        "Could not fully parse pattern into blocks — staying in Advanced so the raw pattern is kept."
+        "Could not fully parse pattern into blocks - staying in Advanced so the raw pattern is kept."
       );
       return;
     }
     setBlocks(parsed);
     setBuilderDirty(false);
     setUiMode("builder");
-    setStatus("Switched to Builder — pattern synced into blocks");
+    setStatus("Switched to Builder - pattern synced into blocks");
   };
 
   const addBlock = (type) => {
@@ -969,7 +969,7 @@ export default function RegexTool() {
                   </div>
                   {blocks.length === 0 ? (
                     <p className="text-sm text-gray-500">
-                      No blocks yet — pick from the palette.
+                      No blocks yet - pick from the palette.
                     </p>
                   ) : (
                     <ul className="space-y-2">
@@ -1097,7 +1097,7 @@ export default function RegexTool() {
                             {match.groups
                               .map((group, groupIndex) =>
                                 group == null
-                                  ? `(${groupIndex + 1}: —)`
+                                  ? `(${groupIndex + 1}: -)`
                                   : `(${groupIndex + 1}: ${group})`
                               )
                               .join(", ")}
@@ -1110,7 +1110,7 @@ export default function RegexTool() {
                               {Object.entries(match.namedGroups)
                                 .map(
                                   ([name, value]) =>
-                                    `${name}=${value == null ? "—" : value}`
+                                    `${name}=${value == null ? "-" : value}`
                                 )
                                 .join(", ")}
                             </div>

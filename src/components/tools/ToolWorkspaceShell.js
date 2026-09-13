@@ -97,7 +97,7 @@ const ToolWorkspaceShell = ({
         </div>
       )}
 
-      {/* Dynamic lg columns — Tailwind cannot see runtime width values */}
+      {/* Dynamic lg columns - Tailwind cannot see runtime width values */}
       <style>{`
         @media (min-width: 1024px) {
           .tools-workspace-grid {

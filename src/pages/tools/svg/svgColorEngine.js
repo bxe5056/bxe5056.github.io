@@ -47,7 +47,7 @@ function classifyToken(token) {
   const t = String(token ?? "").trim();
   if (!t) return "other";
   // `transparent` is not a paint-server special in normalize helpers, but it is
-  // meaningful “no paint” — treat like none/currentColor for extract/opt-in.
+  // meaningful “no paint” - treat like none/currentColor for extract/opt-in.
   if (isPaintServerOrSpecial(t) || isTransparentPaint(t)) return "special";
   if (normalizeSvgColor(t)) return "solid";
   return "other";

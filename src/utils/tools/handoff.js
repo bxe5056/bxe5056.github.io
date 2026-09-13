@@ -1,7 +1,7 @@
 /**
  * Open another tool with a shared session payload (in-tab handoff).
  *
- * Payload conventions — set via session before navigate:
+ * Payload conventions - set via session before navigate:
  *
  * | type     | fields                                      | typical targets              |
  * |----------|---------------------------------------------|------------------------------|

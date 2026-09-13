@@ -2,7 +2,7 @@
  * Single source of truth for tools hub categories and deep-link slugs.
  * Slugs must match the `:tool` route params handled by each category page.
  *
- * Data tools note — format matrix:
+ * Data tools note - format matrix:
  * Deep links use `{source}To{target}` where source/target are SUPPORTED_FORMATS
  * keys lowercased (e.g. csvToJson, md_tableToJson, html_tableToJson).
  * data.js parses the path by splitting on "To" and uppercasing both sides, so
