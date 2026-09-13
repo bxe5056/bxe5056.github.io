@@ -12,12 +12,12 @@ import {
   FaFilePdf,
 } from "react-icons/fa";
 import BugReportToggle from "../BugReportToggle";
-import SharedPasteBar from "./SharedPasteBar";
-import ToolSubNav from "./ToolSubNav";
+import ToolWorkspaceShell from "./ToolWorkspaceShell";
 import { TOOL_CATEGORIES, getAllTools } from "../../pages/tools/catalog";
 import { recordRecent } from "../../utils/tools/recents";
 
-export { ToolSubNav };
+export { default as ToolSubNav } from "./ToolSideNav";
+export { default as ToolSideNav } from "./ToolSideNav";
 
 const categoryIcons = {
   text: FaFont,
@@ -93,12 +93,6 @@ const ToolLayout = ({
     ["0 0 0 0 rgba(51, 65, 85, 0)", "0 8px 32px -8px rgba(51, 65, 85, 0.15)"]
   );
 
-  const textColorActive = useTransform(
-    scrollY,
-    [0, 50],
-    ["rgba(37, 99, 235, 1)", "rgba(255, 255, 255, 1)"]
-  );
-
   const textColorInactive = useTransform(
     scrollY,
     [0, 50],
@@ -119,7 +113,7 @@ const ToolLayout = ({
       className="min-h-screen bg-gray-50"
       style={{ scrollMarginTop: "7.5rem" }}
     >
-      {/* Navigation Bar */}
+      {/* Category switcher — sticky under site header */}
       <motion.nav
         style={{
           backgroundColor: toolbarBackground,
@@ -171,42 +165,33 @@ const ToolLayout = ({
                 <BugReportToggle />
               </div>
             </div>
-            {/* Desktop View */}
-            <div className="hidden md:flex items-center space-x-2">
-              {categories.map((category) => (
-                <div key={category.path} className="relative">
-                  <Link
-                    to={category.path}
-                    className="px-3 h-full flex items-center"
-                  >
-                    <motion.div
-                      style={{
-                        color: location.pathname.startsWith(category.path)
-                          ? textColorActive
-                          : textColorInactive,
-                      }}
-                      className="flex items-center text-sm font-medium"
+            {/* Desktop View — segmented category pills */}
+            <div className="hidden md:flex items-center gap-1.5">
+              <div className="inline-flex items-center gap-0.5 rounded-full border border-gray-200/80 bg-white/70 p-1 shadow-sm backdrop-blur-sm">
+                {categories.map((category) => {
+                  const isActive = location.pathname.startsWith(category.path);
+                  return (
+                    <Link
+                      key={category.path}
+                      to={category.path}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                        isActive
+                          ? "bg-primary-50 text-primary-700 shadow-sm ring-1 ring-inset ring-primary-200"
+                          : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
+                      }`}
                     >
-                      <category.icon className="mr-1.5" />
+                      <category.icon
+                        className={`h-3.5 w-3.5 ${
+                          isActive ? "text-primary-600" : "text-gray-400"
+                        }`}
+                        aria-hidden
+                      />
                       {category.label}
-                    </motion.div>
-                  </Link>
-                  {location.pathname.startsWith(category.path) && (
-                    <motion.div
-                      layoutId="activeCategory"
-                      style={{ backgroundColor: textColorActive }}
-                      className="absolute bottom-[-13px] left-0 right-0 h-[3px]"
-                      initial={false}
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 30,
-                      }}
-                    />
-                  )}
-                </div>
-              ))}
-              <div className="border-l border-gray-200 ml-2 pl-2">
+                    </Link>
+                  );
+                })}
+              </div>
+              <div className="border-l border-gray-200 ml-1 pl-2">
                 <BugReportToggle />
               </div>
             </div>
@@ -214,32 +199,30 @@ const ToolLayout = ({
         </div>
       </motion.nav>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
+      {/* Main Content — three-column workspace */}
+      <div className="container mx-auto px-4 py-6 sm:py-8 pb-24 lg:pb-8">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto"
+          transition={{ duration: 0.4 }}
         >
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
+          <div className="mb-5 sm:mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+              {title}
+            </h1>
             {description && (
-              <p className="text-gray-600 text-lg">{description}</p>
+              <p className="text-gray-600 text-base sm:text-lg">{description}</p>
             )}
           </div>
 
-          <SharedPasteBar />
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <ToolSubNav
-              tools={tools}
-              activeId={activeToolId}
-              onChange={onToolChange}
-              label={toolNavLabel}
-            />
+          <ToolWorkspaceShell
+            tools={tools}
+            activeToolId={activeToolId}
+            onToolChange={onToolChange}
+            toolNavLabel={toolNavLabel}
+          >
             {children}
-          </div>
+          </ToolWorkspaceShell>
         </motion.div>
       </div>
     </div>

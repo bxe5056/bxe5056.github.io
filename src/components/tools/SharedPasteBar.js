@@ -162,13 +162,14 @@ async function fileToPayload(file) {
   return { type, dataUrl, fileName, mime };
 }
 
-const SharedPasteBar = () => {
+const SharedPasteBar = ({ variant = "bar" }) => {
   const navigate = useNavigate();
   const fileInputId = useId();
   const fileInputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const isRail = variant === "rail";
 
   const payload = useSyncExternalStore(
     subscribeSession,
@@ -268,13 +269,21 @@ const SharedPasteBar = () => {
       onDragEnter={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`mb-4 rounded-lg border px-3 py-2.5 transition-colors ${
+      className={`rounded-lg border px-3 py-2.5 transition-colors ${
+        isRail ? "mb-0" : "mb-4"
+      } ${
         dragging
           ? "border-blue-400 bg-blue-50/80"
           : "border-gray-200 bg-gray-50/80"
       }`}
     >
-      <div className="flex flex-wrap items-center gap-2">
+      <div
+        className={
+          isRail
+            ? "flex flex-col gap-2"
+            : "flex flex-wrap items-center gap-2"
+        }
+      >
         <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
           <FaClipboard className="opacity-70" aria-hidden />
           Shared
@@ -319,13 +328,25 @@ const SharedPasteBar = () => {
           )}
         </div>
 
-        <p className="w-full text-[11px] text-slate-400 sm:ml-auto sm:w-auto sm:text-right">
-          {dragging ? "Drop to load into shared session" : "Drop a file anywhere on this bar"}
+        <p
+          className={`text-[11px] text-slate-400 ${
+            isRail ? "" : "w-full sm:ml-auto sm:w-auto sm:text-right"
+          }`}
+        >
+          {dragging
+            ? "Drop to load into shared session"
+            : isRail
+              ? "Drop a file here"
+              : "Drop a file anywhere on this bar"}
         </p>
       </div>
 
       {payload ? (
-        <div className="mt-2 flex flex-col gap-2 border-t border-gray-200/80 pt-2 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          className={`mt-2 flex flex-col gap-2 border-t border-gray-200/80 pt-2 ${
+            isRail ? "" : "sm:flex-row sm:items-center sm:justify-between"
+          }`}
+        >
           <div className="min-w-0 text-xs text-slate-600">
             <span className="mr-2 inline-flex rounded bg-slate-200/70 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-slate-700">
               {payload.type || "payload"}
