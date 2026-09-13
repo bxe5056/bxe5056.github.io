@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaClipboardList } from "react-icons/fa";
 import BugReportToggle from "../BugReportToggle";
 import ToolWorkspaceShell from "./ToolWorkspaceShell";
+import ToolsCommandPalette from "./ToolsCommandPalette";
 import { TOOLS_CHROME_HEIGHT, TOOLS_STICKY_TOP } from "./toolsChrome";
 import { TOOL_CATEGORIES, getAllTools } from "../../pages/tools/catalog";
 import { recordRecent } from "../../utils/tools/recents";
@@ -142,6 +143,8 @@ const ToolLayout = ({
           {children}
         </ToolWorkspaceShell>
       </div>
+
+      <ToolsCommandPalette />
     </div>
   );
 };

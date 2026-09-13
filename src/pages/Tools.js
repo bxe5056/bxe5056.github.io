@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import PageContainer from "../components/common/PageContainer";
+import ToolsCommandPalette from "../components/tools/ToolsCommandPalette";
 import { TOOL_CATEGORIES, getToolPath } from "./tools/catalog";
 import {
   getRecentsSnapshot,
@@ -220,6 +221,8 @@ const Tools = () => {
           </motion.div>
         ))}
       </motion.div>
+
+      <ToolsCommandPalette />
     </PageContainer>
   );
 };
